@@ -1,0 +1,17 @@
+{
+  "name": "monitor-de-passagens-aereas",
+  "version": "0.1.0",
+  "description": "Monitor de Passagens Aéreas — sistema de monitoramento e alerta de preços de passagens aéreas, governado pelo protocolo ARGUS + XDRS.",
+  "keywords": [
+    "passagens-aereas",
+    "monitor",
+    "alertas",
+    "argus",
+    "governance",
+    "xdrs"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "xdrs-core": "^0.28.4"
+  }
+}
