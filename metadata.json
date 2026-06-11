@@ -1,0 +1,6 @@
+{
+  "name": "Monitor de Passagens Aéreas",
+  "description": "Monitore preços de passagens aéreas em tempo real, configure alertas de preços ideais para suas próximas viagens e receba notificações instantâneas por e-mail ou mensagens.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
