@@ -2,65 +2,92 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Commands
+## Stack (padrão dos projetos do owner)
 
-```bash
-npm install          # install dependencies
-npm run dev          # dev server (Express + Vite HMR) on http://localhost:3000
-npm run build        # production build (Vite frontend + esbuild server)
-npm start            # serve production build
-npm run lint         # TypeScript type-check (noEmit)
+| Camada | Tecnologia |
+|--------|-----------|
+| Frontend | Next.js 14 (App Router) + React + Tailwind CSS |
+| Backend | Fastify (Node.js/TypeScript) — 3 serviços independentes |
+| Banco de dados | Firestore (Firebase) via `firebase-admin` |
+| IA | Google Gemini API |
+| Pagamentos | Stripe |
+| Deploy backend | Railway |
+| Deploy frontend | Vercel |
+
+## Serviços backend (estrutura alvo)
+
+```
+services/
+  api/          # gateway REST — autenticação, CRUD de monitores, orquestração
+  generator/    # IA + busca de preços (Gemini, Duffel, Amadeus)
+  publisher/    # disparo de notificações (e-mail via Resend, futuramente Telegram)
 ```
 
-No test suite yet — `npm run lint` is the only automated check.
+Cada serviço é um processo Fastify independente, deployado separadamente no Railway.
 
-## Architecture
+## Estado atual (MVP herdado do AI Studio)
 
-This is a **full-stack single-repo** app: one Express server (`server.ts`) serves both the REST API and the Vite-bundled React SPA.
+O MVP usa Express + Vite + arquivo JSON como banco. **Ainda não foi migrado** para a stack definitiva acima. Os arquivos atuais na raiz (`server.ts`, `src/`, `vite.config.ts`) são a base de partida — a migração ocorre nas fases do roadmap.
 
-### Data flow
+## Commands (MVP atual — enquanto não migra)
+
+```bash
+npm install       # instalar dependências
+npm run dev       # servidor dev (Express + Vite HMR) em http://localhost:3000
+npm run build     # build de produção
+npm start         # servir build de produção
+npm run lint      # type-check TypeScript (noEmit)
+```
+
+## Arquitetura do MVP atual
 
 ```
 Browser (React SPA)
   └─ fetch /api/*
        └─ Express (server.ts)
-            ├─ JSON file DB  (server_db_passagens.json, auto-created at runtime)
-            └─ Gemini AI API  (optional — falls back to offline simulation)
+            ├─ JSON file DB  (server_db_passagens.json, auto-criado em runtime)
+            └─ Gemini AI API  (opcional — fallback offline se sem GEMINI_API_KEY)
 ```
 
-### Key files
+### Arquivos-chave do MVP
 
-| File | Role |
-|------|------|
-| `server.ts` | All backend logic: REST routes, DB read/write, Gemini AI calls, price scan logic, notification generation |
-| `src/types.ts` | Shared TypeScript interfaces (`FlightMonitor`, `NotificationLog`, `AirlineSite`) — single source of truth for shape of data |
-| `src/App.tsx` | Root component: owns all state, fetches from API, passes handlers down |
-| `src/components/MonitorCard.tsx` | Handles the scan UX flow (step-by-step animation, result display) |
+| Arquivo | Papel |
+|---------|-------|
+| `server.ts` | Todo o backend: rotas REST, leitura/escrita do JSON, chamadas Gemini, lógica de scan e notificações |
+| `src/types.ts` | Interfaces TypeScript compartilhadas — fonte da verdade para o shape dos dados |
+| `src/App.tsx` | Componente raiz: todo o state, fetch da API, passa handlers para baixo |
+| `src/components/MonitorCard.tsx` | UX do scan: animação passo a passo, exibição de resultado |
 
-### Data model (types.ts)
+### Modelo de dados (types.ts)
 
-- **`FlightMonitor`** — the core entity: origin/destination IATA codes, dates, passenger counts, `targetPrice`, `currentPrice`, `history[]`, list of `trackedSites`, `status: 'active' | 'paused'`
-- **`NotificationLog`** — generated when a scan finds `currentPrice ≤ targetPrice` or price changes; includes `purchaseUrl` deep-link to the airline site
-- **`AirlineSite`** — metadata for each source (LATAM, GOL, Azul, Decolar, Skyscanner): `status`, `scrapedCount`, `avgResponseMs`
+- **`FlightMonitor`** — entidade central: códigos IATA origem/destino, datas, contagem de passageiros, `targetPrice`, `currentPrice`, `history[]`, `trackedSites`, `status: 'active' | 'paused'`
+- **`NotificationLog`** — gerada quando `currentPrice ≤ targetPrice` ou preço muda; inclui `purchaseUrl` deep-link para o site da companhia
+- **`AirlineSite`** — metadata de cada fonte (LATAM, GOL, Azul, Decolar, Skyscanner): `status`, `scrapedCount`, `avgResponseMs`
 
-### Price scanning (`POST /api/monitors/:id/scan`)
+### Lógica de scan (`POST /api/monitors/:id/scan`)
 
-1. Calls Gemini (`gemini-3.5-flash`) with a structured JSON schema prompt to generate realistic BRL prices per site
-2. Falls back to deterministic random simulation if `GEMINI_API_KEY` is absent or the call fails
-3. Picks the cheapest result, updates `monitor.currentPrice` and `monitor.history`, increments site stats
-4. Creates a `NotificationLog` if price ≤ target or price changed since last scan
+1. Chama Gemini (`gemini-3.5-flash`) com schema JSON estruturado para gerar preços realistas em BRL por site
+2. Fallback para simulação determinística se `GEMINI_API_KEY` ausente ou chamada falhar
+3. Pega o resultado mais barato, atualiza `monitor.currentPrice` e `monitor.history`, incrementa stats do site
+4. Cria `NotificationLog` se preço ≤ meta ou preço mudou desde o último scan
 
-### Environment variables
+### Variáveis de ambiente
 
-| Variable | Required | Notes |
-|----------|----------|-------|
-| `GEMINI_API_KEY` | No | Enables AI price simulation; without it, offline fallback runs |
-| `APP_URL` | No | Base URL for self-referential links |
+| Variável | Obrigatória | Notas |
+|----------|-------------|-------|
+| `GEMINI_API_KEY` | Não | Habilita simulação AI; sem ela roda fallback offline |
+| `APP_URL` | Não | URL base para links auto-referenciais |
 
-Copy `.env.example` to `.env.local` for local development.
+Copiar `.env.example` para `.env.local` para desenvolvimento local.
 
-### Dev vs production server mode
+### Dev vs produção
 
-`server.ts` checks `NODE_ENV`:
-- **development** — mounts Vite as Express middleware (HMR works)
-- **production** — serves static `dist/` folder from `npm run build`
+`server.ts` verifica `NODE_ENV`:
+- **development** — monta Vite como middleware Express (HMR funciona)
+- **production** — serve pasta estática `dist/` do `npm run build`
+
+## Processo de desenvolvimento
+
+- Toda feature passa por **UX** antes de implementar
+- Toda feature passa por **QA** antes de ir ao ar
+- Agente Argus aciona a equipe técnica — o dono do produto não resolve questões técnicas diretamente
