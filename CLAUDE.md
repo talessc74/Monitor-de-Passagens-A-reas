@@ -157,6 +157,8 @@ A hierarquia de resolução está em `.seeds/ARGUS.md` — Seção V.
 /
   CLAUDE.md              ← este arquivo — lido primeiro
   AGENTS.md              ← regras para agentes IA (não modificar)
+  package.json           ← dependências do pacote
+  .filedist.lock         ← rastreia arquivos externos (não modificar)
   .seeds/
     ARGUS.md             ← orquestrador — lido segundo
     SCOUT.json
@@ -181,6 +183,7 @@ A hierarquia de resolução está em `.seeds/ARGUS.md` — Seção V.
     CHRONOS.json
   .xdrs/
     index.md             ← raiz XDRS — lida antes de qualquer ação
+    _core/               ← padrões do framework (não modificar — externo)
     _local/              ← policies do projeto (criadas pela governança)
       index.md
       adrs/

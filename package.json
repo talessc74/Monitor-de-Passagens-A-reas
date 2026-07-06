@@ -1,0 +1,20 @@
+{
+  "name": "monitor-de-passagens-a-reas",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:41729/git/talessc74/Monitor-de-Passagens-A-reas"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "argus-xdrs-governance": "^1.2.0",
+    "xdrs-core": "^0.37.2"
+  }
+}
