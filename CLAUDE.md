@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Banco de dados | Firestore (Firebase) via `firebase-admin` |
 | IA | Google Gemini API |
 | Pagamentos | Stripe |
-| Deploy backend | Railway |
+| Deploy backend | Firebase Cloud Functions / Cloud Run |
 | Deploy frontend | Vercel |
 
 ## Serviços backend (estrutura alvo)
@@ -23,7 +23,7 @@ services/
   publisher/    # disparo de notificações (e-mail via Resend, futuramente Telegram)
 ```
 
-Cada serviço é um processo Fastify independente, deployado separadamente no Railway.
+Cada serviço é um processo Fastify independente, deployado como Firebase Cloud Function (ou Cloud Run, se precisar de execução contínua para o scheduler). Um único ecossistema Firebase para banco + backend, evitando um provedor de deploy extra.
 
 ## Estado atual (MVP herdado do AI Studio)
 

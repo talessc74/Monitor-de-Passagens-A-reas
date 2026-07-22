@@ -1,6 +1,8 @@
-# Roadmap — Monitor de Passagens Aéreas (v2 — revisado)
+# Roadmap — Monitor de Passagens Aéreas (v3 — revisado)
 
-> **v2 (07/2026):** revisão técnica completa. Correções: fila de jobs incompatível com Firestore substituída por scheduler de polling; caveats de custo do Duffel/Amadeus; cache de buscas para controle de custo; segurança movida para padrão transversal desde a Fase 1; deploy Vercel movido para a Fase 2 (junto com Next.js).
+> **v3 (07/2026):** deploy do backend migrado de Railway para **Firebase (Cloud Functions/Cloud Run)** — ecossistema único (banco + backend no Firebase), sem provedor de deploy extra. Isso também simplifica a Fase 4 (scheduler nativo via Cloud Scheduler, no lugar de loop manual) e a Fase 5 (Firestore Triggers no lugar de listener manual).
+>
+> **v2 (07/2026):** revisão técnica completa. Correções: fila de jobs incompatível com Firestore substituída por scheduler; caveats de custo do Duffel/Amadeus; cache de buscas para controle de custo; segurança movida para padrão transversal desde a Fase 1.
 
 ## Stack definitiva (padrão dos projetos)
 
@@ -12,7 +14,7 @@
 | IA | Google Gemini API (modelo via env `GEMINI_MODEL`) |
 | Pagamentos | Stripe |
 | E-mail | Resend + React Email |
-| Deploy backend | Railway (3 serviços separados) |
+| Deploy backend | Firebase Cloud Functions / Cloud Run |
 | Deploy frontend | Vercel |
 
 ## Estrutura de monorepo alvo
@@ -49,29 +51,28 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 
 ## Fase 1 — Fundação: Monorepo + Firestore + Deploy do backend
 
-**O que será construído:** Estrutura definitiva de pastas, banco real (Firestore) e o serviço `api` no ar via Railway. O frontend atual (Vite SPA) continua funcionando apontando para a nova API — a migração dele para Next.js fica na Fase 2.
+**O que será construído:** Estrutura definitiva de pastas, banco real (Firestore) e o serviço `api` no ar via Firebase Cloud Functions. O frontend atual (Vite SPA) continua funcionando apontando para a nova API — a migração dele para Next.js fica na Fase 2.
 
 **Tarefas (ordem de execução):**
 
 1. Reestruturar o repositório em monorepo npm workspaces (`apps/`, `services/`, `packages/`)
 2. Criar `packages/types` movendo `src/types.ts` para lá; adicionar campo `userId` (nullable por enquanto) e `nextScanAt` ao `FlightMonitor`
-3. Criar `services/api` (Fastify + TypeScript): portar todas as rotas REST do `server.ts` atual (`/api/monitors`, `/api/sites`, `/api/notifications`, scan manual)
+3. Criar `services/api` (Fastify + TypeScript, empacotado como Cloud Function via `firebase-functions` + adaptador Fastify↔HTTP): portar todas as rotas REST do `server.ts` atual (`/api/monitors`, `/api/sites`, `/api/notifications`, scan manual)
 4. Criar projeto Firebase + Firestore; coleções: `monitors`, `notifications`, `sites`, `users`
 5. Camada de repositório (`services/api/src/repositories/`) usando `firebase-admin` — nenhuma rota fala com o Firestore diretamente
 6. Seed script para popular a coleção `sites` (LATAM, GOL, Azul, Decolar, Skyscanner) — **não migrar** os monitores fictícios do JSON
 7. Aplicar os padrões transversais (Zod, rate limit, helmet, env validado, Pino)
 8. Mover a lógica de scan simulado (Gemini) do `server.ts` para o `api` temporariamente (vira serviço `generator` na Fase 3); modelo Gemini via env `GEMINI_MODEL`
-9. Deploy do `api` no Railway; frontend Vite atual servido pelo próprio `api` (como hoje) até a Fase 2
-10. GitHub Actions: `lint` + `build` a cada push
+9. Deploy do `api` no Firebase (Cloud Functions 2nd gen ou Cloud Run, mesmo projeto do Firestore); frontend Vite atual servido pelo próprio `api` (como hoje) até a Fase 2
+10. GitHub Actions: `lint` + `build` a cada push, `firebase deploy` no merge para `main`
 
 **Critérios de aceite (QA):**
-- Criar, editar, pausar, deletar monitor funciona contra o Firestore em produção (Railway)
+- Criar, editar, pausar, deletar monitor funciona contra o Firestore em produção (Firebase)
 - Servidor não sobe com env inválida; rotas rejeitam payload malformado com erro 400 claro
-- Reiniciar o serviço não perde nenhum dado (era o problema do JSON)
+- Reiniciar/redeployar o serviço não perde nenhum dado (era o problema do JSON)
 
 **Ações fora do código:**
-- [ ] Criar projeto no Firebase Console (plano Blaze — necessário para uso via firebase-admin em produção)
-- [ ] Criar projeto no Railway
+- [ ] Criar (novo) projeto no Firebase Console dentro da conta existente, dedicado a este produto (plano Blaze — necessário para uso via firebase-admin e Cloud Functions em produção)
 
 ---
 
@@ -87,7 +88,7 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 4. Todas as queries de `monitors`/`notifications` filtram por `userId`; remover `CURRENT_USER_EMAIL` hardcoded
 5. Documento `users/{uid}` criado no primeiro login (e-mail, nome, `plan: 'free'`, `createdAt`)
 6. Tela de perfil com "Deletar minha conta" (apaga user + monitores + notificações — obrigatório LGPD)
-7. Deploy do `apps/web` na Vercel; `api` no Railway passa a ser API pura (remove o serving de estáticos)
+7. Deploy do `apps/web` na Vercel; `api` no Firebase passa a ser API pura (remove o serving de estáticos)
 
 **Gate de UX (desenhar e aprovar antes de implementar):** login/cadastro, recuperação de senha, perfil.
 
@@ -143,31 +144,31 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 
 **O que será construído:** O sistema varre preços sozinho, respeitando a frequência do plano de cada usuário.
 
-> 🔧 **Correção da revisão:** a versão anterior citava **pg-boss**, que roda sobre PostgreSQL — **incompatível com Firestore**. Solução revisada abaixo, sem infra extra.
+> 🔧 **v3 — simplificado com Firebase:** com o deploy no Firebase, usamos a ferramenta nativa para isso — **Cloud Scheduler + Scheduled Cloud Function** — em vez de um loop manual dentro de um processo persistente (que fazia sentido no Railway, mas não é o padrão em Cloud Functions). Menos código para manter, e o Firebase já cuida de retry/observabilidade dessa function.
 
-**Arquitetura escolhida — polling scheduler no `generator`:**
+**Arquitetura escolhida — Scheduled Function (`generator`):**
 
-- Loop no serviço `generator` (Railway roda processos persistentes, então isso funciona sem Cloud Functions):
-  1. A cada 60s, query no Firestore: `monitors` onde `status == 'active'` e `nextScanAt <= now` (exige índice composto)
+- Uma Cloud Function agendada (`onSchedule`, ex.: a cada 1 minuto) faz:
+  1. Query no Firestore: `monitors` onde `status == 'active'` e `nextScanAt <= now` (exige índice composto)
   2. Para cada monitor vencido: executa o scan (com o cache da Fase 3), grava resultado, calcula `nextScanAt = now + intervalo do plano`
-  3. Concorrência limitada (ex.: 5 scans em paralelo, `p-limit`)
-- **Lease/lock por documento** (`scanningLockedUntil`) para o dia em que houver mais de uma instância do generator — evita scan duplicado
-- "Escanear agora" na UI: seta `nextScanAt = now` (o loop pega em até 60s) e mostra feedback imediato
+  3. Concorrência limitada dentro da execução (ex.: lote de 20 por invocação, resto fica para a próxima chamada 1 min depois — evita estourar o timeout da function)
+- **Lease/lock por documento** (`scanningLockedUntil`) para o caso raro de duas execuções se sobreporem — evita scan duplicado
+- "Escanear agora" na UI: seta `nextScanAt = now` (a próxima execução agendada, em até 1 min, pega o monitor) e mostra feedback imediato na tela enquanto isso
 
-**Por que não fila externa:** BullMQ+Redis (Upstash) é a evolução natural **se** o volume crescer (milhares de monitores); começar com polling elimina uma dependência de infra e o padrão de upgrade é bem conhecido. Cloud Tasks amarraria o worker ao GCP sendo que o deploy é Railway.
+**Por que não fila externa:** BullMQ+Redis (Upstash) é a evolução natural **se** o volume crescer muito (dezenas de milhares de monitores e a Scheduled Function não der conta em 1 lote/minuto); começar com Cloud Scheduler elimina qualquer infraestrutura extra e usa o que já vem de fábrica no Firebase.
 
 **Tarefas:**
 
 1. Índice composto Firestore (`status` + `nextScanAt`)
-2. Loop de scheduling com lease, concorrência limitada e shutdown gracioso (termina scans em andamento no deploy)
-3. Intervalo por plano lido de `users/{uid}.plan` (free: 6h, pro: 1h — configurável por env)
-4. Ao criar monitor: `nextScanAt = now` (primeira varredura imediata)
-5. Telemetria mínima: doc `system/schedulerHealth` com último tick e contagem de scans/erros (vira health check)
+2. Scheduled Function com lease, lote limitado por execução e tratamento de timeout
+3. Intervalo por plano lido de `users/{uid}.plan` (free: 6h, pro: 1h — configurável via Remote Config ou env)
+4. Ao criar monitor: `nextScanAt = now` (primeira varredura na próxima execução agendada)
+5. Telemetria mínima: doc `system/schedulerHealth` com último tick e contagem de scans/erros (vira health check); Cloud Functions já loga execuções no Cloud Logging
 
 **Critérios de aceite (QA):**
 - Monitor criado é varrido em ≤ 2 min sem clique
-- Frequência respeitada por plano; deploy no meio de um scan não corrompe dados nem duplica notificação
-- 2 instâncias do generator rodando ao mesmo tempo não geram scan duplicado (testar o lease)
+- Frequência respeitada por plano; execução que estoura o timeout não corrompe dados nem duplica notificação
+- Duas execuções sobrepostas não geram scan duplicado (testar o lease)
 
 ---
 
@@ -175,12 +176,12 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 
 **O que será construído:** E-mail real quando o preço bater a meta ou variar.
 
-**Arquitetura — padrão outbox no Firestore:**
+**Arquitetura — padrão outbox no Firestore, disparado por Firestore Trigger:**
 
 - Quem detecta o evento (`generator`) grava um doc em `outbox` (`type`, `payload`, `status: 'pending'`)
-- `publisher` (Fastify no Railway) consome a `outbox` via listener `onSnapshot` do firebase-admin + polling de segurança a cada 60s (listener pode perder eventos em reconexão)
-- Após envio: `status: 'sent'` + `sentAt` + id da mensagem no Resend. Falha: retry com backoff, máximo 5 tentativas, depois `status: 'failed'`
-- **Idempotência**: chave de deduplicação por evento (`monitorId + tipo + janela de tempo`) — nunca dois e-mails iguais para o mesmo evento
+- `publisher` roda como Cloud Function acionada por **Firestore Trigger** (`onDocumentCreated` na coleção `outbox`) — sem precisar de listener manual nem polling de segurança, o Firebase já garante a entrega do evento
+- Após envio: `status: 'sent'` + `sentAt` + id da mensagem no Resend. Falha: retry com backoff (Cloud Functions já suporta retry automático em trigger), máximo 5 tentativas, depois `status: 'failed'`
+- **Idempotência**: chave de deduplicação por evento (`monitorId + tipo + janela de tempo`) — nunca dois e-mails iguais para o mesmo evento, mesmo se o trigger reprocessar
 
 **Tarefas:**
 
@@ -260,7 +261,7 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 ### Testes e CI/CD
 - Vitest: testes de integração por serviço (prioridade: regras de plano, scheduler, outbox, webhook Stripe)
 - Playwright E2E: cadastro → criar monitor → scan → notificação
-- GitHub Actions completo: lint + testes bloqueando merge; deploy automático Railway/Vercel só com pipeline verde
+- GitHub Actions completo: lint + testes bloqueando merge; deploy automático Firebase/Vercel só com pipeline verde
 
 ### Segurança (hardening final)
 - Auditoria de regras do Firestore (acesso só via backend — regras negam client direto, exceto o que o Auth exigir)
@@ -280,14 +281,14 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 ## Sequência e dependências
 
 ```
-Fase 1: Monorepo + Firestore + api no Railway      ← fundação
+Fase 1: Monorepo + Firestore + api no Firebase      ← fundação
 Fase 2: Next.js 14 + Firebase Auth (Vercel)        ← precisa da 1
 Fase 3: Busca real + generator                     ← precisa da 1; spike de APIs pode rodar em paralelo às fases 1-2
-Fase 4: Scheduler de varreduras                    ← precisa da 3
-Fase 5: E-mail (publisher + outbox)                ← precisa da 4; domínio/DNS pode andar em paralelo desde já
+Fase 4: Scheduler de varreduras (Cloud Scheduler)   ← precisa da 3
+Fase 5: E-mail (publisher + outbox/Firestore Trigger) ← precisa da 4; domínio/DNS pode andar em paralelo desde já
 Fase 6: Stripe                                     ← precisa da 2 (users) e da 4 (frequência por plano)
 Fase 7: UX/UI                                      ← contínua; itens podem intercalar com fases 4-6
 Fase 8: Testes completos + LGPD                    ← antes do lançamento público
 ```
 
-**Paralelizável desde hoje (sem código):** contas Duffel/Amadeus, domínio + DNS, conta Stripe (CNPJ), conta Resend, projeto Firebase, projeto Railway.
+**Paralelizável desde hoje (sem código):** contas Duffel/Amadeus, domínio + DNS, conta Stripe (CNPJ, já existente — criar produto/config novos), conta Resend (já existente — criar domínio de envio novo), projeto Firebase (novo, dentro da conta existente).
