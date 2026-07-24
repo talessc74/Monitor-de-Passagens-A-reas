@@ -1,8 +1,29 @@
-# Roadmap — Monitor de Passagens Aéreas (v3 — revisado)
+# Roadmap — Monitor de Passagens Aéreas (v4 — revisado)
 
+> **v4 (07/2026):** reordenação estratégica de **construção** para evitar custo de API real antes da hora. As 8 fases abaixo continuam sendo a referência de arquitetura e critérios de aceite — o que muda é **a ordem em que a equipe as executa**. Ver seção "Ordem real de construção" logo abaixo.
+>
 > **v3 (07/2026):** deploy do backend migrado de Railway para **Firebase (Cloud Functions/Cloud Run)** — ecossistema único (banco + backend no Firebase), sem provedor de deploy extra. Isso também simplifica a Fase 4 (scheduler nativo via Cloud Scheduler, no lugar de loop manual) e a Fase 5 (Firestore Triggers no lugar de listener manual).
 >
 > **v2 (07/2026):** revisão técnica completa. Correções: fila de jobs incompatível com Firestore substituída por scheduler; caveats de custo do Duffel/Amadeus; cache de buscas para controle de custo; segurança movida para padrão transversal desde a Fase 1.
+
+## Ordem real de construção (v4)
+
+**Motivo:** o dono do produto não quer assumir custo de API real (Duffel/Amadeus em produção, Stripe fora do modo teste) enquanto o site ainda está em construção. A maior parte dos serviços listados no roadmap é **gratuita em modo desenvolvimento/sandbox/teste** (Amadeus sandbox, Stripe test mode, cota grátis do Firebase e do Resend) — o único ponto que gera custo real é formalizar contrato de produção com Duffel/Amadeus antes da hora. Solução: construir o produto inteiro primeiro com a fonte de preços simulada (o Gemini já faz isso hoje), e só trocar essa peça pela conexão real por último.
+
+Isso é possível **sem redesenhar nada**, porque a Fase 3 já isola a busca de preço atrás de uma interface única (`searchFlights`) — hoje implementada pelo simulador do Gemini, depois substituída pelos adaptadores Duffel/Amadeus, sem tocar no resto do sistema.
+
+**Sequência de execução recomendada** (os números entre parênteses referem-se às fases de arquitetura abaixo, que não mudam de conteúdo — só de ordem):
+
+1. Fase 1 — Firestore + deploy no Firebase *(sem custo)*
+2. Fase 2 — Login e cadastro *(sem custo)*
+3. Fase 7 adiantada — site completo (onboarding, mobile, dashboard, histórico), rodando 100% sobre o simulador Gemini existente *(sem custo, zero conexão paga)*
+4. Fase 4 — Varreduras automáticas, testadas contra o simulador *(sem custo)*
+5. Fase 5 — E-mail real via Resend *(cota gratuita cobre o volume de testes)*
+6. Fase 6 — Assinatura Stripe **em modo teste** (cartão de teste, zero cobrança real)
+7. Fase 3 por último — troca o simulador pelos adaptadores reais Duffel/Amadeus; **é só neste momento que se formaliza conta de produção e começa o custo real de API**
+8. Fase 8 — testes finais e LGPD, antes do lançamento público
+
+O conteúdo técnico de cada fase (tarefas, critérios de aceite, arquitetura) permanece exatamente como descrito nas seções abaixo — a numeração "Fase N" identifica o **escopo**, não a ordem cronológica de execução.
 
 ## Stack definitiva (padrão dos projetos)
 
@@ -278,17 +299,19 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 ---
 
-## Sequência e dependências
+## Sequência e dependências (arquitetura — independe da ordem de execução)
 
 ```
 Fase 1: Monorepo + Firestore + api no Firebase      ← fundação
 Fase 2: Next.js 14 + Firebase Auth (Vercel)        ← precisa da 1
-Fase 3: Busca real + generator                     ← precisa da 1; spike de APIs pode rodar em paralelo às fases 1-2
-Fase 4: Scheduler de varreduras (Cloud Scheduler)   ← precisa da 3
+Fase 3: Busca real + generator                     ← precisa da 1; adaptador plugável no lugar do simulador Gemini
+Fase 4: Scheduler de varreduras (Cloud Scheduler)   ← precisa de uma fonte de preço (simulada ou real)
 Fase 5: E-mail (publisher + outbox/Firestore Trigger) ← precisa da 4; domínio/DNS pode andar em paralelo desde já
-Fase 6: Stripe                                     ← precisa da 2 (users) e da 4 (frequência por plano)
+Fase 6: Stripe                                     ← precisa da 2 (users); pode rodar 100% em modo teste
 Fase 7: UX/UI                                      ← contínua; itens podem intercalar com fases 4-6
 Fase 8: Testes completos + LGPD                    ← antes do lançamento público
 ```
 
-**Paralelizável desde hoje (sem código):** contas Duffel/Amadeus, domínio + DNS, conta Stripe (CNPJ, já existente — criar produto/config novos), conta Resend (já existente — criar domínio de envio novo), projeto Firebase (novo, dentro da conta existente).
+**Ordem real de execução recomendada (v4):** 1 → 2 → 7 (adiantada, sobre simulador) → 4 (sobre simulador) → 5 → 6 (Stripe em modo teste) → **3 por último** (troca simulador por Duffel/Amadeus reais — só aqui começa custo de API) → 8. Ver "Ordem real de construção" no topo do documento para o racional completo.
+
+**Paralelizável desde hoje (sem código, sem custo):** domínio + DNS, projeto Firebase (novo, dentro da conta existente). **Adiar até a Fase 3 real:** contas de produção Duffel/Amadeus (sandbox pode ser criado antes sem custo, mas evitar assumir contrato de produção cedo demais). **Sem custo enquanto durar em modo teste:** conta Stripe (produto/config novos, modo teste), conta Resend (domínio de envio novo, cota gratuita).
