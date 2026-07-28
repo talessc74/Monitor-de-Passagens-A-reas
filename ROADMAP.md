@@ -79,7 +79,7 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 1. Reestruturar o repositório em monorepo npm workspaces (`apps/`, `services/`, `packages/`)
 2. Criar `packages/types` movendo `src/types.ts` para lá; adicionar campo `userId` (nullable por enquanto) e `nextScanAt` ao `FlightMonitor`
 3. Criar `services/api` (Fastify + TypeScript, empacotado como Cloud Function via `firebase-functions` + adaptador Fastify↔HTTP): portar todas as rotas REST do `server.ts` atual (`/api/monitors`, `/api/sites`, `/api/notifications`, scan manual)
-4. Criar projeto Firebase + Firestore; coleções: `monitors`, `notifications`, `sites`, `users`
+4. Firestore no projeto Firebase **`lista-ai-f2916`** (compartilhado com o produto Lista Aí — decisão do dono do produto). Coleções com prefixo `mpa_` para nunca colidir com dados do outro produto: `mpa_monitors`, `mpa_notifications`, `mpa_sites`, `mpa_users`
 5. Camada de repositório (`services/api/src/repositories/`) usando `firebase-admin` — nenhuma rota fala com o Firestore diretamente
 6. Seed script para popular a coleção `sites` (LATAM, GOL, Azul, Decolar, Skyscanner) — **não migrar** os monitores fictícios do JSON
 7. Aplicar os padrões transversais (Zod, rate limit, helmet, env validado, Pino)
@@ -93,7 +93,7 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 - Reiniciar/redeployar o serviço não perde nenhum dado (era o problema do JSON)
 
 **Ações fora do código:**
-- [ ] Criar (novo) projeto no Firebase Console dentro da conta existente, dedicado a este produto (plano Blaze — necessário para uso via firebase-admin e Cloud Functions em produção)
+- [x] Projeto Firebase definido: **`lista-ai-f2916`** (compartilhado com o produto Lista Aí — verificar que está no plano Blaze antes do deploy de Cloud Functions)
 
 ---
 

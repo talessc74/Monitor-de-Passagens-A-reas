@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |--------|-----------|
 | Frontend | Next.js 14 (App Router) + React + Tailwind CSS |
 | Backend | Fastify (Node.js/TypeScript) — 3 serviços independentes |
-| Banco de dados | Firestore (Firebase) via `firebase-admin` |
+| Banco de dados | Firestore (Firebase) via `firebase-admin` — projeto **`lista-ai-f2916`**, compartilhado com o produto Lista Aí |
 | IA | Google Gemini API |
 | Pagamentos | Stripe |
 | Deploy backend | Firebase Cloud Functions / Cloud Run |
@@ -24,6 +24,10 @@ services/
 ```
 
 Cada serviço é um processo Fastify independente, deployado como Firebase Cloud Function (ou Cloud Run, se precisar de execução contínua para o scheduler). Um único ecossistema Firebase para banco + backend, evitando um provedor de deploy extra.
+
+## Convenção de nomes no Firestore (projeto compartilhado)
+
+O projeto Firebase (`lista-ai-f2916`) é compartilhado com outro produto (Lista Aí). **Toda coleção deste produto usa o prefixo `mpa_`** para nunca colidir com dados do outro produto: `mpa_monitors`, `mpa_notifications`, `mpa_sites`, `mpa_users`. Nunca criar ou consultar uma coleção sem esse prefixo neste projeto.
 
 ## Estado atual (MVP herdado do AI Studio)
 
