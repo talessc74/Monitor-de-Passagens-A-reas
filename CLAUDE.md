@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Nome do produto
+
+**FlySpot** é o nome oficial de marca. O repositório, o projeto Firebase (`lista-ai-f2916`, compartilhado com o produto Lista Aí) e o prefixo de coleções (`mpa_`) permanecem com o nome interno herdado do começo do projeto — decisão deliberada, sem plano de renomear esses identificadores técnicos.
+
 ## Stack (padrão dos projetos do owner)
 
 | Camada | Tecnologia |
