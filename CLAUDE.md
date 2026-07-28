@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Banco de dados | Firestore (Firebase) via `firebase-admin` — projeto **`lista-ai-f2916`**, compartilhado com o produto Lista Aí |
 | IA | Google Gemini API |
 | Pagamentos | Stripe |
-| Deploy backend | Firebase Cloud Functions / Cloud Run |
+| Deploy backend | Cloud Run (contêiner Docker — não Firebase Cloud Functions) |
 | Deploy frontend | Vercel |
 
 ## Serviços backend (estrutura alvo)
@@ -23,7 +23,7 @@ services/
   publisher/    # disparo de notificações (e-mail via Resend, futuramente Telegram)
 ```
 
-Cada serviço é um processo Fastify independente, deployado como Firebase Cloud Function (ou Cloud Run, se precisar de execução contínua para o scheduler). Um único ecossistema Firebase para banco + backend, evitando um provedor de deploy extra.
+Cada serviço é um processo Fastify independente, empacotado em contêiner Docker e deployado no **Cloud Run** — mesmo padrão já usado no projeto irmão `multi-agent-system` (repo `lexforum-ai-studio`). Escolha deliberada: **não** usar o produto "Cloud Functions" do Firebase, porque ele exige o projeto estar no plano Blaze; o Cloud Run publicado diretamente via contêiner não exige essa mudança de plano no Firebase e mantém `lista-ai-f2916` no Spark. Um único projeto GCP/Firebase para banco + backend, evitando um provedor de deploy extra.
 
 ## Convenção de nomes no Firestore (projeto compartilhado)
 

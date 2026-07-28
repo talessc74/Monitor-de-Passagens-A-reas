@@ -1,5 +1,7 @@
-# Roadmap — Monitor de Passagens Aéreas (v4 — revisado)
+# Roadmap — Monitor de Passagens Aéreas (v5 — revisado)
 
+> **v5 (07/2026):** deploy do backend trocado de **Firebase Cloud Functions** para **Cloud Run direto (contêiner Docker)** — mesmo padrão já usado no projeto irmão `multi-agent-system`. Motivo: Cloud Functions exige o projeto Firebase no plano **Blaze**; o projeto `lista-ai-f2916` está no **Spark** (gratuito) e serve a outro produto (Lista Aí, hoje inativo) — não há motivo para forçar upgrade de plano só por causa deste produto. Cloud Run publicado diretamente não exige esse upgrade. Isso muda o mecanismo interno das Fases 4 e 5 (que dependiam de dois outros produtos "Cloud Functions" do Firebase — `onSchedule` e Firestore Trigger): ambos voltam a ser loops de polling dentro dos próprios serviços Cloud Run, que já são processos persistentes.
+>
 > **v4 (07/2026):** reordenação estratégica de **construção** para evitar custo de API real antes da hora. As 8 fases abaixo continuam sendo a referência de arquitetura e critérios de aceite — o que muda é **a ordem em que a equipe as executa**. Ver seção "Ordem real de construção" logo abaixo.
 >
 > **v3 (07/2026):** deploy do backend migrado de Railway para **Firebase (Cloud Functions/Cloud Run)** — ecossistema único (banco + backend no Firebase), sem provedor de deploy extra. Isso também simplifica a Fase 4 (scheduler nativo via Cloud Scheduler, no lugar de loop manual) e a Fase 5 (Firestore Triggers no lugar de listener manual).
@@ -35,7 +37,7 @@ O conteúdo técnico de cada fase (tarefas, critérios de aceite, arquitetura) p
 | IA | Google Gemini API (modelo via env `GEMINI_MODEL`) |
 | Pagamentos | Stripe |
 | E-mail | Resend + React Email |
-| Deploy backend | Firebase Cloud Functions / Cloud Run |
+| Deploy backend | Cloud Run (contêiner Docker — não Firebase Cloud Functions) |
 | Deploy frontend | Vercel |
 
 ## Estrutura de monorepo alvo
@@ -72,20 +74,20 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 
 ## Fase 1 — Fundação: Monorepo + Firestore + Deploy do backend
 
-**O que será construído:** Estrutura definitiva de pastas, banco real (Firestore) e o serviço `api` no ar via Firebase Cloud Functions. O frontend atual (Vite SPA) continua funcionando apontando para a nova API — a migração dele para Next.js fica na Fase 2.
+**O que será construído:** Estrutura definitiva de pastas, banco real (Firestore) e o serviço `api` no ar via Cloud Run. O frontend atual (Vite SPA) continua funcionando apontando para a nova API — a migração dele para Next.js fica na Fase 2.
 
 **Tarefas (ordem de execução):**
 
 1. Reestruturar o repositório em monorepo npm workspaces (`apps/`, `services/`, `packages/`)
 2. Criar `packages/types` movendo `src/types.ts` para lá; adicionar campo `userId` (nullable por enquanto) e `nextScanAt` ao `FlightMonitor`
-3. Criar `services/api` (Fastify + TypeScript, empacotado como Cloud Function via `firebase-functions` + adaptador Fastify↔HTTP): portar todas as rotas REST do `server.ts` atual (`/api/monitors`, `/api/sites`, `/api/notifications`, scan manual)
+3. Criar `services/api` (Fastify + TypeScript, empacotado em `Dockerfile` para Cloud Run — mesmo padrão do `multi-agent-system`): portar todas as rotas REST do `server.ts` atual (`/api/monitors`, `/api/sites`, `/api/notifications`, scan manual)
 4. Firestore no projeto Firebase **`lista-ai-f2916`** (compartilhado com o produto Lista Aí — decisão do dono do produto). Coleções com prefixo `mpa_` para nunca colidir com dados do outro produto: `mpa_monitors`, `mpa_notifications`, `mpa_sites`, `mpa_users`
 5. Camada de repositório (`services/api/src/repositories/`) usando `firebase-admin` — nenhuma rota fala com o Firestore diretamente
 6. Seed script para popular a coleção `sites` (LATAM, GOL, Azul, Decolar, Skyscanner) — **não migrar** os monitores fictícios do JSON
 7. Aplicar os padrões transversais (Zod, rate limit, helmet, env validado, Pino)
 8. Mover a lógica de scan simulado (Gemini) do `server.ts` para o `api` temporariamente (vira serviço `generator` na Fase 3); modelo Gemini via env `GEMINI_MODEL`
-9. Deploy do `api` no Firebase (Cloud Functions 2nd gen ou Cloud Run, mesmo projeto do Firestore); frontend Vite atual servido pelo próprio `api` (como hoje) até a Fase 2
-10. GitHub Actions: `lint` + `build` a cada push, `firebase deploy` no merge para `main`
+9. Deploy do `api` no Cloud Run (mesmo projeto GCP do Firestore, `lista-ai-f2916`); frontend Vite atual servido pelo próprio `api` (como hoje) até a Fase 2
+10. GitHub Actions: `lint` + `build` a cada push, `gcloud run deploy` no merge para `main`
 
 **Critérios de aceite (QA):**
 - Criar, editar, pausar, deletar monitor funciona contra o Firestore em produção (Firebase)
@@ -93,7 +95,8 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 - Reiniciar/redeployar o serviço não perde nenhum dado (era o problema do JSON)
 
 **Ações fora do código:**
-- [x] Projeto Firebase definido: **`lista-ai-f2916`** (compartilhado com o produto Lista Aí — verificar que está no plano Blaze antes do deploy de Cloud Functions)
+- [x] Projeto Firebase definido: **`lista-ai-f2916`** (compartilhado com o produto Lista Aí, hoje inativo — permanece no plano **Spark**, sem upgrade necessário, já que o deploy usa Cloud Run direto e não Cloud Functions)
+- [ ] Confirmar que a conta de faturamento GCP usada pelo `multi-agent-system` no Cloud Run está disponível para publicar também os serviços deste produto no mesmo projeto
 
 ---
 
@@ -165,26 +168,28 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 
 **O que será construído:** O sistema varre preços sozinho, respeitando a frequência do plano de cada usuário.
 
-> 🔧 **v3 — simplificado com Firebase:** com o deploy no Firebase, usamos a ferramenta nativa para isso — **Cloud Scheduler + Scheduled Cloud Function** — em vez de um loop manual dentro de um processo persistente (que fazia sentido no Railway, mas não é o padrão em Cloud Functions). Menos código para manter, e o Firebase já cuida de retry/observabilidade dessa function.
+> 🔧 **v5 — ajustado para evitar Blaze:** `onSchedule` é um produto Cloud **Functions** do Firebase e exigiria o mesmo upgrade de plano que estamos evitando (ver decisão em §Fase 1). Solução: como `generator` já é um serviço Cloud Run de processo persistente (não uma Function), ele mesmo roda um loop de polling interno — mesmo padrão do `multi-agent-system` (Cloud Run direto, sem depender de produtos Firebase que exigem Blaze). Cloud Scheduler (produto GCP separado do Firebase, tem cota gratuita própria) pode opcionalmente bater num endpoint HTTP do `generator` a cada minuto como redundância/keep-alive, mas o loop interno já é suficiente sozinho.
 
-**Arquitetura escolhida — Scheduled Function (`generator`):**
+**Arquitetura escolhida — loop de polling dentro do `generator` (Cloud Run):**
 
-- Uma Cloud Function agendada (`onSchedule`, ex.: a cada 1 minuto) faz:
-  1. Query no Firestore: `monitors` onde `status == 'active'` e `nextScanAt <= now` (exige índice composto)
+- A cada 60s, dentro do próprio processo do `generator`:
+  1. Query no Firestore: `mpa_monitors` onde `status == 'active'` e `nextScanAt <= now` (exige índice composto)
   2. Para cada monitor vencido: executa o scan (com o cache da Fase 3), grava resultado, calcula `nextScanAt = now + intervalo do plano`
-  3. Concorrência limitada dentro da execução (ex.: lote de 20 por invocação, resto fica para a próxima chamada 1 min depois — evita estourar o timeout da function)
-- **Lease/lock por documento** (`scanningLockedUntil`) para o caso raro de duas execuções se sobreporem — evita scan duplicado
-- "Escanear agora" na UI: seta `nextScanAt = now` (a próxima execução agendada, em até 1 min, pega o monitor) e mostra feedback imediato na tela enquanto isso
+  3. Concorrência limitada (ex.: 5 scans em paralelo, `p-limit`)
+- **Lease/lock por documento** (`scanningLockedUntil`) para o caso de mais de uma instância do Cloud Run rodando ao mesmo tempo (autoscaling) — evita scan duplicado
+- "Escanear agora" na UI: seta `nextScanAt = now` (o loop pega em até 60s) e mostra feedback imediato na tela enquanto isso
+- Cloud Run precisa estar configurado com **mínimo 1 instância sempre ativa** (não escalar a zero), senão o loop para quando não há requisição HTTP chegando
 
-**Por que não fila externa:** BullMQ+Redis (Upstash) é a evolução natural **se** o volume crescer muito (dezenas de milhares de monitores e a Scheduled Function não der conta em 1 lote/minuto); começar com Cloud Scheduler elimina qualquer infraestrutura extra e usa o que já vem de fábrica no Firebase.
+**Por que não fila externa:** BullMQ+Redis (Upstash) é a evolução natural **se** o volume crescer muito; começar com polling elimina qualquer infraestrutura extra e não depende de nenhum produto Firebase gated pelo Blaze.
 
 **Tarefas:**
 
 1. Índice composto Firestore (`status` + `nextScanAt`)
-2. Scheduled Function com lease, lote limitado por execução e tratamento de timeout
-3. Intervalo por plano lido de `users/{uid}.plan` (free: 6h, pro: 1h — configurável via Remote Config ou env)
-4. Ao criar monitor: `nextScanAt = now` (primeira varredura na próxima execução agendada)
-5. Telemetria mínima: doc `system/schedulerHealth` com último tick e contagem de scans/erros (vira health check); Cloud Functions já loga execuções no Cloud Logging
+2. Loop de polling com lease, concorrência limitada e shutdown gracioso
+3. Configurar Cloud Run do `generator` com min-instances = 1
+4. Intervalo por plano lido de `mpa_users/{uid}.plan` (free: 6h, pro: 1h — configurável via env)
+5. Ao criar monitor: `nextScanAt = now` (primeira varredura no próximo ciclo do loop)
+6. Telemetria mínima: doc `system/schedulerHealth` com último tick e contagem de scans/erros (vira health check)
 
 **Critérios de aceite (QA):**
 - Monitor criado é varrido em ≤ 2 min sem clique
@@ -197,12 +202,12 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 
 **O que será construído:** E-mail real quando o preço bater a meta ou variar.
 
-**Arquitetura — padrão outbox no Firestore, disparado por Firestore Trigger:**
+**Arquitetura — padrão outbox no Firestore, consumido por polling (v5: sem Firestore Trigger, que é Cloud Function e exigiria Blaze):**
 
-- Quem detecta o evento (`generator`) grava um doc em `outbox` (`type`, `payload`, `status: 'pending'`)
-- `publisher` roda como Cloud Function acionada por **Firestore Trigger** (`onDocumentCreated` na coleção `outbox`) — sem precisar de listener manual nem polling de segurança, o Firebase já garante a entrega do evento
-- Após envio: `status: 'sent'` + `sentAt` + id da mensagem no Resend. Falha: retry com backoff (Cloud Functions já suporta retry automático em trigger), máximo 5 tentativas, depois `status: 'failed'`
-- **Idempotência**: chave de deduplicação por evento (`monitorId + tipo + janela de tempo`) — nunca dois e-mails iguais para o mesmo evento, mesmo se o trigger reprocessar
+- Quem detecta o evento (`generator`) grava um doc em `mpa_outbox` (`type`, `payload`, `status: 'pending'`)
+- `publisher` (Cloud Run, processo persistente, min-instances = 1) consome a `mpa_outbox` via listener `onSnapshot` do firebase-admin (funciona normalmente fora de Cloud Functions, dentro de qualquer processo Node com firebase-admin) + polling de segurança a cada 60s (cobre reconexões)
+- Após envio: `status: 'sent'` + `sentAt` + id da mensagem no Resend. Falha: retry com backoff interno, máximo 5 tentativas, depois `status: 'failed'`
+- **Idempotência**: chave de deduplicação por evento (`monitorId + tipo + janela de tempo`) — nunca dois e-mails iguais para o mesmo evento
 
 **Tarefas:**
 
