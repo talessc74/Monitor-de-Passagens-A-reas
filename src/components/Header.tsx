@@ -23,7 +23,7 @@ export default function Header({ activeMonitorsCount, notificationsCount }: Head
             </div>
             <div>
               <h1 className="text-base font-extrabold tracking-tight text-slate-800">
-                Monitor de Passagens<span className="text-blue-600 underline decoration-2 underline-offset-4 font-black"> Pro</span>
+                Fly<span className="text-blue-600 underline decoration-2 underline-offset-4 font-black">Spot</span>
               </h1>
               <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Varredura Inteligente & Alertas Ativos

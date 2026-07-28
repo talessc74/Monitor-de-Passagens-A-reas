@@ -1,6 +1,8 @@
-# ✈️ Monitor de Passagens Aéreas
+# ✈️ FlySpot
 
 Sistema de monitoramento de preços de passagens aéreas em tempo real. Configure alertas com preço-alvo para suas viagens e receba notificações quando o valor desejado for atingido.
+
+> Nome oficial do produto: **FlySpot**. O repositório e alguns identificadores internos ainda usam "Monitor de Passagens Aéreas" / `mpa_` por herança do nome provisório — ver `CLAUDE.md`.
 
 > Ver `CLAUDE.md` para arquitetura detalhada e `ROADMAP.md` para o plano completo por fases.
 

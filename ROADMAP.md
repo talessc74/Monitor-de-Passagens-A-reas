@@ -1,4 +1,6 @@
-# Roadmap — Monitor de Passagens Aéreas (v5 — revisado)
+# Roadmap — FlySpot (v6 — revisado)
+
+> **v6 (07/2026):** nome oficial do produto definido: **FlySpot**. O código, o projeto Firebase (`lista-ai-f2916`) e o prefixo de coleções (`mpa_`) continuam como estão — trocar esses identificadores internos agora não traz benefício e só gera trabalho de migração; o nome do produto vale para marca, domínio, UI e comunicação daqui em diante. Ver nota em `CLAUDE.md`.
 
 > **v5 (07/2026):** deploy do backend trocado de **Firebase Cloud Functions** para **Cloud Run direto (contêiner Docker)** — mesmo padrão já usado no projeto irmão `multi-agent-system`. Motivo: Cloud Functions exige o projeto Firebase no plano **Blaze**; o projeto `lista-ai-f2916` está no **Spark** (gratuito) e serve a outro produto (Lista Aí, hoje inativo) — não há motivo para forçar upgrade de plano só por causa deste produto. Cloud Run publicado diretamente não exige esse upgrade. Isso muda o mecanismo interno das Fases 4 e 5 (que dependiam de dois outros produtos "Cloud Functions" do Firebase — `onSchedule` e Firestore Trigger): ambos voltam a ser loops de polling dentro dos próprios serviços Cloud Run, que já são processos persistentes.
 >
