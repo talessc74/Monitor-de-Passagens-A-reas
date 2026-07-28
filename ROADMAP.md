@@ -74,22 +74,26 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 
 ## Fase 1 — Fundação: Monorepo + Firestore + Deploy do backend
 
+**Status: 🔨 código pronto, aguardando primeiro deploy real.**
+
 **O que será construído:** Estrutura definitiva de pastas, banco real (Firestore) e o serviço `api` no ar via Cloud Run. O frontend atual (Vite SPA) continua funcionando apontando para a nova API — a migração dele para Next.js fica na Fase 2.
 
 **Tarefas (ordem de execução):**
 
-1. Reestruturar o repositório em monorepo npm workspaces (`apps/`, `services/`, `packages/`)
-2. Criar `packages/types` movendo `src/types.ts` para lá; adicionar campo `userId` (nullable por enquanto) e `nextScanAt` ao `FlightMonitor`
-3. Criar `services/api` (Fastify + TypeScript, empacotado em `Dockerfile` para Cloud Run — mesmo padrão do `multi-agent-system`): portar todas as rotas REST do `server.ts` atual (`/api/monitors`, `/api/sites`, `/api/notifications`, scan manual)
-4. Firestore no projeto Firebase **`lista-ai-f2916`** (compartilhado com o produto Lista Aí — decisão do dono do produto). Coleções com prefixo `mpa_` para nunca colidir com dados do outro produto: `mpa_monitors`, `mpa_notifications`, `mpa_sites`, `mpa_users`
-5. Camada de repositório (`services/api/src/repositories/`) usando `firebase-admin` — nenhuma rota fala com o Firestore diretamente
-6. Seed script para popular a coleção `sites` (LATAM, GOL, Azul, Decolar, Skyscanner) — **não migrar** os monitores fictícios do JSON
-7. Aplicar os padrões transversais (Zod, rate limit, helmet, env validado, Pino)
-8. Mover a lógica de scan simulado (Gemini) do `server.ts` para o `api` temporariamente (vira serviço `generator` na Fase 3); modelo Gemini via env `GEMINI_MODEL`
-9. Deploy do `api` no Cloud Run (mesmo projeto GCP do Firestore, `lista-ai-f2916`); frontend Vite atual servido pelo próprio `api` (como hoje) até a Fase 2
-10. GitHub Actions: `lint` + `build` a cada push, `gcloud run deploy` no merge para `main`
+1. [x] Reestruturar o repositório em monorepo npm workspaces (`services/`, `packages/`; `apps/` nasce na Fase 2 com o Next.js)
+2. [x] Criar `packages/types` movendo `src/types.ts` para lá; adicionado `userId` (nullable) e `nextScanAt` ao `FlightMonitor` — `src/types.ts` na raiz virou um re-export, sem quebrar os componentes existentes
+3. [x] Criar `services/api` (Fastify + TypeScript, `Dockerfile` para Cloud Run — mesmo padrão do `multi-agent-system`): rotas REST portadas do `server.ts` (`/api/monitors`, `/api/sites`, `/api/notifications`, `/api/test-email`, scan manual)
+4. [x] Firestore no projeto Firebase **`lista-ai-f2916`**, coleções com prefixo `mpa_`: `mpa_monitors`, `mpa_notifications`, `mpa_sites`, `mpa_users` (`services/api/src/firestore.ts`)
+5. [x] Camada de repositório (`services/api/src/repositories/`) usando `firebase-admin` — nenhuma rota fala com o Firestore diretamente
+6. [x] Seed script (`npm run seed`) para popular `mpa_sites` (LATAM, GOL, Azul, Decolar, Skyscanner), idempotente
+7. [x] Padrões transversais aplicados: Zod (env + payloads das rotas), `@fastify/rate-limit`, `@fastify/helmet`, logger Pino (nativo do Fastify)
+8. [x] Lógica de scan simulado (Gemini) movida para `services/api/src/scanSimulator.ts`; modelo via env `GEMINI_MODEL`; `server.ts` antigo removido
+9. [ ] **Deploy real do `api` no Cloud Run** (mesmo projeto GCP do Firestore, `lista-ai-f2916`) — pendente, depende da confirmação da conta de faturamento abaixo
+10. [x] GitHub Actions (`lint` + `build` a cada push) criado; `gcloud run deploy` automático fica para quando o primeiro deploy manual for validado
 
-**Critérios de aceite (QA):**
+**Validado localmente nesta sessão:** `npm install`, type-check do frontend e do `api`, build de produção de ambos, boot do servidor compilado (`/health` responde OK; rota que toca o Firestore falha com erro claro e sem derrubar o processo — esperado, pois este ambiente não tem credenciais reais do `lista-ai-f2916`). **Não validado:** build real da imagem Docker (daemon Docker bloqueado neste ambiente sandbox) e deploy efetivo no Cloud Run — precisam ser conferidos no primeiro deploy.
+
+**Critérios de aceite (QA) — a confirmar no deploy real:**
 - Criar, editar, pausar, deletar monitor funciona contra o Firestore em produção (Firebase)
 - Servidor não sobe com env inválida; rotas rejeitam payload malformado com erro 400 claro
 - Reiniciar/redeployar o serviço não perde nenhum dado (era o problema do JSON)
@@ -97,6 +101,7 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 **Ações fora do código:**
 - [x] Projeto Firebase definido: **`lista-ai-f2916`** (compartilhado com o produto Lista Aí, hoje inativo — permanece no plano **Spark**, sem upgrade necessário, já que o deploy usa Cloud Run direto e não Cloud Functions)
 - [ ] Confirmar que a conta de faturamento GCP usada pelo `multi-agent-system` no Cloud Run está disponível para publicar também os serviços deste produto no mesmo projeto
+- [ ] Gerar/disponibilizar credenciais (service account) para rodar `npm run seed` e testar localmente contra o Firestore real antes do primeiro deploy
 
 ---
 
