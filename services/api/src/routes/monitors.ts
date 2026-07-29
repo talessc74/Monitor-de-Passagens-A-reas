@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { FlightMonitor, NotificationLog } from '@mpa/types';
 import {
-  listMonitors,
+  listMonitorsForUser,
   getMonitor,
   createMonitor,
   updateMonitor,
@@ -14,6 +14,7 @@ import { db, COLLECTIONS } from '../firestore.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import { runScanSimulation } from '../scanSimulator.js';
 import { generatePurchaseLink } from '../purchaseLink.js';
+import { authenticate } from '../auth.js';
 
 const createMonitorSchema = z.object({
   origin: z.string().min(3).max(4),
@@ -37,11 +38,11 @@ const updateMonitorSchema = createMonitorSchema.partial().extend({
 });
 
 export async function monitorsRoutes(app: FastifyInstance) {
-  app.get('/api/monitors', async () => {
-    return listMonitors();
+  app.get('/api/monitors', { preHandler: authenticate }, async (request) => {
+    return listMonitorsForUser(request.userId);
   });
 
-  app.post('/api/monitors', async (request, reply) => {
+  app.post('/api/monitors', { preHandler: authenticate }, async (request, reply) => {
     const parsed = createMonitorSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({ error: 'Campos obrigatórios ausentes ou inválidos', details: parsed.error.flatten() });
@@ -50,7 +51,7 @@ export async function monitorsRoutes(app: FastifyInstance) {
 
     const monitor: FlightMonitor = {
       id: 'mon-' + randomUUID().slice(0, 9),
-      userId: null,
+      userId: request.userId,
       origin: body.origin.toUpperCase().trim(),
       originCity: body.originCity || body.origin,
       destination: body.destination.toUpperCase().trim(),
@@ -76,26 +77,31 @@ export async function monitorsRoutes(app: FastifyInstance) {
     return monitor;
   });
 
-  app.put<{ Params: { id: string } }>('/api/monitors/:id', async (request, reply) => {
+  app.put<{ Params: { id: string } }>('/api/monitors/:id', { preHandler: authenticate }, async (request, reply) => {
+    const existing = await getMonitor(request.params.id);
+    if (!existing || existing.userId !== request.userId) {
+      return reply.status(404).send({ error: 'Monitor não encontrado' });
+    }
     const parsed = updateMonitorSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({ error: 'Payload inválido', details: parsed.error.flatten() });
     }
     const updated = await updateMonitor(request.params.id, parsed.data);
-    if (!updated) {
-      return reply.status(404).send({ error: 'Monitor não encontrado' });
-    }
     return updated;
   });
 
-  app.delete<{ Params: { id: string } }>('/api/monitors/:id', async (request) => {
+  app.delete<{ Params: { id: string } }>('/api/monitors/:id', { preHandler: authenticate }, async (request, reply) => {
+    const existing = await getMonitor(request.params.id);
+    if (!existing || existing.userId !== request.userId) {
+      return reply.status(404).send({ error: 'Monitor não encontrado' });
+    }
     await deleteMonitor(request.params.id);
     return { success: true };
   });
 
-  app.post<{ Params: { id: string } }>('/api/monitors/:id/scan', async (request, reply) => {
+  app.post<{ Params: { id: string } }>('/api/monitors/:id/scan', { preHandler: authenticate }, async (request, reply) => {
     const monitor = await getMonitor(request.params.id);
-    if (!monitor) {
+    if (!monitor || monitor.userId !== request.userId) {
       return reply.status(404).send({ error: 'Monitor não encontrado' });
     }
 
@@ -142,6 +148,7 @@ export async function monitorsRoutes(app: FastifyInstance) {
         if (isUnderTarget) {
           triggeredNotification = {
             id: 'not-' + randomUUID().slice(0, 9),
+            userId: monitor.userId,
             monitorId: monitor.id,
             origin: monitor.origin,
             destination: monitor.destination,
@@ -167,6 +174,7 @@ export async function monitorsRoutes(app: FastifyInstance) {
           const arrow = diff < 0 ? '⬇️ Redução de Preço' : '⬆️ Aumento de Preço';
           triggeredNotification = {
             id: 'not-' + randomUUID().slice(0, 9),
+            userId: monitor.userId,
             monitorId: monitor.id,
             origin: monitor.origin,
             destination: monitor.destination,
@@ -238,7 +246,7 @@ export async function monitorsRoutes(app: FastifyInstance) {
     content: z.string().min(1),
   });
 
-  app.post('/api/test-email', async (request, reply) => {
+  app.post('/api/test-email', { preHandler: authenticate }, async (request, reply) => {
     const parsed = testEmailSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({ error: "Parâmetros 'to', 'subject' e 'content' são necessários." });
@@ -247,6 +255,7 @@ export async function monitorsRoutes(app: FastifyInstance) {
 
     const testNotif: NotificationLog = {
       id: 'not-test-' + Date.now(),
+      userId: request.userId,
       monitorId: 'test',
       origin: 'TEST',
       destination: 'TEST',

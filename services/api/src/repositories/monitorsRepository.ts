@@ -3,8 +3,8 @@ import { db, COLLECTIONS } from '../firestore.js';
 
 const collection = () => db.collection(COLLECTIONS.monitors);
 
-export async function listMonitors(): Promise<FlightMonitor[]> {
-  const snapshot = await collection().orderBy('createdAt', 'desc').get();
+export async function listMonitorsForUser(userId: string): Promise<FlightMonitor[]> {
+  const snapshot = await collection().where('userId', '==', userId).orderBy('createdAt', 'desc').get();
   return snapshot.docs.map((doc) => doc.data() as FlightMonitor);
 }
 
@@ -34,4 +34,11 @@ export async function updateMonitor(
 
 export async function deleteMonitor(id: string): Promise<void> {
   await collection().doc(id).delete();
+}
+
+export async function deleteAllMonitorsForUser(userId: string): Promise<void> {
+  const snapshot = await collection().where('userId', '==', userId).get();
+  const batch = db.batch();
+  snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+  await batch.commit();
 }
