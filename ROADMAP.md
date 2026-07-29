@@ -149,7 +149,7 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 - Rota sem token ou com token expirado retorna 401
 - Deletar conta remove todos os dados do usuário no Firestore
 
-**Decisões do produto:** login Google (recomendado: sim) · exigir confirmação de e-mail (recomendado: sim)
+**Decisões do produto:** login Google — **decidido: sim, e-mail/senha + Google** · exigir confirmação de e-mail (recomendado: sim)
 
 ---
 
