@@ -35,6 +35,7 @@ export interface FlightMonitor {
 
 export interface NotificationLog {
   id: string;
+  userId: string | null;
   monitorId: string;
   origin: string;
   destination: string;
@@ -75,4 +76,12 @@ export interface ScanResponse {
   generalAnalysis: string;
   cheapestResult: ScanResult;
   triggeredNotification: NotificationLog | null;
+}
+
+export interface UserProfile {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  plan: 'free' | 'pro';
+  createdAt: string;
 }

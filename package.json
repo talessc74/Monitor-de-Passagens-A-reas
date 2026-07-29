@@ -4,24 +4,26 @@
   "version": "0.1.0",
   "type": "module",
   "workspaces": [
+    "apps/*",
     "services/*",
     "packages/*"
   ],
   "scripts": {
     "dev:web": "vite",
+    "dev:web:next": "npm run dev --workspace=@mpa/web",
     "dev:api": "npm run dev --workspace=@mpa/api",
-    "dev": "concurrently -n web,api -c blue,green \"npm run dev:web\" \"npm run dev:api\"",
+    "dev": "concurrently -n web,api -c blue,green \"npm run dev:web:next\" \"npm run dev:api\"",
     "build": "vite build",
     "preview": "vite preview",
     "seed": "npm run seed --workspace=@mpa/api",
-    "lint": "tsc --noEmit && npm run lint --workspace=@mpa/api"
+    "lint": "tsc --noEmit && npm run lint --workspace=@mpa/api && npm run lint --workspace=@mpa/web"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "lucide-react": "^0.546.0",
-    "react": "^19.0.1",
-    "react-dom": "^19.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "motion": "^12.23.24"
   },
   "devDependencies": {
@@ -31,5 +33,9 @@
     "tailwindcss": "^4.1.14",
     "typescript": "~5.8.2",
     "vite": "^6.2.3"
+  },
+  "overrides": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   }
 }

@@ -8,6 +8,7 @@ import { env } from './env.js';
 import { monitorsRoutes } from './routes/monitors.js';
 import { sitesRoutes } from './routes/sites.js';
 import { notificationsRoutes } from './routes/notifications.js';
+import { accountRoutes } from './routes/account.js';
 
 async function buildServer() {
   const app = Fastify({ logger: true });
@@ -19,6 +20,7 @@ async function buildServer() {
   await app.register(monitorsRoutes);
   await app.register(sitesRoutes);
   await app.register(notificationsRoutes);
+  await app.register(accountRoutes);
 
   app.get('/health', async () => ({ status: 'ok' }));
 

@@ -1,39 +1,39 @@
-# Roadmap — FlySpot (v9 — revisado)
+# Roadmap — FlySpot (v10 — fases reordenadas pela ordem real de execução)
 
+> **v10 (07/2026):** as fases abaixo foram **fisicamente reordenadas** para refletir a ordem real de construção (era só uma nota separada na v4-v9; agora é a ordem em que o documento lista tudo). Cada título mantém entre parênteses o número de **escopo original** (arquitetura), para referência cruzada com decisões antigas — mas a numeração principal agora é a ordem de execução. Nada de conteúdo técnico mudou, só a ordem de leitura.
+>
 > **v9 (07/2026): 🎉 FASE 1 CONCLUÍDA.** Deploy real em produção no Cloud Run, confirmado ponta a ponta: `https://flyspot-api-1039076887535.southamerica-east1.run.app`. O caminho até aqui exigiu resolver, em sequência, uma lista típica de bloqueios de "primeiro deploy" num projeto GCP novo — todos documentados na Fase 1 abaixo para servir de referência em deploys futuros de outros serviços (`generator`, `publisher`): API do Firestore, banco Firestore, conta de faturamento, API do Artifact Registry, permissões IAM da conta de deploy, migração de `gcr.io` (legado) para Artifact Registry nativo, e API do Cloud Run Admin. Deploy automatizado via GitHub Actions (botão "Run workflow" — sem terminal, sem Cloud Shell), mesmo padrão do `multi-agent-system`.
 >
 > **v8 (07/2026):** Fase 1 validada ponta a ponta contra o Firestore real do `lista-ai-f2916`. No processo, dois bloqueios de infraestrutura foram encontrados e resolvidos: API do Firestore precisou ser habilitada manualmente no projeto GCP, e o banco Firestore em si precisou ser criado (projeto nunca tinha um banco Firestore, só possivelmente Realtime Database do Lista Aí). CRUD de monitor, scan e persistência após reinício do processo testados com sucesso.
 >
-> **v7 (07/2026):** domínio registrado: **`flyspot.com.br`**. Destrava a configuração de DNS (SPF/DKIM) necessária na Fase 5 para o e-mail transacional não cair em spam.
+> **v7 (07/2026):** domínio registrado: **`flyspot.com.br`**. Destrava a configuração de DNS (SPF/DKIM) necessária na fase de e-mail para o e-mail transacional não cair em spam.
 >
 > **v6 (07/2026):** nome oficial do produto definido: **FlySpot**. O código, o projeto Firebase (`lista-ai-f2916`) e o prefixo de coleções (`mpa_`) continuam como estão — trocar esses identificadores internos agora não traz benefício e só gera trabalho de migração; o nome do produto vale para marca, domínio, UI e comunicação daqui em diante. Ver nota em `CLAUDE.md`.
+>
+> **v5 (07/2026):** deploy do backend trocado de **Firebase Cloud Functions** para **Cloud Run direto (contêiner Docker)** — mesmo padrão já usado no projeto irmão `multi-agent-system`. Motivo: Cloud Functions exige o projeto Firebase no plano **Blaze**; o projeto `lista-ai-f2916` está no **Spark** (gratuito) e serve a outro produto (Lista Aí, hoje inativo) — não há motivo para forçar upgrade de plano só por causa deste produto. Cloud Run publicado diretamente não exige esse upgrade. Isso muda o mecanismo interno das fases de scheduler e e-mail (que dependiam de dois outros produtos "Cloud Functions" do Firebase — `onSchedule` e Firestore Trigger): ambos voltam a ser loops de polling dentro dos próprios serviços Cloud Run, que já são processos persistentes.
+>
+> **v4 (07/2026):** reordenação estratégica de **construção** para evitar custo de API real antes da hora. O motivo e o racional completo estão preservados logo abaixo.
 
-> **v5 (07/2026):** deploy do backend trocado de **Firebase Cloud Functions** para **Cloud Run direto (contêiner Docker)** — mesmo padrão já usado no projeto irmão `multi-agent-system`. Motivo: Cloud Functions exige o projeto Firebase no plano **Blaze**; o projeto `lista-ai-f2916` está no **Spark** (gratuito) e serve a outro produto (Lista Aí, hoje inativo) — não há motivo para forçar upgrade de plano só por causa deste produto. Cloud Run publicado diretamente não exige esse upgrade. Isso muda o mecanismo interno das Fases 4 e 5 (que dependiam de dois outros produtos "Cloud Functions" do Firebase — `onSchedule` e Firestore Trigger): ambos voltam a ser loops de polling dentro dos próprios serviços Cloud Run, que já são processos persistentes.
->
-> **v4 (07/2026):** reordenação estratégica de **construção** para evitar custo de API real antes da hora. As 8 fases abaixo continuam sendo a referência de arquitetura e critérios de aceite — o que muda é **a ordem em que a equipe as executa**. Ver seção "Ordem real de construção" logo abaixo.
->
-> **v3 (07/2026):** deploy do backend migrado de Railway para **Firebase (Cloud Functions/Cloud Run)** — ecossistema único (banco + backend no Firebase), sem provedor de deploy extra. Isso também simplifica a Fase 4 (scheduler nativo via Cloud Scheduler, no lugar de loop manual) e a Fase 5 (Firestore Triggers no lugar de listener manual).
->
-> **v2 (07/2026):** revisão técnica completa. Correções: fila de jobs incompatível com Firestore substituída por scheduler; caveats de custo do Duffel/Amadeus; cache de buscas para controle de custo; segurança movida para padrão transversal desde a Fase 1.
-
-## Ordem real de construção (v4)
+## Por que esta ordem
 
 **Motivo:** o dono do produto não quer assumir custo de API real (Duffel/Amadeus em produção, Stripe fora do modo teste) enquanto o site ainda está em construção. A maior parte dos serviços listados no roadmap é **gratuita em modo desenvolvimento/sandbox/teste** (Amadeus sandbox, Stripe test mode, cota grátis do Firebase e do Resend) — o único ponto que gera custo real é formalizar contrato de produção com Duffel/Amadeus antes da hora. Solução: construir o produto inteiro primeiro com a fonte de preços simulada (o Gemini já faz isso hoje), e só trocar essa peça pela conexão real por último.
 
-Isso é possível **sem redesenhar nada**, porque a Fase 3 já isola a busca de preço atrás de uma interface única (`searchFlights`) — hoje implementada pelo simulador do Gemini, depois substituída pelos adaptadores Duffel/Amadeus, sem tocar no resto do sistema.
+Isso é possível **sem redesenhar nada**, porque a busca de preço já é isolada atrás de uma interface única (`searchFlights`) — hoje implementada pelo simulador do Gemini, depois substituída pelos adaptadores Duffel/Amadeus, sem tocar no resto do sistema.
 
-**Sequência de execução recomendada** (os números entre parênteses referem-se às fases de arquitetura abaixo, que não mudam de conteúdo — só de ordem):
+**Correspondência entre ordem de execução e escopo original:**
 
-1. Fase 1 — Firestore + deploy no Firebase *(sem custo)*
-2. Fase 2 — Login e cadastro *(sem custo)*
-3. Fase 7 adiantada — site completo (onboarding, mobile, dashboard, histórico), rodando 100% sobre o simulador Gemini existente *(sem custo, zero conexão paga)*
-4. Fase 4 — Varreduras automáticas, testadas contra o simulador *(sem custo)*
-5. Fase 5 — E-mail real via Resend *(cota gratuita cobre o volume de testes)*
-6. Fase 6 — Assinatura Stripe **em modo teste** (cartão de teste, zero cobrança real)
-7. Fase 3 por último — troca o simulador pelos adaptadores reais Duffel/Amadeus; **é só neste momento que se formaliza conta de produção e começa o custo real de API**
-8. Fase 8 — testes finais e LGPD, antes do lançamento público
+| Ordem de execução | Fase (escopo original) | Custo |
+|---|---|---|
+| 1 | Fase 1 — Fundação (Firestore + deploy) | sem custo |
+| 2 | Fase 2 — Login e cadastro | sem custo |
+| 3 | Fase 7 — UX/UI completa (site inteiro, sobre o simulador) | sem custo |
+| 4 | Fase 4 — Varreduras automáticas (sobre o simulador) | sem custo |
+| 5 | Fase 5 — E-mail real via Resend | cota gratuita cobre os testes |
+| 6 | Fase 6 — Assinatura Stripe em modo teste | zero cobrança real |
+| 7 | Fase 3 — Busca real (Duffel/Amadeus) | **só aqui começa custo real de API** |
+| 8 | Fase 8 — Testes finais e LGPD | sem custo |
 
-O conteúdo técnico de cada fase (tarefas, critérios de aceite, arquitetura) permanece exatamente como descrito nas seções abaixo — a numeração "Fase N" identifica o **escopo**, não a ordem cronológica de execução.
+O conteúdo técnico de cada fase (tarefas, critérios de aceite, arquitetura) é o mesmo de sempre — o que mudou nesta versão é que o documento agora **lista as seções nessa mesma ordem**, em vez de ordem de escopo arquitetural.
 
 ## Stack definitiva (padrão dos projetos)
 
@@ -76,11 +76,11 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 - **Variáveis de ambiente** validadas no boot (Zod schema do `process.env` — serviço não sobe com config faltando)
 - **Idempotência**: todo processamento de evento (scan, e-mail, webhook Stripe) deve poder rodar duas vezes sem duplicar efeito
 - **Logs estruturados** (Pino, já embutido no Fastify) com `monitorId`/`userId` no contexto
-- **CI mínimo desde a Fase 1**: GitHub Actions rodando `lint` + `build` a cada push (testes entram na Fase 8, o pipeline existe desde o dia 1)
+- **CI mínimo desde a Fase 1**: GitHub Actions rodando `lint` + `build` a cada push (testes entram na fase de QA final, o pipeline existe desde o dia 1)
 
 ---
 
-## Fase 1 — Fundação: Monorepo + Firestore + Deploy do backend
+## Fase 1 (escopo: Fase 1) — Fundação: Monorepo + Firestore + Deploy do backend
 
 **Status: ✅ CONCLUÍDA — deploy real em produção, confirmado ponta a ponta.**
 
@@ -128,19 +128,21 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 
 ---
 
-## Fase 2 — Next.js 14 + Firebase Auth
+## Fase 2 (escopo: Fase 2) — Next.js 14 + Firebase Auth
+
+**Status: em revisão — PR aberto.**
 
 **O que será construído:** Frontend definitivo em Next.js 14 com login/cadastro. Cada usuário vê só os próprios monitores.
 
 **Tarefas:**
 
-1. Criar `apps/web` (Next.js 14 App Router + Tailwind); portar os componentes existentes (`MonitorCard`, `MonitorForm`, `NotificationFeed`, `SitesList`, `Header`, `EmailModal`)
-2. Habilitar Firebase Authentication: e-mail/senha + Google (SDK client no Next.js)
-3. Middleware Fastify no `api`: valida o Firebase ID Token (`Authorization: Bearer`) em toda rota protegida; injeta `userId` no request
-4. Todas as queries de `monitors`/`notifications` filtram por `userId`; remover `CURRENT_USER_EMAIL` hardcoded
-5. Documento `users/{uid}` criado no primeiro login (e-mail, nome, `plan: 'free'`, `createdAt`)
-6. Tela de perfil com "Deletar minha conta" (apaga user + monitores + notificações — obrigatório LGPD)
-7. Deploy do `apps/web` na Vercel; `api` no Firebase passa a ser API pura (remove o serving de estáticos)
+1. [x] Criar `apps/web` (Next.js 14 App Router + Tailwind); portar os componentes existentes (`MonitorCard`, `MonitorForm`, `NotificationFeed`, `SitesList`, `Header`, `EmailModal`)
+2. [x] Habilitar Firebase Authentication: e-mail/senha + Google (SDK client no Next.js)
+3. [x] Middleware Fastify no `api`: valida o Firebase ID Token (`Authorization: Bearer`) em toda rota protegida; injeta `userId` no request
+4. [x] Todas as queries de `monitors`/`notifications` filtram por `userId`; removido `CURRENT_USER_EMAIL` hardcoded
+5. [x] Documento `users/{uid}` criado no primeiro login (e-mail, nome, `plan: 'free'`, `createdAt`)
+6. [x] Tela de perfil com "Deletar minha conta" (apaga user + monitores + notificações — obrigatório LGPD)
+7. [ ] Deploy do `apps/web` na Vercel; `api` no Firebase passa a ser API pura (remove o serving de estáticos) — pendente: registrar Web App no Firebase Console para gerar `NEXT_PUBLIC_FIREBASE_API_KEY`/`NEXT_PUBLIC_FIREBASE_APP_ID` reais, criar projeto na Vercel
 
 **Gate de UX (desenhar e aprovar antes de implementar):** login/cadastro, recuperação de senha, perfil.
 
@@ -149,11 +151,131 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 - Rota sem token ou com token expirado retorna 401
 - Deletar conta remove todos os dados do usuário no Firestore
 
-**Decisões do produto:** login Google (recomendado: sim) · exigir confirmação de e-mail (recomendado: sim)
+**Decisões do produto:** login Google — **decidido: sim, e-mail/senha + Google** · exigir confirmação de e-mail (recomendado: sim)
 
 ---
 
-## Fase 3 — Busca Real de Passagens (serviço `generator`)
+## Fase 3 (escopo: Fase 7) — UX/UI para Produto Real
+
+**O que será construído:** site completo, rodando 100% sobre o simulador de preços do Gemini — nenhuma conexão paga ainda.
+
+Fluxo por item: **UX desenha → produto aprova → implementa → QA valida → ar.**
+
+1. **Onboarding** — guiar o primeiro monitor (o momento "aha" é receber o primeiro alerta)
+2. **Mobile-first** — auditar todas as telas em 375px; maioria dos usuários BR é mobile
+3. **Estado vazio** — dashboards sem monitor apontam para a criação
+4. **Erros amigáveis** — mapa de erros da API → mensagens em português com ação sugerida
+5. **Painel de histórico** — mínima histórica, média, tendência (dados já existem em `history[]`)
+6. **Acessibilidade** — contraste AA, navegação por teclado, labels/aria em formulários
+
+---
+
+## Fase 4 (escopo: Fase 4) — Varreduras Automáticas (scheduler)
+
+**O que será construído:** O sistema varre preços sozinho, respeitando a frequência do plano de cada usuário — testado contra o simulador (sem custo).
+
+> 🔧 **v5 — ajustado para evitar Blaze:** `onSchedule` é um produto Cloud **Functions** do Firebase e exigiria o mesmo upgrade de plano que estamos evitando (ver decisão na Fase 1). Solução: como `generator` já é um serviço Cloud Run de processo persistente (não uma Function), ele mesmo roda um loop de polling interno — mesmo padrão do `multi-agent-system` (Cloud Run direto, sem depender de produtos Firebase que exigem Blaze). Cloud Scheduler (produto GCP separado do Firebase, tem cota gratuita própria) pode opcionalmente bater num endpoint HTTP do `generator` a cada minuto como redundância/keep-alive, mas o loop interno já é suficiente sozinho.
+
+**Arquitetura escolhida — loop de polling dentro do `generator` (Cloud Run):**
+
+- A cada 60s, dentro do próprio processo do `generator`:
+  1. Query no Firestore: `mpa_monitors` onde `status == 'active'` e `nextScanAt <= now` (exige índice composto)
+  2. Para cada monitor vencido: executa o scan (com o cache da fase de busca real), grava resultado, calcula `nextScanAt = now + intervalo do plano`
+  3. Concorrência limitada (ex.: 5 scans em paralelo, `p-limit`)
+- **Lease/lock por documento** (`scanningLockedUntil`) para o caso de mais de uma instância do Cloud Run rodando ao mesmo tempo (autoscaling) — evita scan duplicado
+- "Escanear agora" na UI: seta `nextScanAt = now` (o loop pega em até 60s) e mostra feedback imediato na tela enquanto isso
+- Cloud Run precisa estar configurado com **mínimo 1 instância sempre ativa** (não escalar a zero), senão o loop para quando não há requisição HTTP chegando
+
+**Por que não fila externa:** BullMQ+Redis (Upstash) é a evolução natural **se** o volume crescer muito; começar com polling elimina qualquer infraestrutura extra e não depende de nenhum produto Firebase gated pelo Blaze.
+
+**Tarefas:**
+
+1. Índice composto Firestore (`status` + `nextScanAt`)
+2. Loop de polling com lease, concorrência limitada e shutdown gracioso
+3. Configurar Cloud Run do `generator` com min-instances = 1
+4. Intervalo por plano lido de `mpa_users/{uid}.plan` (free: 6h, pro: 1h — configurável via env)
+5. Ao criar monitor: `nextScanAt = now` (primeira varredura no próximo ciclo do loop)
+6. Telemetria mínima: doc `system/schedulerHealth` com último tick e contagem de scans/erros (vira health check)
+
+**Critérios de aceite (QA):**
+- Monitor criado é varrido em ≤ 2 min sem clique
+- Frequência respeitada por plano; execução que estoura o timeout não corrompe dados nem duplica notificação
+- Duas execuções sobrepostas não geram scan duplicado (testar o lease)
+
+---
+
+## Fase 5 (escopo: Fase 5) — Notificações por E-mail (serviço `publisher`)
+
+**O que será construído:** E-mail real quando o preço bater a meta ou variar — cota gratuita do Resend cobre o volume de testes.
+
+**Arquitetura — padrão outbox no Firestore, consumido por polling (v5: sem Firestore Trigger, que é Cloud Function e exigiria Blaze):**
+
+- Quem detecta o evento (`generator`) grava um doc em `mpa_outbox` (`type`, `payload`, `status: 'pending'`)
+- `publisher` (Cloud Run, processo persistente, min-instances = 1) consome a `mpa_outbox` via listener `onSnapshot` do firebase-admin (funciona normalmente fora de Cloud Functions, dentro de qualquer processo Node com firebase-admin) + polling de segurança a cada 60s (cobre reconexões)
+- Após envio: `status: 'sent'` + `sentAt` + id da mensagem no Resend. Falha: retry com backoff interno, máximo 5 tentativas, depois `status: 'failed'`
+- **Idempotência**: chave de deduplicação por evento (`monitorId + tipo + janela de tempo`) — nunca dois e-mails iguais para o mesmo evento
+
+**Tarefas:**
+
+1. Criar `services/publisher` + coleção `outbox`
+2. Integrar Resend; domínio verificado (SPF/DKIM) — **sem domínio próprio o e-mail cai em spam, bloqueador real**
+3. Templates React Email: "Meta atingida" e "Preço variou" — trecho, preço vs. meta, datas, botão "Comprar agora" (deep-link já existe em `generatePurchaseLink`), link de pausar monitor (obrigatório: LGPD/opt-out)
+4. Throttle por usuário (máx. 1 e-mail por monitor por hora, exceto meta atingida)
+5. Registrar cada envio na coleção `notifications` (o feed da UI continua funcionando)
+
+**Fase 5b (não urgente):** Telegram via bot — o padrão outbox já deixa pronto (só um novo consumer).
+
+**Critérios de aceite (QA):**
+- Preço abaixo da meta ⇒ e-mail chega na caixa de entrada (não spam) em < 2 min
+- Evento processado 2x não gera 2 e-mails
+- Link "pausar monitor" funciona sem login (token assinado na URL)
+
+**Ações fora do código:**
+- [ ] Conta Resend
+- [x] Domínio registrado: **`flyspot.com.br`** — falta configurar DNS (SPF/DKIM) para o Resend quando chegar a hora desta fase
+
+**Decisões do produto:** domínio e nome do remetente
+
+---
+
+## Fase 6 (escopo: Fase 6) — Monetização com Stripe
+
+**O que será construído:** Assinatura Pro com limites por plano aplicados no backend — tudo em modo teste (cartão de teste, zero cobrança real).
+
+**Planos (proposta a confirmar):**
+
+| Recurso | Gratuito | Pro (sugestão: R$29/mês) |
+|---------|---------|--------------------------|
+| Monitores ativos | 2 | 10 |
+| Frequência de varredura | 6h | 1h |
+| Histórico de preços | 7 dias | 90 dias |
+| E-mail | ✅ | ✅ |
+| Telegram | ❌ | ✅ |
+
+**Tarefas:**
+
+1. Produtos/preços no Stripe Dashboard (modo test primeiro)
+2. `api`: rota `POST /billing/checkout` (cria sessão Stripe Checkout) e `POST /billing/portal` (Customer Portal)
+3. Webhook `POST /webhooks/stripe`: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted` → atualiza `users/{uid}.plan` e `stripeCustomerId`. **Verificar assinatura do webhook e processar de forma idempotente** (Stripe reenvia eventos)
+4. Enforcement no backend (não só na UI): criar monitor além do limite → 403 com mensagem de upgrade; downgrade → monitores excedentes pausados automaticamente (não deletados)
+5. Job de expurgo de histórico conforme o plano (7/90 dias) — roda 1x/dia no `generator`
+6. UI: página de planos, badge do plano atual, CTA de upgrade nos limites
+
+**Critérios de aceite (QA):**
+- Fluxo completo em modo test: assinar → virar Pro → limites novos valem → cancelar → voltar a free com monitores excedentes pausados
+- Webhook reenviado pelo Stripe não duplica efeito
+- Usuário free não consegue criar 3º monitor nem via chamada direta à API
+
+**Decisões do produto:** preço · trial · confirmação da tabela de limites
+
+**Ações fora do código:**
+- [ ] Conta Stripe — ⚠️ **verificar exigência de CNPJ para receber no Brasil antes de qualquer código desta fase**
+
+---
+
+## Fase 7 (escopo: Fase 3) — Busca Real de Passagens (serviço `generator`)
+
+> ⚠️ **É só a partir desta fase que começa custo real de API** (contrato de produção Duffel/Amadeus). Todas as fases anteriores rodaram sobre o simulador Gemini de propósito, para validar o produto inteiro sem esse custo.
 
 **O que será construído:** Preços reais no lugar da simulação. Nasce o serviço `generator`.
 
@@ -192,125 +314,9 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 
 ---
 
-## Fase 4 — Varreduras Automáticas (scheduler)
+## Fase 8 (escopo: Fase 8) — Qualidade, Testes e LGPD
 
-**O que será construído:** O sistema varre preços sozinho, respeitando a frequência do plano de cada usuário.
-
-> 🔧 **v5 — ajustado para evitar Blaze:** `onSchedule` é um produto Cloud **Functions** do Firebase e exigiria o mesmo upgrade de plano que estamos evitando (ver decisão em §Fase 1). Solução: como `generator` já é um serviço Cloud Run de processo persistente (não uma Function), ele mesmo roda um loop de polling interno — mesmo padrão do `multi-agent-system` (Cloud Run direto, sem depender de produtos Firebase que exigem Blaze). Cloud Scheduler (produto GCP separado do Firebase, tem cota gratuita própria) pode opcionalmente bater num endpoint HTTP do `generator` a cada minuto como redundância/keep-alive, mas o loop interno já é suficiente sozinho.
-
-**Arquitetura escolhida — loop de polling dentro do `generator` (Cloud Run):**
-
-- A cada 60s, dentro do próprio processo do `generator`:
-  1. Query no Firestore: `mpa_monitors` onde `status == 'active'` e `nextScanAt <= now` (exige índice composto)
-  2. Para cada monitor vencido: executa o scan (com o cache da Fase 3), grava resultado, calcula `nextScanAt = now + intervalo do plano`
-  3. Concorrência limitada (ex.: 5 scans em paralelo, `p-limit`)
-- **Lease/lock por documento** (`scanningLockedUntil`) para o caso de mais de uma instância do Cloud Run rodando ao mesmo tempo (autoscaling) — evita scan duplicado
-- "Escanear agora" na UI: seta `nextScanAt = now` (o loop pega em até 60s) e mostra feedback imediato na tela enquanto isso
-- Cloud Run precisa estar configurado com **mínimo 1 instância sempre ativa** (não escalar a zero), senão o loop para quando não há requisição HTTP chegando
-
-**Por que não fila externa:** BullMQ+Redis (Upstash) é a evolução natural **se** o volume crescer muito; começar com polling elimina qualquer infraestrutura extra e não depende de nenhum produto Firebase gated pelo Blaze.
-
-**Tarefas:**
-
-1. Índice composto Firestore (`status` + `nextScanAt`)
-2. Loop de polling com lease, concorrência limitada e shutdown gracioso
-3. Configurar Cloud Run do `generator` com min-instances = 1
-4. Intervalo por plano lido de `mpa_users/{uid}.plan` (free: 6h, pro: 1h — configurável via env)
-5. Ao criar monitor: `nextScanAt = now` (primeira varredura no próximo ciclo do loop)
-6. Telemetria mínima: doc `system/schedulerHealth` com último tick e contagem de scans/erros (vira health check)
-
-**Critérios de aceite (QA):**
-- Monitor criado é varrido em ≤ 2 min sem clique
-- Frequência respeitada por plano; execução que estoura o timeout não corrompe dados nem duplica notificação
-- Duas execuções sobrepostas não geram scan duplicado (testar o lease)
-
----
-
-## Fase 5 — Notificações por E-mail (serviço `publisher`)
-
-**O que será construído:** E-mail real quando o preço bater a meta ou variar.
-
-**Arquitetura — padrão outbox no Firestore, consumido por polling (v5: sem Firestore Trigger, que é Cloud Function e exigiria Blaze):**
-
-- Quem detecta o evento (`generator`) grava um doc em `mpa_outbox` (`type`, `payload`, `status: 'pending'`)
-- `publisher` (Cloud Run, processo persistente, min-instances = 1) consome a `mpa_outbox` via listener `onSnapshot` do firebase-admin (funciona normalmente fora de Cloud Functions, dentro de qualquer processo Node com firebase-admin) + polling de segurança a cada 60s (cobre reconexões)
-- Após envio: `status: 'sent'` + `sentAt` + id da mensagem no Resend. Falha: retry com backoff interno, máximo 5 tentativas, depois `status: 'failed'`
-- **Idempotência**: chave de deduplicação por evento (`monitorId + tipo + janela de tempo`) — nunca dois e-mails iguais para o mesmo evento
-
-**Tarefas:**
-
-1. Criar `services/publisher` + coleção `outbox`
-2. Integrar Resend; domínio verificado (SPF/DKIM) — **sem domínio próprio o e-mail cai em spam, bloqueador real**
-3. Templates React Email: "Meta atingida" e "Preço variou" — trecho, preço vs. meta, datas, botão "Comprar agora" (deep-link já existe em `generatePurchaseLink`), link de pausar monitor (obrigatório: LGPD/opt-out)
-4. Throttle por usuário (máx. 1 e-mail por monitor por hora, exceto meta atingida)
-5. Registrar cada envio na coleção `notifications` (o feed da UI continua funcionando)
-
-**Fase 5b (não urgente):** Telegram via bot — o padrão outbox já deixa pronto (só um novo consumer).
-
-**Critérios de aceite (QA):**
-- Preço abaixo da meta ⇒ e-mail chega na caixa de entrada (não spam) em < 2 min
-- Evento processado 2x não gera 2 e-mails
-- Link "pausar monitor" funciona sem login (token assinado na URL)
-
-**Ações fora do código:**
-- [ ] Conta Resend
-- [x] Domínio registrado: **`flyspot.com.br`** — falta configurar DNS (SPF/DKIM) para o Resend quando chegar a hora desta fase
-
-**Decisões do produto:** domínio e nome do remetente
-
----
-
-## Fase 6 — Monetização com Stripe
-
-**O que será construído:** Assinatura Pro com limites por plano aplicados no backend.
-
-**Planos (proposta a confirmar):**
-
-| Recurso | Gratuito | Pro (sugestão: R$29/mês) |
-|---------|---------|--------------------------|
-| Monitores ativos | 2 | 10 |
-| Frequência de varredura | 6h | 1h |
-| Histórico de preços | 7 dias | 90 dias |
-| E-mail | ✅ | ✅ |
-| Telegram | ❌ | ✅ |
-
-**Tarefas:**
-
-1. Produtos/preços no Stripe Dashboard (modo test primeiro)
-2. `api`: rota `POST /billing/checkout` (cria sessão Stripe Checkout) e `POST /billing/portal` (Customer Portal)
-3. Webhook `POST /webhooks/stripe`: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted` → atualiza `users/{uid}.plan` e `stripeCustomerId`. **Verificar assinatura do webhook e processar de forma idempotente** (Stripe reenvia eventos)
-4. Enforcement no backend (não só na UI): criar monitor além do limite → 403 com mensagem de upgrade; downgrade → monitores excedentes pausados automaticamente (não deletados)
-5. Job de expurgo de histórico conforme o plano (7/90 dias) — roda 1x/dia no `generator`
-6. UI: página de planos, badge do plano atual, CTA de upgrade nos limites
-
-**Critérios de aceite (QA):**
-- Fluxo completo em modo test: assinar → virar Pro → limites novos valem → cancelar → voltar a free com monitores excedentes pausados
-- Webhook reenviado pelo Stripe não duplica efeito
-- Usuário free não consegue criar 3º monitor nem via chamada direta à API
-
-**Decisões do produto:** preço · trial · confirmação da tabela de limites
-
-**Ações fora do código:**
-- [ ] Conta Stripe — ⚠️ **verificar exigência de CNPJ para receber no Brasil antes de qualquer código desta fase**
-
----
-
-## Fase 7 — UX/UI para Produto Real
-
-Fluxo por item: **UX desenha → produto aprova → implementa → QA valida → ar.**
-
-1. **Onboarding** — guiar o primeiro monitor (o momento "aha" é receber o primeiro alerta)
-2. **Mobile-first** — auditar todas as telas em 375px; maioria dos usuários BR é mobile
-3. **Estado vazio** — dashboards sem monitor apontam para a criação
-4. **Erros amigáveis** — mapa de erros da API → mensagens em português com ação sugerida
-5. **Painel de histórico** — mínima histórica, média, tendência (dados já existem em `history[]`)
-6. **Acessibilidade** — contraste AA, navegação por teclado, labels/aria em formulários
-
----
-
-## Fase 8 — Qualidade, Testes e LGPD
-
-> Segurança básica (Zod, rate limit, helmet, idempotência) **já entrou nas fases 1-6** como padrão transversal. Esta fase cobre o que exige o produto estável.
+> Segurança básica (Zod, rate limit, helmet, idempotência) **já entrou desde a Fase 1** como padrão transversal. Esta fase cobre o que exige o produto estável, e é o portão final antes do lançamento público.
 
 ### Testes e CI/CD
 - Vitest: testes de integração por serviço (prioridade: regras de plano, scheduler, outbox, webhook Stripe)
@@ -332,19 +338,17 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 ---
 
-## Sequência e dependências (arquitetura — independe da ordem de execução)
+## Dependências entre fases (arquitetura — independe da ordem física acima)
 
 ```
 Fase 1: Monorepo + Firestore + api no Firebase      ← fundação
 Fase 2: Next.js 14 + Firebase Auth (Vercel)        ← precisa da 1
-Fase 3: Busca real + generator                     ← precisa da 1; adaptador plugável no lugar do simulador Gemini
-Fase 4: Scheduler de varreduras (Cloud Scheduler)   ← precisa de uma fonte de preço (simulada ou real)
-Fase 5: E-mail (publisher + outbox/Firestore Trigger) ← precisa da 4; domínio/DNS pode andar em paralelo desde já
+Fase 3 (escopo 7): UX/UI                           ← contínua; roda sobre o simulador
+Fase 4: Scheduler de varreduras                    ← precisa de uma fonte de preço (simulada ou real)
+Fase 5: E-mail (publisher + outbox)                ← precisa da 4; domínio/DNS pode andar em paralelo desde já
 Fase 6: Stripe                                     ← precisa da 2 (users); pode rodar 100% em modo teste
-Fase 7: UX/UI                                      ← contínua; itens podem intercalar com fases 4-6
+Fase 7 (escopo 3): Busca real + generator          ← precisa da 1; adaptador plugável no lugar do simulador Gemini
 Fase 8: Testes completos + LGPD                    ← antes do lançamento público
 ```
 
-**Ordem real de execução recomendada (v4):** 1 → 2 → 7 (adiantada, sobre simulador) → 4 (sobre simulador) → 5 → 6 (Stripe em modo teste) → **3 por último** (troca simulador por Duffel/Amadeus reais — só aqui começa custo de API) → 8. Ver "Ordem real de construção" no topo do documento para o racional completo.
-
-**Paralelizável desde hoje (sem código, sem custo):** domínio + DNS, projeto Firebase (novo, dentro da conta existente). **Adiar até a Fase 3 real:** contas de produção Duffel/Amadeus (sandbox pode ser criado antes sem custo, mas evitar assumir contrato de produção cedo demais). **Sem custo enquanto durar em modo teste:** conta Stripe (produto/config novos, modo teste), conta Resend (domínio de envio novo, cota gratuita).
+**Paralelizável desde hoje (sem código, sem custo):** domínio + DNS, projeto Firebase (novo, dentro da conta existente). **Adiar até a Fase 7 (escopo 3) real:** contas de produção Duffel/Amadeus (sandbox pode ser criado antes sem custo, mas evitar assumir contrato de produção cedo demais). **Sem custo enquanto durar em modo teste:** conta Stripe (produto/config novos, modo teste), conta Resend (domínio de envio novo, cota gratuita).
