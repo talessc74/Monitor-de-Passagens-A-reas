@@ -1,6 +1,8 @@
-# Roadmap — FlySpot (v8 — revisado)
+# Roadmap — FlySpot (v9 — revisado)
 
-> **v8 (07/2026):** Fase 1 validada ponta a ponta contra o Firestore real do `lista-ai-f2916`. No processo, dois bloqueios de infraestrutura foram encontrados e resolvidos: API do Firestore precisou ser habilitada manualmente no projeto GCP, e o banco Firestore em si precisou ser criado (projeto nunca tinha um banco Firestore, só possivelmente Realtime Database do Lista Aí). CRUD de monitor, scan e persistência após reinício do processo testados com sucesso. Falta só o deploy real no Cloud Run para fechar a fase.
+> **v9 (07/2026): 🎉 FASE 1 CONCLUÍDA.** Deploy real em produção no Cloud Run, confirmado ponta a ponta: `https://flyspot-api-1039076887535.southamerica-east1.run.app`. O caminho até aqui exigiu resolver, em sequência, uma lista típica de bloqueios de "primeiro deploy" num projeto GCP novo — todos documentados na Fase 1 abaixo para servir de referência em deploys futuros de outros serviços (`generator`, `publisher`): API do Firestore, banco Firestore, conta de faturamento, API do Artifact Registry, permissões IAM da conta de deploy, migração de `gcr.io` (legado) para Artifact Registry nativo, e API do Cloud Run Admin. Deploy automatizado via GitHub Actions (botão "Run workflow" — sem terminal, sem Cloud Shell), mesmo padrão do `multi-agent-system`.
+>
+> **v8 (07/2026):** Fase 1 validada ponta a ponta contra o Firestore real do `lista-ai-f2916`. No processo, dois bloqueios de infraestrutura foram encontrados e resolvidos: API do Firestore precisou ser habilitada manualmente no projeto GCP, e o banco Firestore em si precisou ser criado (projeto nunca tinha um banco Firestore, só possivelmente Realtime Database do Lista Aí). CRUD de monitor, scan e persistência após reinício do processo testados com sucesso.
 >
 > **v7 (07/2026):** domínio registrado: **`flyspot.com.br`**. Destrava a configuração de DNS (SPF/DKIM) necessária na Fase 5 para o e-mail transacional não cair em spam.
 >
@@ -80,7 +82,9 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 
 ## Fase 1 — Fundação: Monorepo + Firestore + Deploy do backend
 
-**Status: 🟢 Firestore real validado ponta a ponta. Falta só o deploy no Cloud Run.**
+**Status: ✅ CONCLUÍDA — deploy real em produção, confirmado ponta a ponta.**
+
+**URL de produção:** `https://flyspot-api-1039076887535.southamerica-east1.run.app`
 
 **O que será construído:** Estrutura definitiva de pastas, banco real (Firestore) e o serviço `api` no ar via Cloud Run. O frontend atual (Vite SPA) continua funcionando apontando para a nova API — a migração dele para Next.js fica na Fase 2.
 
@@ -94,30 +98,33 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 6. [x] Seed script (`npm run seed`) para popular `mpa_sites` (LATAM, GOL, Azul, Decolar, Skyscanner), idempotente
 7. [x] Padrões transversais aplicados: Zod (env + payloads das rotas), `@fastify/rate-limit`, `@fastify/helmet`, logger Pino (nativo do Fastify)
 8. [x] Lógica de scan simulado (Gemini) movida para `services/api/src/scanSimulator.ts`; modelo via env `GEMINI_MODEL`; `server.ts` antigo removido
-9. [ ] **Deploy real do `api` no Cloud Run** (mesmo projeto GCP do Firestore, `lista-ai-f2916`) — pendente, depende da confirmação da conta de faturamento abaixo
-10. [x] GitHub Actions (`lint` + `build` a cada push) criado; `gcloud run deploy` automático fica para quando o primeiro deploy manual for validado
+9. [x] **Deploy real do `api` no Cloud Run** — feito e validado em produção (`flyspot-api`, região `southamerica-east1`)
+10. [x] GitHub Actions: `ci.yml` (lint + build a cada push) e `deploy.yml` (deploy sob demanda via botão "Run workflow", mesmo padrão do `multi-agent-system`)
 
 **Validado com credenciais reais do `lista-ai-f2916` nesta sessão:**
 - `npm install`, type-check e build de produção (frontend + `api`) — OK
-- Descobertos e resolvidos dois bloqueios de infraestrutura na hora do teste: (1) API do Firestore não estava habilitada no projeto GCP — ativada; (2) nenhum banco Firestore existia ainda no projeto — criado em modo Nativo
+- Bloqueios de infraestrutura encontrados e resolvidos no processo (todos comuns em projeto GCP novo): API do Firestore desabilitada, banco Firestore inexistente (criado em modo Nativo), Artifact Registry API desabilitada, conta de faturamento não vinculada, permissões IAM incompletas na conta de deploy (`flyspot-deploy` precisou de Cloud Run Admin + Storage Admin + Artifact Registry Admin + Service Account User), domínio legado `gcr.io` bloqueado por política (`createOnPush`) — contornado migrando para Artifact Registry nativo (`southamerica-east1-docker.pkg.dev`), Cloud Run Admin API desabilitada
 - `npm run seed` populou `mpa_sites` (LATAM, GOL, Azul, Decolar, Skyscanner) de verdade no Firestore
-- Fluxo completo testado contra o banco real: criar monitor → rodar scan (preço simulado + histórico gravado) → **reiniciar o processo do servidor por completo** → monitor e histórico continuam intactos → deletar monitor de teste (limpeza)
-- Credencial de teste usada apenas localmente nesta sessão e descartada ao final (nunca commitada; recomendado revogar essa chave específica no Firebase Console e gerar uma nova só se for reusar em dev)
-
-**Não validado ainda:** build real da imagem Docker (daemon Docker bloqueado neste ambiente sandbox) e deploy efetivo no Cloud Run.
+- Fluxo completo testado localmente contra o banco real: criar monitor → rodar scan (preço simulado + histórico gravado) → **reiniciar o processo do servidor por completo** → monitor e histórico continuam intactos → deletar monitor de teste (limpeza)
+- Credencial de teste (Firestore) usada apenas localmente nesta sessão e descartada ao final (nunca commitada)
+- **Deploy real confirmado em produção**: `GET /health` → `{"status":"ok"}`; `GET /api/sites` → retorna as 5 companhias, lidas do Firestore de produção
 
 **Critérios de aceite (QA):**
 - [x] Criar, editar, pausar, deletar monitor funciona contra o Firestore real
 - [x] Reiniciar o serviço não perde nenhum dado (era o problema do JSON) — confirmado
 - [x] Servidor não sobe com env inválida; rotas rejeitam payload malformado com erro 400 claro
-- [ ] Mesmos critérios, agora rodando de fato no Cloud Run (não só localmente com credencial de dev)
+- [x] Mesmos critérios rodando de fato no Cloud Run — confirmado via `GET /health` e `GET /api/sites` na URL de produção
 
 **Ações fora do código:**
 - [x] Projeto Firebase definido: **`lista-ai-f2916`** (compartilhado com o produto Lista Aí, hoje inativo — permanece no plano **Spark**, sem upgrade necessário, já que o deploy usa Cloud Run direto e não Cloud Functions)
 - [x] API do Firestore habilitada no projeto GCP
 - [x] Banco Firestore criado (modo Nativo)
 - [x] Credenciais de service account geradas e validadas (uso local/dev)
-- [ ] Confirmar que a conta de faturamento GCP usada pelo `multi-agent-system` no Cloud Run está disponível para publicar também os serviços deste produto no mesmo projeto
+- [x] Conta de faturamento GCP vinculada ao projeto `lista-ai-f2916`
+- [x] API do Artifact Registry habilitada; repositório Docker nativo criado (`southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot`)
+- [x] API do Cloud Run Admin habilitada
+- [x] Conta de deploy `flyspot-deploy` com as 4 permissões necessárias (Cloud Run Admin, Storage Admin, Artifact Registry Admin, Service Account User)
+- [x] Secret `GCP_SA_KEY` configurado no GitHub Actions
 
 ---
 
