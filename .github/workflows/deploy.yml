@@ -3,6 +3,11 @@ name: Deploy — Cloud Run
 on:
   workflow_dispatch:
 
+env:
+  AR_LOCATION: southamerica-east1
+  AR_REPOSITORY: flyspot
+  IMAGE: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-api
+
 jobs:
   deploy:
     name: Build & Deploy flyspot-api
@@ -20,25 +25,36 @@ jobs:
       - name: Configurar gcloud
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configurar Docker para GCR
-        run: gcloud auth configure-docker gcr.io --quiet
+      - name: Garantir que o repositório Artifact Registry existe
+        run: |
+          gcloud artifacts repositories describe ${{ env.AR_REPOSITORY }} \
+            --location=${{ env.AR_LOCATION }} \
+            --project=lista-ai-f2916 \
+            || gcloud artifacts repositories create ${{ env.AR_REPOSITORY }} \
+                 --repository-format=docker \
+                 --location=${{ env.AR_LOCATION }} \
+                 --project=lista-ai-f2916 \
+                 --description="Imagens Docker do FlySpot"
+
+      - name: Configurar Docker para o Artifact Registry
+        run: gcloud auth configure-docker ${{ env.AR_LOCATION }}-docker.pkg.dev --quiet
 
       - name: Build da imagem Docker
         run: |
           docker build \
             -f services/api/Dockerfile \
-            -t gcr.io/lista-ai-f2916/flyspot-api:${{ github.sha }} \
-            -t gcr.io/lista-ai-f2916/flyspot-api:latest \
+            -t ${{ env.IMAGE }}:${{ github.sha }} \
+            -t ${{ env.IMAGE }}:latest \
             .
 
-      - name: Push para Container Registry
-        run: docker push --all-tags gcr.io/lista-ai-f2916/flyspot-api
+      - name: Push para o Artifact Registry
+        run: docker push --all-tags ${{ env.IMAGE }}
 
       - name: Deploy para Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: flyspot-api
-          image: gcr.io/lista-ai-f2916/flyspot-api:latest
+          image: ${{ env.IMAGE }}:latest
           region: southamerica-east1
           project_id: lista-ai-f2916
           flags: --allow-unauthenticated
