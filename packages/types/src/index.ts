@@ -17,9 +17,12 @@ export interface FlightMonitor {
   destination: string;
   destinationCity: string;
   departureDate: string;
+  departFlexDays?: number;
   returnDate: string;
+  returnFlexDays?: number;
   adults: number;
   children: number;
+  infants: number;
   targetPrice: number;
   currentPrice: number | null;
   bestPriceTracked: number | null;
@@ -76,6 +79,14 @@ export interface ScanResponse {
   generalAnalysis: string;
   cheapestResult: ScanResult;
   triggeredNotification: NotificationLog | null;
+}
+
+export interface RouteStats {
+  average: number;
+  min: number;
+  max: number;
+  sampleWindowDays: number;
+  observations: number;
 }
 
 export interface UserProfile {

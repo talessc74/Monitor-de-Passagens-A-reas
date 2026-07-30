@@ -75,8 +75,8 @@ export default function MonitorCard({ monitor, onScan, onDelete, onToggleStatus 
     }
 
     const prices = points.map((p) => p.price);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
+    const minPrice = Math.min(...prices, monitor.targetPrice);
+    const maxPrice = Math.max(...prices, monitor.targetPrice);
     const range = maxPrice - minPrice === 0 ? 1 : maxPrice - minPrice;
 
     const width = 280;
@@ -94,15 +94,26 @@ export default function MonitorCard({ monitor, onScan, onDelete, onToggleStatus 
       })
       .join(' ');
 
+    const targetRatio = (monitor.targetPrice - minPrice) / range;
+    const targetY = padding + chartHeight - targetRatio * chartHeight;
+
     return (
       <div className="rounded-xl border border-slate-100 bg-slate-50/30 p-3">
         <div className="mb-2 flex items-center justify-between text-[10px] text-slate-500 font-bold uppercase tracking-wider">
           <span className="flex items-center gap-1">
             <History className="h-3 w-3" />
-            Variação de Preços (BRL)
+            Preço (eixo Y) por data (eixo X)
           </span>
           <span className="text-slate-600 font-semibold">
             Min: R$ {minPrice} / Max: R$ {maxPrice}
+          </span>
+        </div>
+        <div className="mb-1.5 flex items-center gap-3 text-[9px] font-mono text-slate-400">
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-0.5 w-2.5 bg-blue-600" /> preço
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-0 w-2.5 border-t-2 border-dashed border-slate-400" /> meta (R$ {monitor.targetPrice})
           </span>
         </div>
         <div className="relative">
@@ -114,6 +125,15 @@ export default function MonitorCard({ monitor, onScan, onDelete, onToggleStatus 
               </linearGradient>
             </defs>
             <path d={`M ${padding},${height} L ${svgPoints} L ${width - padding},${height} Z`} fill={`url(#gradient-${monitor.id})`} />
+            <line
+              x1={padding}
+              y1={targetY}
+              x2={width - padding}
+              y2={targetY}
+              stroke="#94a3b8"
+              strokeWidth="1.5"
+              strokeDasharray="4 3"
+            />
             <polyline fill="none" stroke="#2563eb" strokeWidth="2" points={svgPoints} strokeLinecap="round" strokeLinejoin="round" />
             {points.map((p, index) => {
               const x = padding + (index / (points.length - 1)) * chartWidth;
@@ -138,6 +158,10 @@ export default function MonitorCard({ monitor, onScan, onDelete, onToggleStatus 
   };
 
   const isConfiguredUnderTarget = monitor.currentPrice && monitor.currentPrice <= monitor.targetPrice;
+
+  const monitoringDays = monitor.createdAt
+    ? Math.max(0, Math.floor((Date.now() - new Date(monitor.createdAt).getTime()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   return (
     <div
@@ -189,7 +213,8 @@ export default function MonitorCard({ monitor, onScan, onDelete, onToggleStatus 
           <Users className="h-4 w-4 text-slate-400" />
           <span>
             {monitor.adults} {monitor.adults === 1 ? 'Adulto' : 'Adultos'}
-            {monitor.children > 0 && ` e ${monitor.children} ${monitor.children === 1 ? 'Criança' : 'Crianças'}`}
+            {monitor.children > 0 && `, ${monitor.children} ${monitor.children === 1 ? 'Criança' : 'Crianças'}`}
+            {monitor.infants > 0 && ` e ${monitor.infants} ${monitor.infants === 1 ? 'Bebê' : 'Bebês'}`}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -233,6 +258,11 @@ export default function MonitorCard({ monitor, onScan, onDelete, onToggleStatus 
           <span className="font-bold text-slate-500">
             {monitor.lastScannedAt ? new Date(monitor.lastScannedAt).toLocaleTimeString('pt-BR') : 'Ainda não verificado'}
           </span>
+          {monitor.status === 'active' && monitoringDays !== null && (
+            <span className="ml-2 text-slate-400">
+              · monitorando há {monitoringDays === 0 ? 'menos de 1 dia' : monitoringDays === 1 ? '1 dia' : `${monitoringDays} dias`}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5">

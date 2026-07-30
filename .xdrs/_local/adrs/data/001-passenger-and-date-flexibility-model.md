@@ -1,6 +1,6 @@
 ---
 name: _local-adr-policy-001-passenger-and-date-flexibility-model
-description: Splits FlightMonitor.passengers into adults/children/infants and adds optional flexDays to travel dates. Use when touching the FlightMonitor shape, monitor creation payload, or the route-stats/scan simulator inputs.
+description: Adds an infants field alongside FlightMonitor's existing adults/children fields, and adds optional flexDays to travel dates. Use when touching the FlightMonitor shape, monitor creation payload, or the route-stats/scan simulator inputs.
 apply-to: packages/types, services/api routes and repositories for monitors, apps/web onboarding and monitor forms
 valid-from: 2026-07-30
 ---
@@ -10,27 +10,29 @@ valid-from: 2026-07-30
 ## Context and Problem Statement
 
 `_local-bdr-policy-001` requires the onboarding to capture passengers by age band and dates
-as a flexible window. The current `FlightMonitor` type has a single numeric `passengers`
-field and fixed `departDate`/`returnDate` strings, which cannot represent either.
+as a flexible window. `FlightMonitor` already has flat `adults`/`children` fields (from
+Fase 1) but no `infants` field, and `departureDate`/`returnDate` are fixed strings with no
+flexibility window.
 
-Question: how should `FlightMonitor` model passengers and date flexibility to satisfy the
-approved onboarding decision without a breaking, all-at-once rewrite of the type?
+Question: how should `FlightMonitor` model the infant count and date flexibility to satisfy
+the approved onboarding decision without a breaking, all-at-once rewrite of the type?
 
 ## Decision Outcome
 
-**Structured passengers object + optional flexDays per date**
+**Add `infants` alongside the existing flat passenger fields; add optional flexDays per date**
 
-`passengers` becomes `{ adults: number; children: number; infants: number }` (children 2-11,
-infants on lap, matching airline fare rules). `departDate`/`returnDate` keep their existing
-shape but each gains a sibling optional field `departFlexDays?: number` /
-`returnFlexDays?: number` (0 or undefined means an exact date, matching today's behavior).
+`FlightMonitor` gains `infants: number` as a third flat field next to the existing `adults`
+and `children` (children 2-11, infants on lap, matching airline fare rules) — kept flat, not
+nested into a `passengers` object, to match the existing field style and minimize the diff.
+`departureDate`/`returnDate` keep their existing shape but each gains a sibling optional field
+`departFlexDays?: number` / `returnFlexDays?: number` (0 or undefined means an exact date,
+matching today's behavior).
 
 ### Details
 
 - Acceptance criterion (verifiable): `packages/types`' `FlightMonitor` interface exposes
-  `passengers: { adults: number; children: number; infants: number }` and
-  `departFlexDays?: number` / `returnFlexDays?: number`; a build with the old single-number
-  `passengers` type is non-compliant.
+  `adults: number`, `children: number`, `infants: number` as flat fields, plus
+  `departFlexDays?: number` / `returnFlexDays?: number`.
 - `adults` must be `>= 1`; `children` and `infants` default to `0`.
 - `flexDays` is expressed once per date (not a shared range), because ida and volta are
   independently flexible per `_local-bdr-policy-001`.

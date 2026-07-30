@@ -13,18 +13,14 @@ import { createNotification } from '../repositories/notificationsRepository.js';
 import { db, COLLECTIONS } from '../firestore.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import { runScanSimulation } from '../scanSimulator.js';
+import { getRouteStats } from '../routeStats.js';
 import { generatePurchaseLink } from '../purchaseLink.js';
 import { authenticate } from '../auth.js';
+import { passengerDateSchema } from '../schemas/passengerDate.js';
 
-const createMonitorSchema = z.object({
-  origin: z.string().min(3).max(4),
+const createMonitorSchema = passengerDateSchema.extend({
   originCity: z.string().optional(),
-  destination: z.string().min(3).max(4),
   destinationCity: z.string().optional(),
-  departureDate: z.string().min(1),
-  returnDate: z.string().min(1),
-  adults: z.coerce.number().int().min(1).default(1),
-  children: z.coerce.number().int().min(0).default(0),
   targetPrice: z.coerce.number().positive(),
   trackedSites: z.array(z.string()).optional(),
   email: z.string().email(),
@@ -42,6 +38,15 @@ export async function monitorsRoutes(app: FastifyInstance) {
     return listMonitorsForUser(request.userId);
   });
 
+  app.get('/api/route-stats', { preHandler: authenticate }, async (request, reply) => {
+    const parsed = passengerDateSchema.safeParse(request.query);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'Parâmetros de rota inválidos', details: parsed.error.flatten() });
+    }
+    const stats = await getRouteStats(parsed.data);
+    return stats;
+  });
+
   app.post('/api/monitors', { preHandler: authenticate }, async (request, reply) => {
     const parsed = createMonitorSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -57,9 +62,12 @@ export async function monitorsRoutes(app: FastifyInstance) {
       destination: body.destination.toUpperCase().trim(),
       destinationCity: body.destinationCity || body.destination,
       departureDate: body.departureDate,
+      departFlexDays: body.departFlexDays,
       returnDate: body.returnDate,
+      returnFlexDays: body.returnFlexDays,
       adults: body.adults,
       children: body.children,
+      infants: body.infants,
       targetPrice: body.targetPrice,
       currentPrice: null,
       bestPriceTracked: null,
