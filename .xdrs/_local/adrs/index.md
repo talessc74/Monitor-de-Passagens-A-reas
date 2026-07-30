@@ -28,3 +28,4 @@ System and service design decisions at application level.
 
 - [001-pricing-source-abstraction](application/001-pricing-source-abstraction.md) — Scan logic isolated behind `scanSimulator.ts`, swappable for real Duffel/Amadeus adapters without touching the rest of the system
 - [002-outbox-email-delivery](application/002-outbox-email-delivery.md) — `mpa_outbox` + `services/publisher` for real e-mail (Fase 5); outbox is a thin pointer to the already-created `NotificationLog`, not a replacement for it
+- [003-stripe-billing-architecture](application/003-stripe-billing-architecture.md) — Stripe SDK for checkout/portal/webhook signing (Fase 6); webhook idempotency reuses the outbox's dedup pattern; monitor limit counts total monitors (not just active) to close a pause-and-recreate loophole; downgrade pauses excess monitors, never deletes

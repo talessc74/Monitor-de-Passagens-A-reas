@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { FlightMonitor, NotificationLog } from '@mpa/types';
+import { PLAN_LIMITS } from '@mpa/types';
 import {
   listMonitorsForUser,
   getMonitor,
@@ -10,6 +11,7 @@ import {
   deleteMonitor,
 } from '../repositories/monitorsRepository.js';
 import { createNotification } from '../repositories/notificationsRepository.js';
+import { getUser } from '../repositories/usersRepository.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getRouteStats } from '../routeStats.js';
 import { authenticate } from '../auth.js';
@@ -97,6 +99,20 @@ export async function monitorsRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'Campos obrigatórios ausentes ou inválidos', details: parsed.error.flatten() });
     }
     const body = parsed.data;
+
+    // Limite por plano — conta todos os monitores do usuário, ativos ou
+    // pausados, não só os ativos. Contar só ativos permitiria pausar
+    // monitores antigos para abrir espaço a novos indefinidamente. Ver
+    // _local-adr-policy-003.
+    const user = await getUser(request.userId);
+    const plan = user?.plan ?? 'free';
+    const existingCount = (await listMonitorsForUser(request.userId)).length;
+    if (existingCount >= PLAN_LIMITS[plan].maxMonitors) {
+      return reply.status(403).send({
+        error: `Limite de ${PLAN_LIMITS[plan].maxMonitors} monitores do plano ${plan === 'free' ? 'Gratuito' : 'Pro'} atingido.`,
+        upgradeRequired: plan === 'free',
+      });
+    }
 
     const monitor: FlightMonitor = {
       id: 'mon-' + randomUUID().slice(0, 9),

@@ -13,6 +13,7 @@ export const COLLECTIONS = {
   sites: 'mpa_sites',
   users: 'mpa_users',
   outbox: 'mpa_outbox',
+  webhookEvents: 'mpa_webhook_events',
 } as const;
 
 function initFirebase() {

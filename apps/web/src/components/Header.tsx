@@ -56,6 +56,12 @@ export default function Header({ activeMonitorsCount, notificationsCount }: Head
             {user && (
               <div className="flex items-center gap-2 border-l border-slate-200 pl-2 sm:pl-4">
                 <a
+                  href="/plans"
+                  className="text-xs font-semibold text-slate-500 hover:text-blue-600 transition"
+                >
+                  Planos
+                </a>
+                <a
                   href="/profile"
                   className="text-xs font-semibold text-slate-500 hover:text-blue-600 transition"
                   title={user.email ?? ''}

@@ -18,12 +18,27 @@ const envSchema = z.object({
   // _local-edr-policy-004.
   EMAIL_ACTION_SECRET: z.string().min(16).optional(),
   PAUSE_LINK_TTL_DAYS: z.coerce.number().positive().default(30),
+  // Stripe (Fase 6) — opcionais: sem eles, as rotas de billing e o
+  // webhook ficam desabilitadas (503) em vez de derrubar o boot. Ver
+  // _local-adr-policy-003.
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_PRICE_ID_PRO: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
 
+/**
+ * O Cloud Run/GitHub Actions injeta `env_vars` de secrets não configurados
+ * como string vazia, não como variável ausente — o que quebraria qualquer
+ * campo `.optional()` combinado com um validador adicional (`.url()`,
+ * `.min()`), derrubando o boot por um segredo que deveria ser
+ * legitimamente opcional. Normaliza string vazia para `undefined` antes
+ * do parse para que `.optional()` signifique o que diz.
+ */
 function loadEnv(): Env {
-  const parsed = envSchema.safeParse(process.env);
+  const sanitized = Object.fromEntries(Object.entries(process.env).map(([key, value]) => [key, value === '' ? undefined : value]));
+  const parsed = envSchema.safeParse(sanitized);
   if (!parsed.success) {
     console.error('Configuração de ambiente inválida:');
     console.error(parsed.error.flatten().fieldErrors);

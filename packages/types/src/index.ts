@@ -128,4 +128,19 @@ export interface UserProfile {
   displayName: string | null;
   plan: 'free' | 'pro';
   createdAt: string;
+  /** IDs opacos do Stripe — nenhum dado de pagamento é replicado aqui. Ver _local-adr-policy-003. */
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
 }
+
+export interface PlanLimits {
+  maxMonitors: number;
+  scanIntervalHours: number;
+  historyRetentionDays: number;
+}
+
+/** Tabela de planos confirmada pelo dono do produto na Fase 6. Ver _local-adr-policy-003. */
+export const PLAN_LIMITS: Record<UserProfile['plan'], PlanLimits> = {
+  free: { maxMonitors: 2, scanIntervalHours: 6, historyRetentionDays: 7 },
+  pro: { maxMonitors: 10, scanIntervalHours: 1, historyRetentionDays: 90 },
+};

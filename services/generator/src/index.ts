@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import { env } from './env.js';
 import { startScheduler, stopScheduler } from './scheduler.js';
+import { purgeHistory } from './purgeHistory.js';
 
 /**
  * services/generator: processo Cloud Run persistente cujo único papel,
@@ -21,9 +22,24 @@ async function main() {
 
   startScheduler();
 
+  let purgeTimer: NodeJS.Timeout | null = null;
+  const runPurge = async () => {
+    try {
+      const stats = await purgeHistory();
+      if (stats.monitorsTrimmed > 0) {
+        app.log.info(stats, '[generator] expurgo de histórico concluído');
+      }
+    } catch (error) {
+      app.log.error({ err: error }, '[generator] erro no expurgo de histórico');
+    }
+  };
+  runPurge();
+  purgeTimer = setInterval(runPurge, env.PURGE_INTERVAL_MS);
+
   const shutdown = async (signal: string) => {
     app.log.info(`[generator] recebido ${signal}, encerrando com graça...`);
     stopScheduler();
+    if (purgeTimer) clearInterval(purgeTimer);
     await app.close();
     process.exit(0);
   };

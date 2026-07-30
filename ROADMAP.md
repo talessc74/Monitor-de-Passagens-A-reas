@@ -259,9 +259,9 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 **O que será construído:** Assinatura Pro com limites por plano aplicados no backend — tudo em modo teste (cartão de teste, zero cobrança real).
 
-**Planos (proposta a confirmar):**
+**Planos (confirmada pelo dono do produto):**
 
-| Recurso | Gratuito | Pro (sugestão: R$29/mês) |
+| Recurso | Gratuito | Pro (R$29/mês) |
 |---------|---------|--------------------------|
 | Monitores ativos | 2 | 10 |
 | Frequência de varredura | 6h | 1h |
@@ -271,22 +271,28 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 **Tarefas:**
 
-1. Produtos/preços no Stripe Dashboard (modo test primeiro)
-2. `api`: rota `POST /billing/checkout` (cria sessão Stripe Checkout) e `POST /billing/portal` (Customer Portal)
-3. Webhook `POST /webhooks/stripe`: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted` → atualiza `users/{uid}.plan` e `stripeCustomerId`. **Verificar assinatura do webhook e processar de forma idempotente** (Stripe reenvia eventos)
-4. Enforcement no backend (não só na UI): criar monitor além do limite → 403 com mensagem de upgrade; downgrade → monitores excedentes pausados automaticamente (não deletados)
-5. Job de expurgo de histórico conforme o plano (7/90 dias) — roda 1x/dia no `generator`
-6. UI: página de planos, badge do plano atual, CTA de upgrade nos limites
+1. [ ] Produtos/preços no Stripe Dashboard (modo test primeiro) — ação fora do código, ver abaixo
+2. [x] `api`: rota `POST /billing/checkout` (cria sessão Stripe Checkout) e `POST /billing/portal` (Customer Portal)
+3. [x] Webhook `POST /webhooks/stripe`: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted` → atualiza `users/{uid}.plan` e `stripeCustomerId`. Assinatura verificada via SDK oficial do Stripe (corpo bruto); idempotente por `event.id` (mesmo padrão de dedup do outbox da Fase 5)
+4. [x] Enforcement no backend (não só na UI): criar monitor além do limite → 403 com mensagem de upgrade (conta todos os monitores do usuário, ativos ou pausados — ver `_local-adr-policy-003`); downgrade → monitores excedentes pausados automaticamente (não deletados), mantendo os mais antigos ativos
+5. [x] Job de expurgo de histórico conforme o plano (7/90 dias) — roda 1x/dia no `generator`
+6. [x] UI: página `/plans`, badge do plano atual no perfil, CTA de upgrade quando o limite é atingido no dashboard
 
 **Critérios de aceite (QA):**
 - Fluxo completo em modo test: assinar → virar Pro → limites novos valem → cancelar → voltar a free com monitores excedentes pausados
 - Webhook reenviado pelo Stripe não duplica efeito
 - Usuário free não consegue criar 3º monitor nem via chamada direta à API
 
-**Decisões do produto:** preço · trial · confirmação da tabela de limites
+**Decisões do produto:** preço R$29/mês confirmado · tabela de limites confirmada como proposta · trial ainda não decidido
 
 **Ações fora do código:**
-- [ ] Conta Stripe — ⚠️ **verificar exigência de CNPJ para receber no Brasil antes de qualquer código desta fase**
+- [x] Conta Stripe — confirmado pelo dono do produto: já recebe pagamentos no Brasil sem CNPJ (validado no projeto irmão EAI Jurídico)
+- [ ] Criar produto/preço recorrente (R$29/mês) no Stripe Dashboard em modo test e copiar o `price_id` para `STRIPE_PRICE_ID_PRO`
+- [ ] Configurar o endpoint de webhook no Stripe Dashboard apontando para `https://<url-do-flyspot-api>/webhooks/stripe` e copiar o `whsec_...` para `STRIPE_WEBHOOK_SECRET`
+- [ ] Adicionar secrets no GitHub Actions: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_PRO`
+- [ ] Adicionar secret `APP_URL` no GitHub Actions com a URL de produção do frontend (Vercel) — usada para montar os links de retorno do Checkout/Portal do Stripe; sem ele o redirecionamento cai em `http://localhost:5173` (fallback de dev, incorreto em produção)
+- [ ] **Verificar também `EMAIL_ACTION_SECRET` (pendente desde a Fase 5)** antes de rodar o deploy — sem ele configurado, o `services/api` agora normaliza o valor ausente como opcional de fato (ver `_local-adr-policy-003`), mas a rota de pausar monitor sem login fica desabilitada (401 sempre) até ser definido
+- [ ] Rodar `deploy.yml` para publicar a versão do `flyspot-api` com as rotas de billing
 
 ---
 
