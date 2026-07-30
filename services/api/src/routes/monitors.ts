@@ -122,7 +122,25 @@ export async function monitorsRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.status(400).send({ error: 'Payload inválido', details: parsed.error.flatten() });
     }
-    const updated = await updateMonitor(request.params.id, parsed.data);
+
+    // Editar para 'anytime' precisa remover de fato os campos de data —
+    // um merge-write normal só sobrescreve chaves presentes, nunca as
+    // apaga. Ver _local-edr-policy-003.
+    const patch: Record<string, unknown> = { ...parsed.data };
+    if (parsed.data.searchMode === 'anytime') {
+      for (const field of [
+        'departureDate',
+        'departDaysBefore',
+        'departDaysAfter',
+        'returnDate',
+        'returnDaysBefore',
+        'returnDaysAfter',
+      ]) {
+        patch[field] = FieldValue.delete();
+      }
+    }
+
+    const updated = await updateMonitor(request.params.id, patch);
     return updated;
   });
 

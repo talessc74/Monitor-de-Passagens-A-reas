@@ -1,14 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Users, DollarSign, RefreshCw, Trash2, Power, History, Sparkles } from 'lucide-react';
-import type { FlightMonitor } from '@mpa/types';
+import { Calendar, Users, DollarSign, RefreshCw, Trash2, Power, History, Sparkles, Pencil } from 'lucide-react';
+import type { AirlineSite, FlightMonitor } from '@mpa/types';
+import EditMonitorModal from './EditMonitorModal';
 
 interface MonitorCardProps {
   monitor: FlightMonitor;
+  airlineSites: AirlineSite[];
   onScan: (id: string) => Promise<any>;
   onDelete: (id: string) => void;
   onToggleStatus: (id: string, currentStatus: string) => void;
+  onEdit: (id: string, patch: Record<string, unknown>) => Promise<boolean>;
 }
 
 const SITE_NAMES: { [key: string]: string } = {
@@ -19,10 +22,11 @@ const SITE_NAMES: { [key: string]: string } = {
   skyscanner: 'Skyscanner',
 };
 
-export default function MonitorCard({ monitor, onScan, onDelete, onToggleStatus }: MonitorCardProps) {
+export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, onToggleStatus, onEdit }: MonitorCardProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanSteps, setScanSteps] = useState<string[]>([]);
   const [scanResultText, setScanResultText] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleScanClick = async () => {
     setIsScanning(true);
@@ -278,6 +282,14 @@ export default function MonitorCard({ monitor, onScan, onDelete, onToggleStatus 
 
         <div className="flex items-center gap-1.5">
           <button
+            onClick={() => setIsEditing(true)}
+            className="p-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 transition"
+            title="Editar alerta"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+
+          <button
             onClick={() => onToggleStatus(monitor.id, monitor.status)}
             className={`p-2 rounded-lg border text-xs transition ${
               monitor.status === 'active'
@@ -307,6 +319,15 @@ export default function MonitorCard({ monitor, onScan, onDelete, onToggleStatus 
           </button>
         </div>
       </div>
+
+      {isEditing && (
+        <EditMonitorModal
+          monitor={monitor}
+          airlineSites={airlineSites}
+          onClose={() => setIsEditing(false)}
+          onSave={onEdit}
+        />
+      )}
     </div>
   );
 }

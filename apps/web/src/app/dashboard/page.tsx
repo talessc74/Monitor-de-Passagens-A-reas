@@ -123,6 +123,24 @@ export default function DashboardPage() {
     }
   };
 
+  const handleEditMonitor = async (id: string, patch: Record<string, unknown>): Promise<boolean> => {
+    try {
+      const response = await apiFetch(`/api/monitors/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(patch),
+      });
+      if (response.ok) {
+        const updated = await response.json();
+        setMonitors((prev) => prev.map((m) => (m.id === id ? updated : m)));
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Erro ao editar monitor:', err);
+      return false;
+    }
+  };
+
   const handleToggleMonitorStatus = async (id: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'active' ? 'paused' : 'active';
     try {
@@ -282,9 +300,11 @@ export default function DashboardPage() {
                         <MonitorCard
                           key={monitor.id}
                           monitor={monitor}
+                          airlineSites={sites}
                           onScan={handleScanMonitor}
                           onDelete={handleDeleteMonitor}
                           onToggleStatus={handleToggleMonitorStatus}
+                          onEdit={handleEditMonitor}
                         />
                       ))}
                     </div>
