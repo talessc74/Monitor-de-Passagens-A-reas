@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Plane, Copy, Check, ExternalLink } from 'lucide-react';
 import type { NotificationLog } from '@mpa/types';
+import { useEscapeToClose } from '../lib/useEscapeToClose';
 
 interface EmailModalProps {
   notification: NotificationLog | null;
@@ -11,6 +12,7 @@ interface EmailModalProps {
 
 export default function EmailModal({ notification, onClose }: EmailModalProps) {
   const [copied, setCopied] = useState(false);
+  useEscapeToClose(onClose);
 
   if (!notification) return null;
 
@@ -23,8 +25,19 @@ export default function EmailModal({ notification, onClose }: EmailModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" id="email-preview-modal">
-      <div className="w-full max-w-2xl bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden border border-zinc-800 text-white flex flex-col max-h-[90vh]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      id="email-preview-modal"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        className="w-full max-w-2xl bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden border border-zinc-800 text-white flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Pré-visualização do e-mail"
+      >
         <div className="bg-zinc-950 px-5 py-3.5 border-b border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded-full bg-red-500"></div>
@@ -32,7 +45,7 @@ export default function EmailModal({ notification, onClose }: EmailModalProps) {
             <div className="h-3 w-3 rounded-full bg-green-500"></div>
             <span className="text-xs font-mono text-zinc-500 ml-2">FlySpot_Email_Preview</span>
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white p-1 rounded-lg">
+          <button onClick={onClose} aria-label="Fechar" className="text-zinc-400 hover:text-white p-1 rounded-lg">
             <X className="h-4 w-4" />
           </button>
         </div>

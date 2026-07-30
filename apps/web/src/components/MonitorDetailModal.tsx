@@ -2,6 +2,7 @@
 
 import { X, TrendingDown, TrendingUp } from 'lucide-react';
 import type { FlightMonitor } from '@mpa/types';
+import { useEscapeToClose } from '../lib/useEscapeToClose';
 
 interface MonitorDetailModalProps {
   monitor: FlightMonitor;
@@ -22,6 +23,8 @@ const SITE_NAMES: { [key: string]: string } = {
  * site do último scan. Ver .xdrs/_local/bdrs/product/plans/001-...
  */
 export default function MonitorDetailModal({ monitor, onClose }: MonitorDetailModalProps) {
+  useEscapeToClose(onClose);
+
   const points = [...monitor.history];
   if (monitor.currentPrice) {
     points.push({ date: new Date().toISOString(), price: monitor.currentPrice, site: 'atual' });
@@ -62,21 +65,28 @@ export default function MonitorDetailModal({ monitor, onClose }: MonitorDetailMo
     monitor.currentPrice !== null ? monitor.currentPrice - monitor.targetPrice : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+      onClick={onClose}
+      role="presentation"
+    >
       <div
         className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="monitor-detail-title"
       >
         <div className="mb-1 flex items-start justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               {monitor.origin} → {monitor.destination} · {monitor.trackedSites.map((s) => SITE_NAMES[s] || s).join(', ')}
             </p>
-            <h2 className="text-base font-extrabold text-slate-800">
+            <h2 id="monitor-detail-title" className="text-base font-extrabold text-slate-800">
               {priceVsTarget !== null && priceVsTarget <= 0 ? 'Meta batida — hora de comprar' : 'Histórico de preço'}
             </h2>
           </div>
-          <button onClick={onClose} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+          <button onClick={onClose} aria-label="Fechar" className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
             <X className="h-4 w-4" />
           </button>
         </div>

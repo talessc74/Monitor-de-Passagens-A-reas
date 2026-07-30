@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Calendar, CalendarX, Users, DollarSign, Mail } from 'lucide-react';
 import type { AirlineSite, FlightMonitor } from '@mpa/types';
+import { useEscapeToClose } from '../lib/useEscapeToClose';
 
 interface EditMonitorModalProps {
   monitor: FlightMonitor;
@@ -18,6 +19,8 @@ const DAY_OPTIONS = [0, 1, 2, 3, 4, 5, 7, 10, 15];
  * (ativo ou pausado). Ver _local-bdr-policy-004.
  */
 export default function EditMonitorModal({ monitor, airlineSites, onClose, onSave }: EditMonitorModalProps) {
+  useEscapeToClose(onClose);
+
   const [searchMode, setSearchMode] = useState<'dated' | 'anytime'>(monitor.searchMode ?? 'dated');
   const [origin, setOrigin] = useState(monitor.origin);
   const [destination, setDestination] = useState(monitor.destination);
@@ -79,16 +82,23 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+      onClick={onClose}
+      role="presentation"
+    >
       <div
         className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-monitor-title"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
+          <h2 id="edit-monitor-title" className="text-sm font-bold uppercase tracking-wider text-slate-800">
             Editar alerta {monitor.origin} → {monitor.destination}
           </h2>
-          <button onClick={onClose} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+          <button onClick={onClose} aria-label="Fechar" className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
             <X className="h-4 w-4" />
           </button>
         </div>

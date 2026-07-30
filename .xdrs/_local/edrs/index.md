@@ -2,6 +2,12 @@
 
 Engineering workflow and implementation decisions for FlySpot.
 
+## principles
+
+Engineering principles and non-functional quality defaults.
+
+- [001-mobile-and-accessibility-baseline](principles/001-mobile-and-accessibility-baseline.md) — Modal dialog semantics, icon-button aria-labels, label/input pairing, and 375px overflow rules mandatory across apps/web
+
 ## application
 
 Code-level implementation patterns and application conventions.

@@ -269,7 +269,7 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
         </div>
       )}
 
-      <div className="mt-4 flex items-center justify-between border-t border-slate-150 pt-3">
+      <div className="mt-4 flex flex-col gap-3 border-t border-slate-150 pt-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-[10px] text-slate-400 font-medium">
           Última Verificação:{' '}
           <span className="font-bold text-slate-500">
@@ -282,11 +282,12 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => setIsViewingDetail(true)}
             className="p-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 transition"
             title="Ver histórico"
+            aria-label="Ver histórico do monitor"
           >
             <History className="h-4 w-4" />
           </button>
@@ -295,6 +296,7 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
             onClick={() => setIsEditing(true)}
             className="p-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 transition"
             title="Editar alerta"
+            aria-label="Editar alerta"
           >
             <Pencil className="h-4 w-4" />
           </button>
@@ -307,6 +309,7 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
                 : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100'
             }`}
             title={monitor.status === 'active' ? 'Pausar Monitoramento' : 'Ativar de volta'}
+            aria-label={monitor.status === 'active' ? 'Pausar monitoramento' : 'Ativar monitoramento de volta'}
           >
             <Power className="h-4 w-4" />
           </button>
@@ -321,9 +324,14 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
           </button>
 
           <button
-            onClick={() => onDelete(monitor.id)}
+            onClick={() => {
+              if (window.confirm(`Excluir o alerta ${monitor.origin} → ${monitor.destination}? O histórico de preços será perdido.`)) {
+                onDelete(monitor.id);
+              }
+            }}
             className="p-2 rounded-lg border border-red-150 bg-red-50 text-red-600 hover:bg-red-100 transition"
             title="Excluir Alerta"
+            aria-label="Excluir alerta"
           >
             <Trash2 className="h-4 w-4" />
           </button>
