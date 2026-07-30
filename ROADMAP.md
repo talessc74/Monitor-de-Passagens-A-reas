@@ -130,7 +130,7 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 
 ## Fase 2 (escopo: Fase 2) — Next.js 14 + Firebase Auth
 
-**Status: em revisão — PR aberto.**
+**Status: ✅ CONCLUÍDA — código, deploy e configuração do Firebase Auth confirmados em produção.**
 
 **O que será construído:** Frontend definitivo em Next.js 14 com login/cadastro. Cada usuário vê só os próprios monitores.
 
@@ -142,7 +142,7 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 4. [x] Todas as queries de `monitors`/`notifications` filtram por `userId`; removido `CURRENT_USER_EMAIL` hardcoded
 5. [x] Documento `users/{uid}` criado no primeiro login (e-mail, nome, `plan: 'free'`, `createdAt`)
 6. [x] Tela de perfil com "Deletar minha conta" (apaga user + monitores + notificações — obrigatório LGPD)
-7. [x] Deploy do `apps/web` em **Cloud Run** (não Vercel — decisão corrigida, ver `_local-adr-policy-001`); `api` vira API pura (remove o serving de estáticos de `web-dist/`) — feito: Web App registrado no Firebase Console, `flyspot-web` no ar em `https://flyspot-web-1039076887535.southamerica-east1.run.app` (2026-07-30). **Pendente de confirmação:** ativação dos provedores Email/Password e Google no Firebase Authentication, e adição do domínio do `flyspot-web` aos domínios autorizados — pedido ao Cowork, resposta ainda não confirmada
+7. [x] Deploy do `apps/web` em **Cloud Run** (não Vercel — decisão corrigida, ver `_local-adr-policy-001`); `api` vira API pura (remove o serving de estáticos de `web-dist/`) — feito e confirmado: Web App registrado no Firebase Console, `flyspot-web` no ar em `https://flyspot-web-1039076887535.southamerica-east1.run.app` (2026-07-30); provedores Email/Password e Google ativos no Firebase Authentication; domínio do `flyspot-web` presente nos domínios autorizados
 
 **Gate de UX (desenhar e aprovar antes de implementar):** login/cadastro, recuperação de senha, perfil.
 
