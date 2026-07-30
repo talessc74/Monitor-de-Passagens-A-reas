@@ -15,6 +15,7 @@ import { getRouteStats } from '../routeStats.js';
 import { authenticate } from '../auth.js';
 import { authenticateInternal } from '../internalAuth.js';
 import { executeScanForMonitor } from '../executeScan.js';
+import { verifyPauseToken } from '../pauseLink.js';
 import { passengerDateSchema, passengerDateUnion } from '../schemas/passengerDate.js';
 
 const createMonitorSchema = passengerDateUnion({
@@ -165,6 +166,25 @@ export async function monitorsRoutes(app: FastifyInstance) {
     await deleteMonitor(request.params.id);
     return { success: true };
   });
+
+  // Link "pausar monitor" clicado a partir de um e-mail — sem login,
+  // autorizado por um token assinado (não Firebase auth). Ver
+  // _local-edr-policy-004.
+  app.get<{ Params: { id: string }; Querystring: { token?: string } }>(
+    '/api/monitors/:id/pause',
+    async (request, reply) => {
+      const token = request.query.token;
+      if (!token || !verifyPauseToken(request.params.id, token)) {
+        return reply.status(401).send({ error: 'Link inválido ou expirado' });
+      }
+      const existing = await getMonitor(request.params.id);
+      if (!existing) {
+        return reply.status(404).send({ error: 'Monitor não encontrado' });
+      }
+      await updateMonitor(request.params.id, { status: 'paused' });
+      return { success: true, message: 'Monitor pausado com sucesso.' };
+    }
+  );
 
   app.post<{ Params: { id: string } }>('/api/monitors/:id/scan', { preHandler: authenticate }, async (request, reply) => {
     const monitor = await getMonitor(request.params.id);

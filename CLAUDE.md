@@ -151,7 +151,7 @@ Vigilância Permanente, `.seeds/ARGUS.md` §I).
 | Deploy backend | Cloud Run (contêiner Docker — não Firebase Cloud Functions) |
 | Deploy frontend | Vercel |
 
-## Estrutura do monorepo (Fase 4 — em vigor)
+## Estrutura do monorepo (Fase 5 — em vigor)
 
 ```
 ├── apps/
@@ -175,16 +175,26 @@ Vigilância Permanente, `.seeds/ARGUS.md` §I).
     │   │   ├── routes/           # rotas Fastify com validação Zod (inclui /internal/scan/:id)
     │   │   └── seed.ts           # popula mpa_sites (LATAM, GOL, Azul, Decolar, Skyscanner)
     │   └── Dockerfile            # build multi-stage para Cloud Run
-    └── generator/          # @mpa/generator — Fastify mínimo + loop de polling do scheduler (Fase 4)
+    ├── generator/          # @mpa/generator — Fastify mínimo + loop de polling do scheduler (Fase 4)
+    │   ├── src/
+    │   │   ├── index.ts          # bootstrap Fastify (só /health) + inicia/encerra o scheduler
+    │   │   ├── env.ts            # POLL_INTERVAL_MS, MAX_CONCURRENT_SCANS, intervalo por plano, etc.
+    │   │   ├── firestore.ts      # mesmo projeto/coleções do api (leitura de mpa_monitors/mpa_users)
+    │   │   └── scheduler.ts      # tick: query de vencidos, lease por transação, chama /internal/scan/:id
+    │   └── Dockerfile
+    └── publisher/          # @mpa/publisher — Fastify mínimo + consumidor do outbox de e-mail (Fase 5)
         ├── src/
-        │   ├── index.ts          # bootstrap Fastify (só /health) + inicia/encerra o scheduler
-        │   ├── env.ts            # POLL_INTERVAL_MS, MAX_CONCURRENT_SCANS, intervalo por plano, etc.
-        │   ├── firestore.ts      # mesmo projeto/coleções do api (leitura de mpa_monitors/mpa_users)
-        │   └── scheduler.ts      # tick: query de vencidos, lease por transação, chama /internal/scan/:id
+        │   ├── index.ts          # bootstrap Fastify (só /health) + inicia/encerra o consumidor
+        │   ├── env.ts            # RESEND_API_KEY, EMAIL_ACTION_SECRET, POLL_INTERVAL_MS, etc.
+        │   ├── firestore.ts      # mesmo projeto/coleções do api (leitura de mpa_outbox/mpa_notifications/mpa_monitors)
+        │   ├── outboxConsumer.ts # onSnapshot + poll de segurança, lease 'sending', retry com backoff até 'failed'
+        │   ├── resendClient.ts   # cliente fino via fetch para a API REST do Resend (no-op sem RESEND_API_KEY)
+        │   ├── pauseLink.ts      # mint-only do token HMAC de "pausar monitor" (verificado pelo api)
+        │   └── templates.ts      # e-mails HTML: meta atingida / preço variou
         └── Dockerfile
 ```
 
-Gerenciado via **npm workspaces** (`services/*`, `packages/*`, `apps/*`) — sem ferramenta extra de monorepo. `services/publisher` nasce na Fase 5.
+Gerenciado via **npm workspaces** (`services/*`, `packages/*`, `apps/*`) — sem ferramenta extra de monorepo.
 
 **Autenticação de serviço-a-serviço:** `generator` não tem usuário Firebase logado para autenticar como (quem dispara o scan é o scheduler, não um clique). Por isso ele chama `POST /internal/scan/:id` no `api`, autenticado por um segredo compartilhado (`INTERNAL_SCAN_TOKEN`, mesmo valor nos dois serviços) em vez de ID Token — ver `_local-adr-policy-002` no XDRS.
 

@@ -89,6 +89,29 @@ export interface ScanResponse {
   triggeredNotification: NotificationLog | null;
 }
 
+/**
+ * Evento de e-mail a enviar — ponteiro fino para um NotificationLog já
+ * criado, consumido por services/publisher. Ver _local-adr-policy-002
+ * (application). O id do documento É a chave de dedup/throttle
+ * (monitorId:type:janela), garantindo idempotência via Firestore
+ * .create() em vez de leitura-depois-escrita.
+ */
+export interface OutboxEvent {
+  id: string;
+  type: 'target_reached' | 'price_update';
+  monitorId: string;
+  userId: string | null;
+  notificationId: string;
+  /** 'sending' é um lease curto — evita o listener e o poll de segurança processarem o mesmo evento em paralelo. */
+  status: 'pending' | 'sending' | 'sent' | 'failed';
+  attempts: number;
+  createdAt: string;
+  sentAt?: string;
+  lastError?: string;
+  /** Quando o lease 'sending' foi tomado — permite reclamar leases travados (processo caiu no meio do envio). */
+  sendingSince?: string;
+}
+
 export interface RouteStats {
   average: number;
   min: number;

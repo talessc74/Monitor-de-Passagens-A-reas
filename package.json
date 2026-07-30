@@ -13,11 +13,12 @@
     "dev:web:next": "npm run dev --workspace=@mpa/web",
     "dev:api": "npm run dev --workspace=@mpa/api",
     "dev:generator": "npm run dev --workspace=@mpa/generator",
-    "dev": "concurrently -n web,api,generator -c blue,green,yellow \"npm run dev:web:next\" \"npm run dev:api\" \"npm run dev:generator\"",
+    "dev:publisher": "npm run dev --workspace=@mpa/publisher",
+    "dev": "concurrently -n web,api,generator,publisher -c blue,green,yellow,magenta \"npm run dev:web:next\" \"npm run dev:api\" \"npm run dev:generator\" \"npm run dev:publisher\"",
     "build": "vite build",
     "preview": "vite preview",
     "seed": "npm run seed --workspace=@mpa/api",
-    "lint": "tsc --noEmit && npm run lint --workspace=@mpa/api && npm run lint --workspace=@mpa/generator && npm run lint --workspace=@mpa/web"
+    "lint": "tsc --noEmit && npm run lint --workspace=@mpa/api && npm run lint --workspace=@mpa/generator && npm run lint --workspace=@mpa/publisher && npm run lint --workspace=@mpa/web"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",

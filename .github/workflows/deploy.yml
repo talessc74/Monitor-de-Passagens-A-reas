@@ -8,10 +8,11 @@ env:
   AR_REPOSITORY: flyspot
   IMAGE_API: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-api
   IMAGE_GENERATOR: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-generator
+  IMAGE_PUBLISHER: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-publisher
 
 jobs:
   deploy:
-    name: Build & Deploy flyspot-api + flyspot-generator
+    name: Build & Deploy flyspot-api + flyspot-generator + flyspot-publisher
     runs-on: ubuntu-latest
 
     steps:
@@ -65,6 +66,7 @@ jobs:
             NODE_ENV=production
             FIREBASE_PROJECT_ID=lista-ai-f2916
             INTERNAL_SCAN_TOKEN=${{ secrets.INTERNAL_SCAN_TOKEN }}
+            EMAIL_ACTION_SECRET=${{ secrets.EMAIL_ACTION_SECRET }}
 
       # ── flyspot-generator (Fase 4 — scheduler) ──────────────────────────
       - name: Build da imagem Docker — generator
@@ -94,6 +96,35 @@ jobs:
             FIREBASE_PROJECT_ID=lista-ai-f2916
             API_INTERNAL_URL=${{ steps.deploy-api.outputs.url }}
             INTERNAL_SCAN_TOKEN=${{ secrets.INTERNAL_SCAN_TOKEN }}
+
+      # ── flyspot-publisher (Fase 5 — e-mail via Resend) ──────────────────
+      - name: Build da imagem Docker — publisher
+        run: |
+          docker build \
+            -f services/publisher/Dockerfile \
+            -t ${{ env.IMAGE_PUBLISHER }}:${{ github.sha }} \
+            -t ${{ env.IMAGE_PUBLISHER }}:latest \
+            .
+
+      - name: Push para o Artifact Registry — publisher
+        run: docker push --all-tags ${{ env.IMAGE_PUBLISHER }}
+
+      - name: Deploy para Cloud Run — publisher
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: flyspot-publisher
+          image: ${{ env.IMAGE_PUBLISHER }}:latest
+          region: southamerica-east1
+          project_id: lista-ai-f2916
+          # min-instances=1 é obrigatório: o consumidor do outbox
+          # (onSnapshot + poll) só existe enquanto o processo está de pé.
+          flags: --allow-unauthenticated --min-instances=1
+          env_vars: |
+            NODE_ENV=production
+            FIREBASE_PROJECT_ID=lista-ai-f2916
+            API_PUBLIC_URL=${{ steps.deploy-api.outputs.url }}
+            EMAIL_ACTION_SECRET=${{ secrets.EMAIL_ACTION_SECRET }}
+            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
 
       - name: URLs dos serviços
         run: |
