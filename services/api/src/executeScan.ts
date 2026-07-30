@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { FlightMonitor, NotificationLog, ScanResponse } from '@mpa/types';
 import { updateMonitor } from './repositories/monitorsRepository.js';
 import { createNotification } from './repositories/notificationsRepository.js';
+import { createOutboxEvent } from './repositories/outboxRepository.js';
 import { db, COLLECTIONS } from './firestore.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import { runScanSimulation } from './scanSimulator.js';
@@ -110,6 +111,15 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
 
     if (triggeredNotification) {
       await createNotification(triggeredNotification);
+      // Ponteiro fino para o publisher enviar o e-mail de verdade — não
+      // substitui a notificação já registrada acima. Ver
+      // _local-adr-policy-002 (application).
+      await createOutboxEvent({
+        type: triggeredNotification.type as 'target_reached' | 'price_update',
+        monitorId: monitor.id,
+        userId: monitor.userId,
+        notificationId: triggeredNotification.id,
+      });
     }
   }
 

@@ -3,16 +3,13 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { env } from './env.js';
 
 /**
- * Projeto Firebase compartilhado com o produto Lista Aí (lista-ai-f2916).
- * Toda coleção deste produto usa o prefixo mpa_ para nunca colidir com
- * dados do outro produto. Ver CLAUDE.md.
+ * Mesmo projeto Firebase compartilhado (lista-ai-f2916) e mesmas
+ * coleções com prefixo mpa_ que services/api. Ver CLAUDE.md.
  */
 export const COLLECTIONS = {
-  monitors: 'mpa_monitors',
-  notifications: 'mpa_notifications',
-  sites: 'mpa_sites',
-  users: 'mpa_users',
   outbox: 'mpa_outbox',
+  notifications: 'mpa_notifications',
+  monitors: 'mpa_monitors',
 } as const;
 
 function initFirebase() {
@@ -20,9 +17,6 @@ function initFirebase() {
     return;
   }
 
-  // Cloud Run injeta credenciais do serviço automaticamente (ADC).
-  // Em desenvolvimento local, usa GOOGLE_APPLICATION_CREDENTIALS apontando
-  // para um arquivo de service account, ou `gcloud auth application-default login`.
   const credential = process.env.GOOGLE_APPLICATION_CREDENTIALS
     ? cert(process.env.GOOGLE_APPLICATION_CREDENTIALS)
     : applicationDefault();

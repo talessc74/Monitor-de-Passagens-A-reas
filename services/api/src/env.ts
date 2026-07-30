@@ -12,6 +12,12 @@ const envSchema = z.object({
   // Firebase, já que quem chama é o loop de polling, não um usuário
   // logado). Ver _local-adr-policy-002.
   INTERNAL_SCAN_TOKEN: z.string().min(16).optional(),
+  // Segredo compartilhado com services/publisher para assinar/verificar
+  // o link de "pausar monitor" sem login, embutido no e-mail. Distinto
+  // do INTERNAL_SCAN_TOKEN — protegem coisas diferentes. Ver
+  // _local-edr-policy-004.
+  EMAIL_ACTION_SECRET: z.string().min(16).optional(),
+  PAUSE_LINK_TTL_DAYS: z.coerce.number().positive().default(30),
 });
 
 export type Env = z.infer<typeof envSchema>;

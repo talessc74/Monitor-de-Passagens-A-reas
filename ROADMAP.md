@@ -232,11 +232,11 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 **Tarefas:**
 
-1. Criar `services/publisher` + coleção `outbox`
-2. Integrar Resend; domínio verificado (SPF/DKIM) — **sem domínio próprio o e-mail cai em spam, bloqueador real**
-3. Templates React Email: "Meta atingida" e "Preço variou" — trecho, preço vs. meta, datas, botão "Comprar agora" (deep-link já existe em `generatePurchaseLink`), link de pausar monitor (obrigatório: LGPD/opt-out)
-4. Throttle por usuário (máx. 1 e-mail por monitor por hora, exceto meta atingida)
-5. Registrar cada envio na coleção `notifications` (o feed da UI continua funcionando)
+1. [x] Criar `services/publisher` + coleção `outbox`
+2. [x] Integrar Resend (cliente REST via fetch, no-op sem `RESEND_API_KEY`) — falta apenas a parte de infra: domínio verificado (SPF/DKIM), ver "Ações fora do código" abaixo. **Sem domínio próprio o e-mail cai em spam, bloqueador real**
+3. [x] Templates HTML: "Meta atingida" e "Preço variou" — preço vs. meta, botão "Comprar agora" (deep-link já existe em `purchaseUrl`), link de pausar monitor (LGPD/opt-out)
+4. [x] Throttle por monitor (máx. 1 e-mail por monitor por hora, exceto meta atingida) — via chave de dedup determinística + `.create()` no outbox
+5. [x] Registrar cada envio na coleção `notifications` (o feed da UI continua funcionando — outbox é um ponteiro fino para o `NotificationLog` já existente, não o substitui)
 
 **Fase 5b (não urgente):** Telegram via bot — o padrão outbox já deixa pronto (só um novo consumer).
 
@@ -246,8 +246,10 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 - Link "pausar monitor" funciona sem login (token assinado na URL)
 
 **Ações fora do código:**
-- [ ] Conta Resend
-- [x] Domínio registrado: **`flyspot.com.br`** — falta configurar DNS (SPF/DKIM) para o Resend quando chegar a hora desta fase
+- [ ] Conta Resend + API key
+- [x] Domínio registrado: **`flyspot.com.br`** — falta configurar DNS (SPF/DKIM) para o Resend
+- [ ] Secrets no GitHub Actions: `RESEND_API_KEY`, `EMAIL_ACTION_SECRET` (gerar com `openssl rand -hex 32`, distinto do `INTERNAL_SCAN_TOKEN`)
+- [ ] Rodar `deploy.yml` para publicar `flyspot-publisher` no Cloud Run
 
 **Decisões do produto:** domínio e nome do remetente
 

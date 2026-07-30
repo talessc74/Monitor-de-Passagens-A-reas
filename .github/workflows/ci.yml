@@ -31,3 +31,6 @@ jobs:
 
       - name: Build generator service
         run: npm run build --workspace=@mpa/generator
+
+      - name: Build publisher service
+        run: npm run build --workspace=@mpa/publisher

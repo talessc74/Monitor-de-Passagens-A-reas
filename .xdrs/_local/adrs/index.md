@@ -27,3 +27,4 @@ Architecture controls for risk, security, and compliance at a high level.
 System and service design decisions at application level.
 
 - [001-pricing-source-abstraction](application/001-pricing-source-abstraction.md) — Scan logic isolated behind `scanSimulator.ts`, swappable for real Duffel/Amadeus adapters without touching the rest of the system
+- [002-outbox-email-delivery](application/002-outbox-email-delivery.md) — `mpa_outbox` + `services/publisher` for real e-mail (Fase 5); outbox is a thin pointer to the already-created `NotificationLog`, not a replacement for it
