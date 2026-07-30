@@ -69,3 +69,4 @@ The onboarding offers two modes, chosen first:
 - `ROADMAP.md`, Fase 3, item 1 and item 7
 - `_local-adr-policy-001` — data model this decision requires
 - `_local-edr-policy-001` — endpoint that serves the price-history card
+- [plans/001-fase-3-completion-and-next-phases](plans/001-fase-3-completion-and-next-phases.md) — tracks which of the six approved screens are still unbuilt (04, 05)
