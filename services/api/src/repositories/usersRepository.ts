@@ -24,6 +24,21 @@ export async function ensureUser(uid: string, email: string | null, displayName:
   return profile;
 }
 
+export async function updateUser(uid: string, patch: Partial<UserProfile>): Promise<void> {
+  await collection().doc(uid).set(patch, { merge: true });
+}
+
+/**
+ * Eventos de assinatura do Stripe (`customer.subscription.*`) trazem o
+ * `customer` id, não o uid do Firebase — precisamos do caminho inverso
+ * a partir do `stripeCustomerId` já gravado em `checkout.session.completed`.
+ * Ver _local-adr-policy-003.
+ */
+export async function getUserByStripeCustomerId(stripeCustomerId: string): Promise<UserProfile | null> {
+  const snapshot = await collection().where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
+  return snapshot.empty ? null : (snapshot.docs[0].data() as UserProfile);
+}
+
 export async function deleteUser(uid: string): Promise<void> {
   await collection().doc(uid).delete();
 }

@@ -67,6 +67,10 @@ jobs:
             FIREBASE_PROJECT_ID=lista-ai-f2916
             INTERNAL_SCAN_TOKEN=${{ secrets.INTERNAL_SCAN_TOKEN }}
             EMAIL_ACTION_SECRET=${{ secrets.EMAIL_ACTION_SECRET }}
+            APP_URL=${{ vars.APP_URL }}
+            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+            STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+            STRIPE_PRICE_ID_PRO=${{ secrets.STRIPE_PRICE_ID_PRO }}
 
       # ── flyspot-generator (Fase 4 — scheduler) ──────────────────────────
       - name: Build da imagem Docker — generator

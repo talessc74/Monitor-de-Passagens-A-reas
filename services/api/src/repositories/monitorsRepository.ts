@@ -62,3 +62,26 @@ export async function deleteAllMonitorsForUser(userId: string): Promise<void> {
   snapshot.docs.forEach((doc) => batch.delete(doc.ref));
   await batch.commit();
 }
+
+/**
+ * Downgrade de plano: pausa (nunca apaga) os monitores que excedem o
+ * novo limite, mantendo ativos os mais antigos por `createdAt`. Função
+ * pura e testável, separada do handler do webhook. Ver
+ * _local-adr-policy-003.
+ */
+export function pauseExcessMonitors(monitors: FlightMonitor[], newLimit: number): FlightMonitor[] {
+  const sorted = [...monitors].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  return sorted.slice(newLimit).filter((m) => m.status === 'active');
+}
+
+export async function pauseExcessMonitorsForUser(userId: string, newLimit: number): Promise<void> {
+  const monitors = await listMonitorsForUser(userId);
+  const toPause = pauseExcessMonitors(monitors, newLimit);
+  if (toPause.length === 0) return;
+
+  const batch = db.batch();
+  toPause.forEach((monitor) => {
+    batch.set(collection().doc(monitor.id), { status: 'paused' }, { merge: true });
+  });
+  await batch.commit();
+}

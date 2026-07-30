@@ -13,6 +13,9 @@ const envSchema = z.object({
   LEASE_DURATION_MS: z.coerce.number().int().positive().default(120_000),
   FREE_SCAN_INTERVAL_HOURS: z.coerce.number().positive().default(6),
   PRO_SCAN_INTERVAL_HOURS: z.coerce.number().positive().default(1),
+  // Expurgo de histórico por plano (Fase 6) — roda uma vez por dia por
+  // padrão. Ver _local-adr-policy-003.
+  PURGE_INTERVAL_MS: z.coerce.number().int().positive().default(24 * 60 * 60 * 1000),
 });
 
 export type Env = z.infer<typeof envSchema>;

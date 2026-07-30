@@ -18,6 +18,12 @@ const envSchema = z.object({
   // _local-edr-policy-004.
   EMAIL_ACTION_SECRET: z.string().min(16).optional(),
   PAUSE_LINK_TTL_DAYS: z.coerce.number().positive().default(30),
+  // Stripe (Fase 6) — opcionais: sem eles, as rotas de billing e o
+  // webhook ficam desabilitadas (503) em vez de derrubar o boot. Ver
+  // _local-adr-policy-003.
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_PRICE_ID_PRO: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

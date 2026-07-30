@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const [selectedEmail, setSelectedEmail] = useState<NotificationLog | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const [upgradeMessage, setUpgradeMessage] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -69,6 +70,7 @@ export default function DashboardPage() {
 
   const handleAddMonitor = async (payload: any): Promise<boolean> => {
     setErrorMessage('');
+    setUpgradeMessage('');
     try {
       const response = await apiFetch('/api/monitors', {
         method: 'POST',
@@ -76,7 +78,12 @@ export default function DashboardPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Falha ao cadastrar seu alerta de passagens');
+        const body = await response.json().catch(() => null);
+        if (response.status === 403 && body?.upgradeRequired) {
+          setUpgradeMessage(body.error);
+          return false;
+        }
+        throw new Error(body?.error || 'Falha ao cadastrar seu alerta de passagens');
       }
 
       const newMon = await response.json();
@@ -216,6 +223,21 @@ export default function DashboardPage() {
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8">
         {errorMessage && <ErrorCard message={errorMessage} onRetry={fetchData} retrying={isLoading} />}
+
+        {upgradeMessage && (
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-blue-200 bg-blue-50 p-4">
+            <div className="flex items-start gap-3">
+              <Sparkles className="h-5 w-5 shrink-0 text-blue-600" />
+              <p className="text-sm font-semibold text-blue-900">{upgradeMessage}</p>
+            </div>
+            <a
+              href="/plans"
+              className="shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700"
+            >
+              Ver planos
+            </a>
+          </div>
+        )}
 
         <div className="mb-8 rounded-2xl bg-slate-900 text-white p-6 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-850">
           <div className="absolute top-0 right-0 transform translate-x-12 -translate-y-12 opacity-5 text-white pointer-events-none">

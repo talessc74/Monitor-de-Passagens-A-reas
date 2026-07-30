@@ -4,7 +4,8 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Sparkles } from 'lucide-react';
+import type { UserProfile } from '@mpa/types';
 import { useAuth } from '../../lib/auth-context';
 import { apiFetch } from '../../lib/api';
 
@@ -14,12 +15,33 @@ export default function ProfilePage() {
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       router.replace('/login');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    apiFetch('/api/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then(setProfile);
+  }, [user]);
+
+  async function handleManageSubscription() {
+    setIsRedirecting(true);
+    try {
+      const response = await apiFetch('/billing/portal', { method: 'POST' });
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      if (data.url) window.location.href = data.url;
+    } catch {
+      setIsRedirecting(false);
+    }
+  }
 
   async function handleDeleteAccount() {
     setDeleting(true);
@@ -52,6 +74,34 @@ export default function ProfilePage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-lg font-bold text-slate-800">Seu perfil</h1>
           <p className="mt-1 text-sm text-slate-500">{user.email}</p>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700">Plano</h2>
+              <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-slate-800">
+                {profile?.plan === 'pro' && <Sparkles className="h-3.5 w-3.5 text-blue-600" />}
+                {profile?.plan === 'pro' ? 'Pro' : 'Gratuito'}
+              </p>
+            </div>
+            {profile?.plan === 'pro' ? (
+              <button
+                onClick={handleManageSubscription}
+                disabled={isRedirecting}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition disabled:opacity-60"
+              >
+                {isRedirecting ? 'Redirecionando...' : 'Gerenciar assinatura'}
+              </button>
+            ) : (
+              <a
+                href="/plans"
+                className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition"
+              >
+                Fazer upgrade
+              </a>
+            )}
+          </div>
         </div>
 
         <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-6">
