@@ -108,8 +108,9 @@ conversation has a checklist instead of re-deriving it from memory:
   introduz custo real de API, por decisão já registrada (`_local-bdr-policy-002`)
 - [ ] Fase 8 — testes automatizados, hardening de segurança, LGPD (Política de Privacidade,
   Termos de Uso, consentimento) antes do lançamento público
-- [ ] Deploy do `apps/web` na Vercel (`ROADMAP.md` Fase 2, item 7, ainda pendente) e `api`
-  virar API pura (remover o serving de estáticos)
+- [ ] Deploy do `apps/web` em Cloud Run (`ROADMAP.md` Fase 2, item 7, ainda pendente — corrigido
+  de Vercel para Cloud Run, ver `_local-adr-policy-001`) e `api` virar API pura (remover o
+  serving de estáticos)
 
 ## Risks Identified
 
