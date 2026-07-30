@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { PlaneTakeoff, PlaneLanding, Users, Calendar, DollarSign, ListFilter, Mail, Plus, TrendingUp } from 'lucide-react';
+import { PlaneTakeoff, PlaneLanding, Users, Calendar, DollarSign, ListFilter, Mail, Plus, TrendingUp, CalendarX } from 'lucide-react';
 import type { AirlineSite, RouteStats } from '@mpa/types';
 import { apiFetch } from '../lib/api';
 
@@ -21,20 +21,18 @@ const POPULAR_AIRPORTS = [
   { code: 'CDG', city: 'Paris', name: 'Charles de Gaulle' },
 ];
 
-const FLEX_OPTIONS = [
-  { value: 0, label: 'Data exata' },
-  { value: 3, label: '± 3 dias' },
-  { value: 5, label: '± 5 dias' },
-  { value: 7, label: '± 7 dias' },
-];
+const DAY_OPTIONS = [0, 1, 2, 3, 4, 5, 7, 10, 15];
 
 export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }: MonitorFormProps) {
+  const [searchMode, setSearchMode] = useState<'dated' | 'anytime'>('dated');
   const [origin, setOrigin] = useState('GRU');
   const [destination, setDestination] = useState('LIS');
   const [departureDate, setDepartureDate] = useState('2026-10-12');
-  const [departFlexDays, setDepartFlexDays] = useState(3);
+  const [departDaysBefore, setDepartDaysBefore] = useState(2);
+  const [departDaysAfter, setDepartDaysAfter] = useState(3);
   const [returnDate, setReturnDate] = useState('2026-10-26');
-  const [returnFlexDays, setReturnFlexDays] = useState(3);
+  const [returnDaysBefore, setReturnDaysBefore] = useState(2);
+  const [returnDaysAfter, setReturnDaysAfter] = useState(3);
   const [adults, setAdults] = useState<number>(1);
   const [children, setChildren] = useState<number>(0);
   const [infants, setInfants] = useState<number>(0);
@@ -49,7 +47,11 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
   useEffect(() => {
     const o = origin.toUpperCase().trim();
     const d = destination.toUpperCase().trim();
-    if (o.length < 3 || d.length < 3 || !departureDate || !returnDate) {
+    if (o.length < 3 || d.length < 3) {
+      setRouteStats(null);
+      return;
+    }
+    if (searchMode === 'dated' && (!departureDate || !returnDate)) {
       setRouteStats(null);
       return;
     }
@@ -60,14 +62,19 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
         const params = new URLSearchParams({
           origin: o,
           destination: d,
-          departureDate,
-          departFlexDays: String(departFlexDays),
-          returnDate,
-          returnFlexDays: String(returnFlexDays),
+          searchMode,
           adults: String(adults),
           children: String(children),
           infants: String(infants),
         });
+        if (searchMode === 'dated') {
+          params.set('departureDate', departureDate);
+          params.set('departDaysBefore', String(departDaysBefore));
+          params.set('departDaysAfter', String(departDaysAfter));
+          params.set('returnDate', returnDate);
+          params.set('returnDaysBefore', String(returnDaysBefore));
+          params.set('returnDaysAfter', String(returnDaysAfter));
+        }
         const response = await apiFetch(`/api/route-stats?${params.toString()}`);
         if (response.ok) {
           setRouteStats(await response.json());
@@ -80,7 +87,20 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
     }, 500);
 
     return () => clearTimeout(timeout);
-  }, [origin, destination, departureDate, departFlexDays, returnDate, returnFlexDays, adults, children, infants]);
+  }, [
+    searchMode,
+    origin,
+    destination,
+    departureDate,
+    departDaysBefore,
+    departDaysAfter,
+    returnDate,
+    returnDaysBefore,
+    returnDaysAfter,
+    adults,
+    children,
+    infants,
+  ]);
 
   const resolveCityName = (code: string) => {
     const found = POPULAR_AIRPORTS.find((a) => a.code.toUpperCase() === code.toUpperCase());
@@ -101,15 +121,12 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
     e.preventDefault();
     setIsSubmitting(true);
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       origin: origin.toUpperCase().trim(),
       originCity: resolveCityName(origin),
       destination: destination.toUpperCase().trim(),
       destinationCity: resolveCityName(destination),
-      departureDate,
-      departFlexDays,
-      returnDate,
-      returnFlexDays,
+      searchMode,
       adults,
       children,
       infants,
@@ -117,6 +134,15 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
       trackedSites: selectedSites,
       email: email || currentUserEmail,
     };
+
+    if (searchMode === 'dated') {
+      payload.departureDate = departureDate;
+      payload.departDaysBefore = departDaysBefore;
+      payload.departDaysAfter = departDaysAfter;
+      payload.returnDate = returnDate;
+      payload.returnDaysBefore = returnDaysBefore;
+      payload.returnDaysAfter = returnDaysAfter;
+    }
 
     await onSubmit(payload);
     setIsSubmitting(false);
@@ -135,6 +161,29 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
       </div>
 
       <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1">
+          <button
+            type="button"
+            onClick={() => setSearchMode('dated')}
+            className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition ${
+              searchMode === 'dated' ? 'bg-white text-blue-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Calendar className="h-3.5 w-3.5" />
+            Tenho datas
+          </button>
+          <button
+            type="button"
+            onClick={() => setSearchMode('anytime')}
+            className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition ${
+              searchMode === 'anytime' ? 'bg-white text-blue-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <CalendarX className="h-3.5 w-3.5" />
+            Só me importa o preço
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
@@ -189,57 +238,94 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
           </div>
         </div>
 
-        <div className="space-y-3">
-          <div>
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-slate-400" />
-              Quando você pode ir?
-            </label>
-            <div className="grid grid-cols-[1.4fr_1fr] gap-2">
+        {searchMode === 'dated' ? (
+          <div className="space-y-3">
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                Quando você pode ir?
+              </label>
               <input
                 type="date"
                 value={departureDate}
                 onChange={(e) => setDepartureDate(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold transition"
+                className="mb-2 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold transition"
                 required
               />
-              <select
-                value={departFlexDays}
-                onChange={(e) => setDepartFlexDays(Number(e.target.value))}
-                className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
-              >
-                {FLEX_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-slate-400">Dias antes</label>
+                  <select
+                    value={departDaysBefore}
+                    onChange={(e) => setDepartDaysBefore(Number(e.target.value))}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
+                  >
+                    {DAY_OPTIONS.map((d) => (
+                      <option key={d} value={d}>{d === 0 ? 'nenhum' : `${d} dia(s)`}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-slate-400">Dias depois</label>
+                  <select
+                    value={departDaysAfter}
+                    onChange={(e) => setDepartDaysAfter(Number(e.target.value))}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
+                  >
+                    {DAY_OPTIONS.map((d) => (
+                      <option key={d} value={d}>{d === 0 ? 'nenhum' : `${d} dia(s)`}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-slate-400" />
-              Quando você volta?
-            </label>
-            <div className="grid grid-cols-[1.4fr_1fr] gap-2">
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                Quando você volta?
+              </label>
               <input
                 type="date"
                 value={returnDate}
                 onChange={(e) => setReturnDate(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold transition"
+                className="mb-2 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold transition"
                 required
               />
-              <select
-                value={returnFlexDays}
-                onChange={(e) => setReturnFlexDays(Number(e.target.value))}
-                className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
-              >
-                {FLEX_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-slate-400">Dias antes</label>
+                  <select
+                    value={returnDaysBefore}
+                    onChange={(e) => setReturnDaysBefore(Number(e.target.value))}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
+                  >
+                    {DAY_OPTIONS.map((d) => (
+                      <option key={d} value={d}>{d === 0 ? 'nenhum' : `${d} dia(s)`}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-slate-400">Dias depois</label>
+                  <select
+                    value={returnDaysAfter}
+                    onChange={(e) => setReturnDaysAfter(Number(e.target.value))}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
+                  >
+                    {DAY_OPTIONS.map((d) => (
+                      <option key={d} value={d}>{d === 0 ? 'nenhum' : `${d} dia(s)`}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-xs text-blue-900">
+            <CalendarX className="h-4 w-4 shrink-0 text-blue-500 mt-0.5" />
+            <p>Sem data marcada. Avisamos assim que <strong>qualquer</strong> data futura para essa rota bater a sua meta de preço.</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-2 rounded-xl bg-slate-50 p-3 border border-slate-200/60">
           <div>

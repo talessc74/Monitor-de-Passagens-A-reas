@@ -12,6 +12,6 @@ Business principles and decision criteria that guide all product areas.
 
 Product behavior, lifecycle, and offering decisions.
 
-- [001-onboarding-flexible-search-and-price-estimate](product/001-onboarding-flexible-search-and-price-estimate.md) — Onboarding collects flexible date windows and age-banded passengers, and shows a price estimate before the user sets a target
+- [001-onboarding-flexible-search-and-price-estimate](product/001-onboarding-flexible-search-and-price-estimate.md) — Onboarding offers a "dated" mode (asymmetric days-before/days-after per date) and an "anytime" mode (no dates at all), age-banded passengers, and a price estimate before the user sets a target
 - [002-build-order-defer-paid-apis](product/002-build-order-defer-paid-apis.md) — Build the whole product on the free Gemini simulator first; integrate paid Duffel/Amadeus APIs last
 - [003-auth-both-email-and-google](product/003-auth-both-email-and-google.md) — Login accepts both e-mail/senha and Google, not one or the other

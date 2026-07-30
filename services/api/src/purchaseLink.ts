@@ -2,8 +2,8 @@ export function generatePurchaseLink(
   siteId: string,
   origin: string,
   destination: string,
-  departureDate: string,
-  returnDate: string,
+  departureDate: string | undefined,
+  returnDate: string | undefined,
   adults: number,
   children: number
 ): string {

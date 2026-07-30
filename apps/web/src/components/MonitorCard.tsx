@@ -192,7 +192,18 @@ export default function MonitorCard({ monitor, onScan, onDelete, onToggleStatus 
           </h3>
           <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5 font-medium">
             <Calendar className="h-3.5 w-3.5" />
-            {new Date(monitor.departureDate).toLocaleDateString('pt-BR')} a {new Date(monitor.returnDate).toLocaleDateString('pt-BR')}
+            {monitor.searchMode === 'dated' && monitor.departureDate && monitor.returnDate ? (
+              <>
+                {new Date(monitor.departureDate).toLocaleDateString('pt-BR')} a {new Date(monitor.returnDate).toLocaleDateString('pt-BR')}
+                {(monitor.departDaysBefore || monitor.departDaysAfter || monitor.returnDaysBefore || monitor.returnDaysAfter) && (
+                  <span className="text-slate-400">
+                    {' '}(flexível: ida −{monitor.departDaysBefore ?? 0}/+{monitor.departDaysAfter ?? 0}, volta −{monitor.returnDaysBefore ?? 0}/+{monitor.returnDaysAfter ?? 0})
+                  </span>
+                )}
+              </>
+            ) : (
+              <span>Qualquer data · só o preço importa</span>
+            )}
           </p>
         </div>
 

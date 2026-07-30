@@ -16,9 +16,9 @@ import { runScanSimulation } from '../scanSimulator.js';
 import { getRouteStats } from '../routeStats.js';
 import { generatePurchaseLink } from '../purchaseLink.js';
 import { authenticate } from '../auth.js';
-import { passengerDateSchema } from '../schemas/passengerDate.js';
+import { passengerDateSchema, passengerDateUnion } from '../schemas/passengerDate.js';
 
-const createMonitorSchema = passengerDateSchema.extend({
+const createMonitorSchema = passengerDateUnion({
   originCity: z.string().optional(),
   destinationCity: z.string().optional(),
   targetPrice: z.coerce.number().positive(),
@@ -26,7 +26,28 @@ const createMonitorSchema = passengerDateSchema.extend({
   email: z.string().email(),
 });
 
-const updateMonitorSchema = createMonitorSchema.partial().extend({
+// Update é um PATCH parcial e permissivo — não reaplica o discriminated
+// union de criação (que exigiria repassar searchMode + todos os campos
+// do modo a cada PUT); mudar de modo depois de criado não é um caso de
+// uso hoje (pausar/retomar e ajustar preço/sites são os usos reais).
+const updateMonitorSchema = z.object({
+  origin: z.string().min(3).max(4).optional(),
+  originCity: z.string().optional(),
+  destination: z.string().min(3).max(4).optional(),
+  destinationCity: z.string().optional(),
+  searchMode: z.enum(['dated', 'anytime']).optional(),
+  departureDate: z.string().optional(),
+  departDaysBefore: z.coerce.number().int().min(0).max(15).optional(),
+  departDaysAfter: z.coerce.number().int().min(0).max(15).optional(),
+  returnDate: z.string().optional(),
+  returnDaysBefore: z.coerce.number().int().min(0).max(15).optional(),
+  returnDaysAfter: z.coerce.number().int().min(0).max(15).optional(),
+  adults: z.coerce.number().int().min(1).optional(),
+  children: z.coerce.number().int().min(0).optional(),
+  infants: z.coerce.number().int().min(0).optional(),
+  targetPrice: z.coerce.number().positive().optional(),
+  trackedSites: z.array(z.string()).optional(),
+  email: z.string().email().optional(),
   currentPrice: z.number().nullable().optional(),
   bestPriceTracked: z.number().nullable().optional(),
   notificationsEnabled: z.boolean().optional(),
@@ -61,10 +82,17 @@ export async function monitorsRoutes(app: FastifyInstance) {
       originCity: body.originCity || body.origin,
       destination: body.destination.toUpperCase().trim(),
       destinationCity: body.destinationCity || body.destination,
-      departureDate: body.departureDate,
-      departFlexDays: body.departFlexDays,
-      returnDate: body.returnDate,
-      returnFlexDays: body.returnFlexDays,
+      searchMode: body.searchMode,
+      ...(body.searchMode === 'dated'
+        ? {
+            departureDate: body.departureDate,
+            departDaysBefore: body.departDaysBefore,
+            departDaysAfter: body.departDaysAfter,
+            returnDate: body.returnDate,
+            returnDaysBefore: body.returnDaysBefore,
+            returnDaysAfter: body.returnDaysAfter,
+          }
+        : {}),
       adults: body.adults,
       children: body.children,
       infants: body.infants,
@@ -148,6 +176,11 @@ export async function monitorsRoutes(app: FastifyInstance) {
         history.shift();
       }
 
+      const travelDatesText =
+        monitor.searchMode === 'dated' && monitor.departureDate && monitor.returnDate
+          ? `${monitor.departureDate} a ${monitor.returnDate}`
+          : 'qualquer data (monitor sem data fixa)';
+
       let triggeredNotification: NotificationLog | null = null;
       const isUnderTarget = cheapestResult.price <= monitor.targetPrice;
       const priceChanged = prevPrice !== null && cheapestResult.price !== prevPrice;
@@ -161,7 +194,7 @@ export async function monitorsRoutes(app: FastifyInstance) {
             origin: monitor.origin,
             destination: monitor.destination,
             title: `Meta Atingida! ${monitor.originCity} ➔ ${monitor.destinationCity} por R$ ${cheapestResult.price}`,
-            message: `O site de passagens ${cheapestResult.site.toUpperCase()} atingiu um valor incrível de R$ ${cheapestResult.price} para as datas de sua viagem (${monitor.departureDate} a ${monitor.returnDate}). Este valor está abaixo da sua meta estipulada de R$ ${monitor.targetPrice}!`,
+            message: `O site de passagens ${cheapestResult.site.toUpperCase()} atingiu um valor incrível de R$ ${cheapestResult.price} para as datas de sua viagem (${travelDatesText}). Este valor está abaixo da sua meta estipulada de R$ ${monitor.targetPrice}!`,
             price: cheapestResult.price,
             targetPrice: monitor.targetPrice,
             sentTo: monitor.email,
@@ -187,7 +220,7 @@ export async function monitorsRoutes(app: FastifyInstance) {
             origin: monitor.origin,
             destination: monitor.destination,
             title: `${arrow} para ${monitor.destinationCity}`,
-            message: `Olá! O preço da sua passagem monitorada variou de R$ ${prevPrice} para R$ ${cheapestResult.price} no site ${cheapestResult.site.toUpperCase()}. Suas datas de viagem são ${monitor.departureDate} a ${monitor.returnDate}.`,
+            message: `Olá! O preço da sua passagem monitorada variou de R$ ${prevPrice} para R$ ${cheapestResult.price} no site ${cheapestResult.site.toUpperCase()}. Suas datas de viagem são ${travelDatesText}.`,
             price: cheapestResult.price,
             targetPrice: monitor.targetPrice,
             sentTo: monitor.email,

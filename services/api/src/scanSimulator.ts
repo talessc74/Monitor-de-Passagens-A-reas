@@ -15,8 +15,9 @@ interface ScanParams {
   origin: string;
   destinationCity: string;
   destination: string;
-  departureDate: string;
-  returnDate: string;
+  /** Ausentes quando o monitor é 'anytime' — sem data específica. */
+  departureDate?: string;
+  returnDate?: string;
   adults: number;
   children: number;
   targetPrice: number;
@@ -54,7 +55,11 @@ export async function runScanSimulation(params: ScanParams): Promise<ScanOutcome
     );
   }
 
-  const prompt = `Você é um robô de busca inteligente de passagens aéreas. O usuário quer viajar de ${params.originCity} (${params.origin}) para ${params.destinationCity} (${params.destination}) saindo em ${params.departureDate} e retornando em ${params.returnDate} com ${params.adults} adultos e ${params.children} crianças.
+  const dateClause = params.departureDate && params.returnDate
+    ? `saindo em ${params.departureDate} e retornando em ${params.returnDate}`
+    : 'sem data fixa — o usuário aceita qualquer data futura, quer apenas o menor preço da rota';
+
+  const prompt = `Você é um robô de busca inteligente de passagens aéreas. O usuário quer viajar de ${params.originCity} (${params.origin}) para ${params.destinationCity} (${params.destination}) ${dateClause}, com ${params.adults} adultos e ${params.children} crianças.
 Determine valores fictícios porém altamente realistas em Reais Brasileiros (BRL) para as seguintes companhias aéreas: [${params.sitesToScan.join(', ')}].
 Considere a data atual das buscas correspondente ao ano de 2026. Escreva uma análise breve sobre as flutuações sazonais, proximidade da data, se o preço está bom e os detalhes fictícios para cada voo (escalas, duração, etc).
 Sempre garanta que os preços gerados façam sentido para uma viagem dessa distância (ex: viagens internacionais custam mais que domésticas, classe econômica).`;
