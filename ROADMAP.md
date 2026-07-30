@@ -161,12 +161,16 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 
 Fluxo por item: **UX desenha → produto aprova → implementa → QA valida → ar.**
 
-1. **Onboarding** — guiar o primeiro monitor (o momento "aha" é receber o primeiro alerta)
+1. **Onboarding** — guiar o primeiro monitor (o momento "aha" é receber o primeiro alerta); passos: origem/destino → data de ida e volta **com flexibilidade** (± 3/5/7 dias, em vez de data fixa) → passageiros **discriminados** (adultos, crianças 2-11, bebês de colo) → meta de preço, já sugerida a partir do histórico da rota (item 7 abaixo)
 2. **Mobile-first** — auditar todas as telas em 375px; maioria dos usuários BR é mobile
 3. **Estado vazio** — dashboards sem monitor apontam para a criação
 4. **Erros amigáveis** — mapa de erros da API → mensagens em português com ação sugerida
 5. **Painel de histórico** — mínima histórica, média, tendência (dados já existem em `history[]`)
 6. **Acessibilidade** — contraste AA, navegação por teclado, labels/aria em formulários
+7. **Estimativa de preço no onboarding** — antes de o usuário definir a meta, mostrar média/mínima/máxima observada para aquela rota+datas+passageiros nos últimos 60 dias, com atalho "usar como meta". Requer:
+   - Novo endpoint `GET /api/route-stats?origin=&destination=&departDate=&returnDate=&flexDays=&adults=&children=&infants=` em `services/api`, reaproveitando o Gemini do `scanSimulator.ts` (mesmo modelo, prompt novo — sem custo adicional, roda sobre o simulador como o resto da fase)
+   - Muda o momento da consulta: hoje o Gemini só é chamado *depois* de o monitor existir (scan); esta consulta roda *antes*, no formulário de criação, sem persistir nada
+   - Modelo de dados (`packages/types`) precisa acompanhar os novos campos capturados no onboarding: `passengers` deixa de ser um número único e vira `{ adults, children, infants }`; datas fixas (`departDate`/`returnDate`) ganham `flexDays` opcional
 
 ---
 
