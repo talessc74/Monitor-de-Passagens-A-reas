@@ -48,6 +48,11 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
   };
 
   const handleSave = async () => {
+    if (searchMode === 'dated' && (!departureDate || !returnDate)) {
+      setError('Preencha as duas datas, ou mude para "Só me importa o preço".');
+      return;
+    }
+
     setIsSaving(true);
     setError('');
 

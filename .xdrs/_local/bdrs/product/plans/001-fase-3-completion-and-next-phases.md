@@ -66,9 +66,14 @@ Owner: Galera de UX
 Due date: 2026-08-31
 
 **Acceptance checklist:**
-- [ ] Mobile-first audit at 375px across every screen (onboarding, dashboard, detail, error)
-- [ ] Acessibilidade: contraste AA, navegação por teclado, labels/aria em formulários —
-  never audited since the Next.js migration
+- [x] Mobile-first audit at 375px across every screen (onboarding, dashboard, detail, error)
+  — done 2026-07-30, findings in `_local-edr-policy-001` (edrs/principles). Found and fixed:
+  `Header` and `MonitorCard`'s action row overflowing at 375px.
+- [x] Acessibilidade: contraste AA, navegação por teclado, labels/aria em formulários —
+  done 2026-07-30, same policy. Fixed: modal dialog semantics, icon-button aria-labels,
+  label/input pairing. **Not fully closed**: color contrast (`text-slate-400` used
+  pervasively, some instances likely below AA) and modal focus-trap are known, registered
+  gaps — see that policy's "Known gaps" section. Revisit before public launch (Fase 8).
 
 ### Milestone 3: Run the QA gate
 Owner: Galera de QA (Pareto, Probe, Scaffold)
@@ -78,10 +83,16 @@ Every PR since Fase 2 has merged straight to `main` without an actual QA convoca
 `CLAUDE.md`'s "Processo de desenvolvimento" requiring it before something goes live.
 
 **Acceptance checklist:**
-- [ ] Convene "Argus, chama a galera de QA" against the current `main` before calling Fase 3
-  live
-- [ ] Multi-tenant isolation re-verified against the new fields (`searchMode`, asymmetric
-  flex, edit flow) — not just the original Fase 2 auth test
+- [x] Convene "Argus, chama a galera de QA" against the current `main` before calling Fase 3
+  live — done 2026-07-30. Pareto clustered risk on the mode-switch logic; Probe traced an
+  undocumented scenario (edit `anytime` → `dated` → save without dates) and found a real
+  defect, fixed and archived as `_local-edr-policy-002`. Scaffold flagged that neither
+  `services/api` nor `apps/web` has any automated test suite yet — formally in Fase 8's
+  scope per `ROADMAP.md`, not blocking this gate, but a real coverage gap in the meantime.
+- [x] Multi-tenant isolation re-verified against the new fields (`searchMode`, asymmetric
+  flex, edit flow) — confirmed every monitor route (`GET`, `PUT`, `DELETE`, scan) still
+  checks `existing.userId !== request.userId` before acting; the new fields ride through the
+  same schema/lookup path, no new bypass introduced.
 
 ### Milestone 4: Fases 4-8 (unchanged scope, roadmap execution order)
 Owner: Product owner + Argus
