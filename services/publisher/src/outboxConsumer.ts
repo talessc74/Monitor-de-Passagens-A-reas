@@ -2,7 +2,7 @@ import type { OutboxEvent, NotificationLog, FlightMonitor } from '@mpa/types';
 import { db, COLLECTIONS } from './firestore.js';
 import { env } from './env.js';
 import { sendEmail } from './resendClient.js';
-import { targetReachedEmail, priceUpdateEmail } from './templates.js';
+import { targetReachedEmail, priceUpdateEmail, priceInRangeEmail } from './templates.js';
 
 /**
  * Consome mpa_outbox via onSnapshot (tempo real) + poll de segurança a
@@ -49,7 +49,11 @@ async function processEvent(event: OutboxEvent): Promise<void> {
     }
 
     const { subject, html } =
-      event.type === 'target_reached' ? targetReachedEmail(notification) : priceUpdateEmail(notification);
+      event.type === 'target_reached'
+        ? targetReachedEmail(notification)
+        : event.type === 'price_in_range'
+          ? priceInRangeEmail(notification)
+          : priceUpdateEmail(notification);
 
     await sendEmail({ to: monitor.email, subject, html });
 

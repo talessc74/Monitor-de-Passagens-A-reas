@@ -54,6 +54,8 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
 
   let triggeredNotification: NotificationLog | null = null;
   const isUnderTarget = cheapestResult.price <= monitor.targetPrice;
+  const marginCeiling = monitor.targetPrice * (1 + monitor.targetPriceMarginPercent / 100);
+  const isInMarginRange = !isUnderTarget && cheapestResult.price <= marginCeiling;
   const priceChanged = prevPrice !== null && cheapestResult.price !== prevPrice;
 
   if (monitor.notificationsEnabled) {
@@ -71,6 +73,30 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
         sentTo: monitor.email,
         sentAt: new Date().toISOString(),
         type: 'target_reached',
+        purchaseUrl: generatePurchaseLink(
+          cheapestResult.site,
+          monitor.origin,
+          monitor.destination,
+          monitor.departureDate,
+          monitor.returnDate,
+          monitor.adults,
+          monitor.children
+        ),
+      };
+    } else if (isInMarginRange) {
+      triggeredNotification = {
+        id: 'not-' + randomUUID().slice(0, 9),
+        userId: monitor.userId,
+        monitorId: monitor.id,
+        origin: monitor.origin,
+        destination: monitor.destination,
+        title: `Preço na faixa de aviso! ${monitor.originCity} ➔ ${monitor.destinationCity} por R$ ${cheapestResult.price}`,
+        message: `O site de passagens ${cheapestResult.site.toUpperCase()} está oferecendo R$ ${cheapestResult.price} para as datas de sua viagem (${travelDatesText}). Está acima da sua meta de R$ ${monitor.targetPrice}, mas dentro da faixa de aviso de ${monitor.targetPriceMarginPercent}% que você definiu (até R$ ${marginCeiling.toFixed(2)}).`,
+        price: cheapestResult.price,
+        targetPrice: monitor.targetPrice,
+        sentTo: monitor.email,
+        sentAt: new Date().toISOString(),
+        type: 'price_in_range',
         purchaseUrl: generatePurchaseLink(
           cheapestResult.site,
           monitor.origin,
@@ -115,7 +141,7 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
       // substitui a notificação já registrada acima. Ver
       // _local-adr-policy-002 (application).
       await createOutboxEvent({
-        type: triggeredNotification.type as 'target_reached' | 'price_update',
+        type: triggeredNotification.type as 'target_reached' | 'price_update' | 'price_in_range',
         monitorId: monitor.id,
         userId: monitor.userId,
         notificationId: triggeredNotification.id,

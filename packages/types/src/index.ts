@@ -28,6 +28,8 @@ export interface FlightMonitor {
   children: number;
   infants: number;
   targetPrice: number;
+  /** Percentual acima do targetPrice que ainda dispara um aviso ('price_in_range'). 0 = só na meta exata. Ver _local-bdr-policy-005. */
+  targetPriceMarginPercent: number;
   currentPrice: number | null;
   bestPriceTracked: number | null;
   trackedSites: string[];
@@ -56,7 +58,7 @@ export interface NotificationLog {
   targetPrice: number;
   sentTo: string;
   sentAt: string;
-  type: 'price_update' | 'target_reached' | 'promotion';
+  type: 'price_update' | 'target_reached' | 'promotion' | 'price_in_range';
   purchaseUrl?: string;
 }
 
@@ -98,7 +100,7 @@ export interface ScanResponse {
  */
 export interface OutboxEvent {
   id: string;
-  type: 'target_reached' | 'price_update';
+  type: 'target_reached' | 'price_update' | 'price_in_range';
   monitorId: string;
   userId: string | null;
   notificationId: string;

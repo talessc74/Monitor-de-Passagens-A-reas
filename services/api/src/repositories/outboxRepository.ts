@@ -6,8 +6,9 @@ const collection = () => db.collection(COLLECTIONS.outbox);
 /**
  * Janela de dedup/throttle por tipo de evento — ver _local-adr-policy-002
  * (application). `target_reached` nunca é jogado fora (janela = o
- * próprio notificationId, único por evento); `price_update` throttla a
- * 1 e-mail por monitor por hora.
+ * próprio notificationId, único por evento); `price_update` e
+ * `price_in_range` (_local-bdr-policy-005) throttlam a 1 e-mail por
+ * monitor por hora.
  */
 function dedupWindow(type: OutboxEvent['type'], notificationId: string): string {
   if (type === 'target_reached') return notificationId;

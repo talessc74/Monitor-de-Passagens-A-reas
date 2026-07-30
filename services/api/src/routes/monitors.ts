@@ -18,10 +18,18 @@ import { executeScanForMonitor } from '../executeScan.js';
 import { verifyPauseToken } from '../pauseLink.js';
 import { passengerDateSchema, passengerDateUnion } from '../schemas/passengerDate.js';
 
+// Presets fechados de _local-bdr-policy-005 — a UI nunca envia um valor
+// livre, então validamos contra o conjunto discreto, não um range.
+const marginPresets = [0, 5, 10, 15, 20] as const;
+const targetPriceMarginPercentSchema = z.coerce.number().refine((v) => (marginPresets as readonly number[]).includes(v), {
+  message: 'targetPriceMarginPercent deve ser um dos presets: 0, 5, 10, 15, 20',
+});
+
 const createMonitorSchema = passengerDateUnion({
   originCity: z.string().optional(),
   destinationCity: z.string().optional(),
   targetPrice: z.coerce.number().positive(),
+  targetPriceMarginPercent: targetPriceMarginPercentSchema.optional(),
   trackedSites: z.array(z.string()).optional(),
   email: z.string().email(),
 });
@@ -50,6 +58,7 @@ const updateMonitorSchema = z
     children: z.coerce.number().int().min(0).optional(),
     infants: z.coerce.number().int().min(0).optional(),
     targetPrice: z.coerce.number().positive().optional(),
+    targetPriceMarginPercent: targetPriceMarginPercentSchema.optional(),
     trackedSites: z.array(z.string()).optional(),
     email: z.string().email().optional(),
     currentPrice: z.number().nullable().optional(),
@@ -111,6 +120,7 @@ export async function monitorsRoutes(app: FastifyInstance) {
       children: body.children,
       infants: body.infants,
       targetPrice: body.targetPrice,
+      targetPriceMarginPercent: body.targetPriceMarginPercent ?? 0,
       currentPrice: null,
       bestPriceTracked: null,
       trackedSites: body.trackedSites && body.trackedSites.length ? body.trackedSites : ['latam', 'gol', 'azul', 'decolar'],

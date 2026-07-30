@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { PlaneTakeoff, PlaneLanding, Users, Calendar, DollarSign, ListFilter, Mail, Plus, TrendingUp, CalendarX } from 'lucide-react';
 import type { AirlineSite, RouteStats } from '@mpa/types';
 import { apiFetch } from '../lib/api';
+import MarginPresetControl from './MarginPresetControl';
 
 interface MonitorFormProps {
   airlineSites: AirlineSite[];
@@ -37,6 +38,7 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
   const [children, setChildren] = useState<number>(0);
   const [infants, setInfants] = useState<number>(0);
   const [targetPrice, setTargetPrice] = useState<string>('4000');
+  const [targetPriceMarginPercent, setTargetPriceMarginPercent] = useState<number>(0);
   const [email, setEmail] = useState(currentUserEmail);
   const [selectedSites, setSelectedSites] = useState<string[]>(['latam', 'gol', 'azul', 'decolar']);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -131,6 +133,7 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
       children,
       infants,
       targetPrice: Number(targetPrice),
+      targetPriceMarginPercent,
       trackedSites: selectedSites,
       email: email || currentUserEmail,
     };
@@ -436,6 +439,12 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
             Enviaremos alerta imediatamente ao alcançar este valor ou menos.
           </p>
         </div>
+
+        <MarginPresetControl
+          targetPrice={Number(targetPrice) || 0}
+          value={targetPriceMarginPercent}
+          onChange={setTargetPriceMarginPercent}
+        />
 
         <div>
           <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">

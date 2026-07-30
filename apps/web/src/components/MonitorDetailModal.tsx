@@ -30,10 +30,15 @@ export default function MonitorDetailModal({ monitor, onClose }: MonitorDetailMo
     points.push({ date: new Date().toISOString(), price: monitor.currentPrice, site: 'atual' });
   }
 
+  const hasMargin = monitor.targetPriceMarginPercent > 0;
+  const marginCeiling = monitor.targetPrice * (1 + monitor.targetPriceMarginPercent / 100);
+
   const hasHistory = points.length >= 2;
   const prices = points.map((p) => p.price);
   const minPrice = hasHistory ? Math.min(...prices, monitor.targetPrice) : monitor.targetPrice;
-  const maxPrice = hasHistory ? Math.max(...prices, monitor.targetPrice) : monitor.targetPrice;
+  const maxPrice = hasHistory
+    ? Math.max(...prices, monitor.targetPrice, hasMargin ? marginCeiling : monitor.targetPrice)
+    : monitor.targetPrice;
   const range = maxPrice - minPrice === 0 ? 1 : maxPrice - minPrice;
 
   const width = 400;
@@ -53,6 +58,8 @@ export default function MonitorDetailModal({ monitor, onClose }: MonitorDetailMo
 
   const targetRatio = (monitor.targetPrice - minPrice) / range;
   const targetY = padding + chartHeight - targetRatio * chartHeight;
+  const marginRatio = (marginCeiling - minPrice) / range;
+  const marginY = padding + chartHeight - marginRatio * chartHeight;
 
   const observedMin = hasHistory ? Math.min(...prices) : null;
   const observedAvg = hasHistory ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : null;
@@ -110,6 +117,9 @@ export default function MonitorDetailModal({ monitor, onClose }: MonitorDetailMo
             <div className="mb-1 flex items-center gap-3 text-[9px] font-mono text-slate-400">
               <span className="flex items-center gap-1"><span className="inline-block h-0.5 w-2.5 bg-blue-600" /> preço (eixo Y) por data (eixo X)</span>
               <span className="flex items-center gap-1"><span className="inline-block h-0 w-2.5 border-t-2 border-dashed border-slate-400" /> meta</span>
+              {hasMargin && (
+                <span className="flex items-center gap-1"><span className="inline-block h-0 w-2.5 border-t-2 border-dashed border-amber-400" /> aviso (+{monitor.targetPriceMarginPercent}%)</span>
+              )}
             </div>
             <svg className="w-full" viewBox={`0 0 ${width} ${height}`} height={height}>
               <defs>
@@ -120,6 +130,9 @@ export default function MonitorDetailModal({ monitor, onClose }: MonitorDetailMo
               </defs>
               <path d={`M ${padding},${height} L ${svgPoints} L ${width - padding},${height} Z`} fill={`url(#detail-gradient-${monitor.id})`} />
               <line x1={padding} y1={targetY} x2={width - padding} y2={targetY} stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="5 3" />
+              {hasMargin && (
+                <line x1={padding} y1={marginY} x2={width - padding} y2={marginY} stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="5 3" />
+              )}
               <polyline fill="none" stroke="#2563eb" strokeWidth="2.5" points={svgPoints} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
 
