@@ -130,7 +130,7 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 
 ## Fase 2 (escopo: Fase 2) — Next.js 14 + Firebase Auth
 
-**Status: em revisão — PR aberto.**
+**Status: ✅ CONCLUÍDA — código, deploy e configuração do Firebase Auth confirmados em produção.**
 
 **O que será construído:** Frontend definitivo em Next.js 14 com login/cadastro. Cada usuário vê só os próprios monitores.
 
@@ -142,7 +142,7 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 4. [x] Todas as queries de `monitors`/`notifications` filtram por `userId`; removido `CURRENT_USER_EMAIL` hardcoded
 5. [x] Documento `users/{uid}` criado no primeiro login (e-mail, nome, `plan: 'free'`, `createdAt`)
 6. [x] Tela de perfil com "Deletar minha conta" (apaga user + monitores + notificações — obrigatório LGPD)
-7. [ ] Deploy do `apps/web` em **Cloud Run** (não Vercel — decisão corrigida, ver `_local-adr-policy-001`); `api` vira API pura (remove o serving de estáticos de `web-dist/`) — pendente: registrar Web App no Firebase Console para gerar `NEXT_PUBLIC_FIREBASE_API_KEY`/`NEXT_PUBLIC_FIREBASE_APP_ID` reais, adicionar o domínio do novo serviço `flyspot-web` aos domínios autorizados do Firebase Auth
+7. [x] Deploy do `apps/web` em **Cloud Run** (não Vercel — decisão corrigida, ver `_local-adr-policy-001`); `api` vira API pura (remove o serving de estáticos de `web-dist/`) — feito e confirmado: Web App registrado no Firebase Console, `flyspot-web` no ar em `https://flyspot-web-1039076887535.southamerica-east1.run.app` (2026-07-30); provedores Email/Password e Google ativos no Firebase Authentication; domínio do `flyspot-web` presente nos domínios autorizados
 
 **Gate de UX (desenhar e aprovar antes de implementar):** login/cadastro, recuperação de senha, perfil.
 
@@ -246,16 +246,19 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 - Link "pausar monitor" funciona sem login (token assinado na URL)
 
 **Ações fora do código:**
-- [ ] Conta Resend + API key
+- [ ] Conta Resend + API key — sem isso, o envio real de e-mail continua em modo no-op (só loga)
 - [x] Domínio registrado: **`flyspot.com.br`** — falta configurar DNS (SPF/DKIM) para o Resend
-- [ ] Secrets no GitHub Actions: `RESEND_API_KEY`, `EMAIL_ACTION_SECRET` (gerar com `openssl rand -hex 32`, distinto do `INTERNAL_SCAN_TOKEN`)
-- [ ] Rodar `deploy.yml` para publicar `flyspot-publisher` no Cloud Run
+- [x] Secret `EMAIL_ACTION_SECRET` no GitHub Actions — confirmado ativo; verificado em produção que `flyspot-publisher` está estável (sem crash-loop) rodando com ele (2026-07-30, revisão `flyspot-publisher-00003-nff`)
+- [ ] `RESEND_API_KEY` — ainda não configurado no GitHub Actions
+- [x] Rodar `deploy.yml` para publicar `flyspot-publisher` no Cloud Run — feito; serviço saudável em produção
 
 **Decisões do produto:** domínio e nome do remetente
 
 ---
 
 ## Fase 6 (escopo: Fase 6) — Monetização com Stripe
+
+**Status: ✅ CONCLUÍDA — código, deploy e configuração do Stripe confirmados em produção (modo test).**
 
 **O que será construído:** Assinatura Pro com limites por plano aplicados no backend — tudo em modo teste (cartão de teste, zero cobrança real).
 
@@ -271,7 +274,7 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 **Tarefas:**
 
-1. [ ] Produtos/preços no Stripe Dashboard (modo test primeiro) — ação fora do código, ver abaixo
+1. [x] Produtos/preços no Stripe Dashboard (modo test primeiro) — "FlySpot Pro", R$29/mês recorrente, separado do produto irmão EAI Jurídico
 2. [x] `api`: rota `POST /billing/checkout` (cria sessão Stripe Checkout) e `POST /billing/portal` (Customer Portal)
 3. [x] Webhook `POST /webhooks/stripe`: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted` → atualiza `users/{uid}.plan` e `stripeCustomerId`. Assinatura verificada via SDK oficial do Stripe (corpo bruto); idempotente por `event.id` (mesmo padrão de dedup do outbox da Fase 5)
 4. [x] Enforcement no backend (não só na UI): criar monitor além do limite → 403 com mensagem de upgrade (conta todos os monitores do usuário, ativos ou pausados — ver `_local-adr-policy-003`); downgrade → monitores excedentes pausados automaticamente (não deletados), mantendo os mais antigos ativos
@@ -285,14 +288,13 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 **Decisões do produto:** preço R$29/mês confirmado · tabela de limites confirmada como proposta · trial de 10 dias grátis (só na primeira assinatura por usuário)
 
-**Ações fora do código:**
+**Ações fora do código — todas concluídas:**
 - [x] Conta Stripe — confirmado pelo dono do produto: já recebe pagamentos no Brasil sem CNPJ (validado no projeto irmão EAI Jurídico)
-- [ ] Criar produto/preço recorrente (R$29/mês) no Stripe Dashboard em modo test e copiar o `price_id` para `STRIPE_PRICE_ID_PRO`
-- [ ] Configurar o endpoint de webhook no Stripe Dashboard apontando para `https://<url-do-flyspot-api>/webhooks/stripe` e copiar o `whsec_...` para `STRIPE_WEBHOOK_SECRET`
-- [ ] Adicionar secrets no GitHub Actions: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_PRO`
-- [ ] Adicionar secret `APP_URL` no GitHub Actions com a URL de produção do frontend (`flyspot-web` no Cloud Run, ver Fase 2 tarefa 7) — usada para montar os links de retorno do Checkout/Portal do Stripe; sem ele o redirecionamento cai em `http://localhost:5173` (fallback de dev, incorreto em produção)
-- [ ] **Verificar também `EMAIL_ACTION_SECRET` (pendente desde a Fase 5)** antes de rodar o deploy — sem ele configurado, o `services/api` agora normaliza o valor ausente como opcional de fato (ver `_local-adr-policy-003`), mas a rota de pausar monitor sem login fica desabilitada (401 sempre) até ser definido
-- [ ] Rodar `deploy.yml` para publicar a versão do `flyspot-api` com as rotas de billing
+- [x] Produto/preço recorrente (R$29/mês) criado no Stripe Dashboard em modo test; `price_id` salvo em `STRIPE_PRICE_ID_PRO`
+- [x] Endpoint de webhook configurado no Stripe Dashboard apontando para `flyspot-api/webhooks/stripe`, com os 3 eventos corretos (`checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`); `whsec_...` salvo em `STRIPE_WEBHOOK_SECRET`
+- [x] Secrets no GitHub Actions: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_PRO`, `APP_URL`
+- [x] `EMAIL_ACTION_SECRET` (pendente desde a Fase 5) — confirmado ativo
+- [x] `deploy.yml` rodado com sucesso publicando os 4 serviços (`flyspot-api`, `flyspot-generator`, `flyspot-publisher`, `flyspot-web`), 2026-07-30 — tudo em modo TEST, zero cobrança real
 
 ---
 
