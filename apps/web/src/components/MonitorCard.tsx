@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Calendar, Users, DollarSign, RefreshCw, Trash2, Power, History, Sparkles, Pencil } from 'lucide-react';
 import type { AirlineSite, FlightMonitor } from '@mpa/types';
 import EditMonitorModal from './EditMonitorModal';
+import MonitorDetailModal from './MonitorDetailModal';
 
 interface MonitorCardProps {
   monitor: FlightMonitor;
@@ -27,6 +28,7 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
   const [scanSteps, setScanSteps] = useState<string[]>([]);
   const [scanResultText, setScanResultText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [isViewingDetail, setIsViewingDetail] = useState(false);
 
   const handleScanClick = async () => {
     setIsScanning(true);
@@ -282,6 +284,14 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
 
         <div className="flex items-center gap-1.5">
           <button
+            onClick={() => setIsViewingDetail(true)}
+            className="p-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 transition"
+            title="Ver histórico"
+          >
+            <History className="h-4 w-4" />
+          </button>
+
+          <button
             onClick={() => setIsEditing(true)}
             className="p-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 transition"
             title="Editar alerta"
@@ -328,6 +338,8 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
           onSave={onEdit}
         />
       )}
+
+      {isViewingDetail && <MonitorDetailModal monitor={monitor} onClose={() => setIsViewingDetail(false)} />}
     </div>
   );
 }

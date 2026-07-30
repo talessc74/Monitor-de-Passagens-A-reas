@@ -266,6 +266,7 @@ export async function monitorsRoutes(app: FastifyInstance) {
         lastScannedAt: new Date().toISOString(),
         bestPriceTracked,
         history,
+        lastScanResults: validResults,
       });
 
       // Atualiza estatísticas dos sites consultados

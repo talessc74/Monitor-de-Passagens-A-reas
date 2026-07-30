@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plane, ShieldAlert, Sparkles, Server, RefreshCw } from 'lucide-react';
+import { Plane, Sparkles, Server, RefreshCw } from 'lucide-react';
 import type { FlightMonitor, AirlineSite, NotificationLog } from '@mpa/types';
 import { useAuth } from '../../lib/auth-context';
 import { apiFetch } from '../../lib/api';
@@ -15,6 +15,7 @@ import SitesList from '../../components/SitesList';
 import NotificationFeed from '../../components/NotificationFeed';
 import EmailModal from '../../components/EmailModal';
 import RadarEmptyState from '../../components/RadarEmptyState';
+import ErrorCard from '../../components/ErrorCard';
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
@@ -214,14 +215,7 @@ export default function DashboardPage() {
       <Header activeMonitorsCount={activeMonitorsCount} notificationsCount={notifications.length} />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8">
-        {errorMessage && (
-          <div className="mb-6 rounded-2xl border border-red-100 bg-red-50 p-4 text-xs text-red-800 flex items-center gap-3">
-            <ShieldAlert className="h-5 w-5 text-red-600 shrink-0" />
-            <div>
-              <span className="font-bold">Ocorreu um problema:</span> {errorMessage}
-            </div>
-          </div>
-        )}
+        {errorMessage && <ErrorCard message={errorMessage} onRetry={fetchData} retrying={isLoading} />}
 
         <div className="mb-8 rounded-2xl bg-slate-900 text-white p-6 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-850">
           <div className="absolute top-0 right-0 transform translate-x-12 -translate-y-12 opacity-5 text-white pointer-events-none">

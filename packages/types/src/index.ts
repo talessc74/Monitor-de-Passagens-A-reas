@@ -38,6 +38,8 @@ export interface FlightMonitor {
   nextScanAt: string | null;
   history: FlightHistoryEntry[];
   status: 'active' | 'paused';
+  /** Resultado por site do último scan — usado na tela de histórico do monitor. */
+  lastScanResults?: ScanResult[];
 }
 
 export interface NotificationLog {
