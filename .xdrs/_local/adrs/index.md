@@ -12,7 +12,7 @@ Platform-level runtime and enabling capabilities.
 
 Data architecture and information modeling choices.
 
-- [001-passenger-and-date-flexibility-model](data/001-passenger-and-date-flexibility-model.md) — `FlightMonitor` gains a flat `infants` field alongside `adults`/`children`, and dates gain an optional flexibility window (`flexDays`), driven by `_local-bdr-policy-001`
+- [001-passenger-and-date-flexibility-model](data/001-passenger-and-date-flexibility-model.md) — `FlightMonitor` gains a flat `infants` field, asymmetric days-before/days-after flexibility per date, and a `searchMode: 'dated' | 'anytime'` for date-agnostic monitors, driven by `_local-bdr-policy-001`
 - [002-firestore-shared-project-convention](data/002-firestore-shared-project-convention.md) — Reuses `lista-ai-f2916` (shared with Lista Aí); every FlySpot collection carries the `mpa_` prefix
 
 ## controls

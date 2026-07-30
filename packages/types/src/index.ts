@@ -16,10 +16,14 @@ export interface FlightMonitor {
   originCity: string;
   destination: string;
   destinationCity: string;
-  departureDate: string;
-  departFlexDays?: number;
-  returnDate: string;
-  returnFlexDays?: number;
+  /** 'dated' (padrão): datas obrigatórias abaixo. 'anytime': nenhuma data é usada. */
+  searchMode: 'dated' | 'anytime';
+  departureDate?: string;
+  departDaysBefore?: number;
+  departDaysAfter?: number;
+  returnDate?: string;
+  returnDaysBefore?: number;
+  returnDaysAfter?: number;
   adults: number;
   children: number;
   infants: number;

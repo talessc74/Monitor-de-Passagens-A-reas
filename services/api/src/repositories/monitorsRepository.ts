@@ -4,14 +4,17 @@ import { db, COLLECTIONS } from '../firestore.js';
 const collection = () => db.collection(COLLECTIONS.monitors);
 
 /**
- * Monitores criados antes do campo `infants` existir não têm esse
- * dado gravado no Firestore. Ver _local-adr-policy-001 (data): sem
- * script de backfill, os campos ausentes são normalizados na leitura.
+ * Monitores criados antes dos campos `infants`/`searchMode` existirem
+ * não têm esses dados gravados no Firestore. Ver _local-adr-policy-001
+ * (data): sem script de backfill, os campos ausentes são normalizados
+ * na leitura — ausência de `searchMode` preserva o comportamento antigo
+ * (`'dated'`).
  */
 function normalizeMonitor(data: FlightMonitor): FlightMonitor {
   return {
     ...data,
     infants: data.infants ?? 0,
+    searchMode: data.searchMode ?? 'dated',
   };
 }
 

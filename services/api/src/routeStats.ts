@@ -32,7 +32,20 @@ export async function getRouteStats(params: PassengerDateInput): Promise<RouteSt
     return offlineRouteStats(params);
   }
 
-  const prompt = `Você é um analista de preços de passagens aéreas. Para a rota ${params.origin} → ${params.destination}, com ida em ${params.departureDate}${params.departFlexDays ? ` (± ${params.departFlexDays} dias)` : ''} e volta em ${params.returnDate}${params.returnFlexDays ? ` (± ${params.returnFlexDays} dias)` : ''}, para ${params.adults} adulto(s), ${params.children} criança(s) e ${params.infants} bebê(s), estime o preço total em Reais Brasileiros (BRL) observado nos últimos ${SAMPLE_WINDOW_DAYS} dias nesta rota: valor médio, mínimo e máximo. Considere a data atual das buscas correspondente ao ano de 2026. Garanta que os valores façam sentido para a distância da rota.`;
+  const dateClause =
+    params.searchMode === 'dated'
+      ? `com ida em ${params.departureDate}${
+          params.departDaysBefore || params.departDaysAfter
+            ? ` (aceita ${params.departDaysBefore ?? 0} dia(s) antes e ${params.departDaysAfter ?? 0} dia(s) depois)`
+            : ''
+        } e volta em ${params.returnDate}${
+          params.returnDaysBefore || params.returnDaysAfter
+            ? ` (aceita ${params.returnDaysBefore ?? 0} dia(s) antes e ${params.returnDaysAfter ?? 0} dia(s) depois)`
+            : ''
+        }`
+      : 'sem data fixa — o usuário aceita qualquer data futura, quer apenas o preço mais barato da rota';
+
+  const prompt = `Você é um analista de preços de passagens aéreas. Para a rota ${params.origin} → ${params.destination}, ${dateClause}, para ${params.adults} adulto(s), ${params.children} criança(s) e ${params.infants} bebê(s), estime o preço total em Reais Brasileiros (BRL) observado nos últimos ${SAMPLE_WINDOW_DAYS} dias nesta rota: valor médio, mínimo e máximo. Considere a data atual das buscas correspondente ao ano de 2026. Garanta que os valores façam sentido para a distância da rota.`;
 
   try {
     const response = await ai.models.generateContent({

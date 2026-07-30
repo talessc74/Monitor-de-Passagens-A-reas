@@ -24,10 +24,11 @@ pricing engine or persisting a monitor just to preview a price?
 
 **New `GET /api/route-stats` route, same Gemini model and prompt family as `scanSimulator.ts`, no persistence**
 
-Add `GET /api/route-stats?origin=&destination=&departDate=&departFlexDays=&returnDate=&returnFlexDays=&adults=&children=&infants=` to `services/api`. It calls the same `GEMINI_MODEL` client already configured in `scanSimulator.ts`, with a prompt asking for an
-average/min/max over a 60-day lookback instead of a single current price, and returns the
-result directly — it never writes to Firestore and never requires an existing `mpa_monitors`
-document.
+Add `GET /api/route-stats?origin=&destination=&searchMode=&departureDate=&departDaysBefore=&departDaysAfter=&returnDate=&returnDaysBefore=&returnDaysAfter=&adults=&children=&infants=` to `services/api` (date fields required only when `searchMode=dated`; absent entirely for
+`searchMode=anytime`). It calls the same `GEMINI_MODEL` client already configured in
+`scanSimulator.ts`, with a prompt asking for an average/min/max over a 60-day lookback
+instead of a single current price, and returns the result directly — it never writes to
+Firestore and never requires an existing `mpa_monitors` document.
 
 ### Details
 
@@ -46,7 +47,11 @@ document.
   the free simulator, so a cache is not required until that phase swaps in a paid source —
   do not add one preemptively.
 - Query params follow the shape defined in `_local-adr-policy-001` (`adults`/`children`/
-  `infants`, `departFlexDays`/`returnFlexDays`) — do not introduce a parallel shape here.
+  `infants`, `searchMode`, the four independent before/after day counters) — do not
+  introduce a parallel shape here.
+- `searchMode=anytime` requests must omit `departureDate`/`returnDate` and the four
+  before/after fields entirely — the endpoint does not accept them alongside `anytime` and
+  must reject the request (400) if they are present, to keep the two modes unambiguous.
 
 ## References
 
