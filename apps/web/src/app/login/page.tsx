@@ -73,8 +73,9 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-600">E-mail</label>
+            <label htmlFor="login-email" className="mb-1 block text-xs font-semibold text-slate-600">E-mail</label>
             <input
+              id="login-email"
               type="email"
               required
               value={email}
@@ -84,8 +85,9 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-600">Senha</label>
+            <label htmlFor="login-password" className="mb-1 block text-xs font-semibold text-slate-600">Senha</label>
             <input
+              id="login-password"
               type="password"
               required
               minLength={6}
@@ -96,7 +98,7 @@ export default function LoginPage() {
             />
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
           <button
             type="submit"
