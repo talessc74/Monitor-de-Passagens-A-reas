@@ -27,32 +27,46 @@ const createMonitorSchema = passengerDateUnion({
 });
 
 // Update é um PATCH parcial e permissivo — não reaplica o discriminated
-// union de criação (que exigiria repassar searchMode + todos os campos
-// do modo a cada PUT); mudar de modo depois de criado não é um caso de
-// uso hoje (pausar/retomar e ajustar preço/sites são os usos reais).
-const updateMonitorSchema = z.object({
-  origin: z.string().min(3).max(4).optional(),
-  originCity: z.string().optional(),
-  destination: z.string().min(3).max(4).optional(),
-  destinationCity: z.string().optional(),
-  searchMode: z.enum(['dated', 'anytime']).optional(),
-  departureDate: z.string().optional(),
-  departDaysBefore: z.coerce.number().int().min(0).max(15).optional(),
-  departDaysAfter: z.coerce.number().int().min(0).max(15).optional(),
-  returnDate: z.string().optional(),
-  returnDaysBefore: z.coerce.number().int().min(0).max(15).optional(),
-  returnDaysAfter: z.coerce.number().int().min(0).max(15).optional(),
-  adults: z.coerce.number().int().min(1).optional(),
-  children: z.coerce.number().int().min(0).optional(),
-  infants: z.coerce.number().int().min(0).optional(),
-  targetPrice: z.coerce.number().positive().optional(),
-  trackedSites: z.array(z.string()).optional(),
-  email: z.string().email().optional(),
-  currentPrice: z.number().nullable().optional(),
-  bestPriceTracked: z.number().nullable().optional(),
-  notificationsEnabled: z.boolean().optional(),
-  status: z.enum(['active', 'paused']).optional(),
-});
+// union de criação campo a campo, mas o EditMonitorModal (_local-bdr-
+// policy-004) permite trocar de modo aqui também, então validamos a
+// mesma regra por fora via superRefine: quando o payload inclui
+// searchMode: 'dated', departureDate/returnDate precisam vir
+// preenchidos — sem isso um monitor "dated" pode ser salvo sem data
+// nenhuma (achado de QA, _local-edr-policy-002).
+const updateMonitorSchema = z
+  .object({
+    origin: z.string().min(3).max(4).optional(),
+    originCity: z.string().optional(),
+    destination: z.string().min(3).max(4).optional(),
+    destinationCity: z.string().optional(),
+    searchMode: z.enum(['dated', 'anytime']).optional(),
+    departureDate: z.string().optional(),
+    departDaysBefore: z.coerce.number().int().min(0).max(15).optional(),
+    departDaysAfter: z.coerce.number().int().min(0).max(15).optional(),
+    returnDate: z.string().optional(),
+    returnDaysBefore: z.coerce.number().int().min(0).max(15).optional(),
+    returnDaysAfter: z.coerce.number().int().min(0).max(15).optional(),
+    adults: z.coerce.number().int().min(1).optional(),
+    children: z.coerce.number().int().min(0).optional(),
+    infants: z.coerce.number().int().min(0).optional(),
+    targetPrice: z.coerce.number().positive().optional(),
+    trackedSites: z.array(z.string()).optional(),
+    email: z.string().email().optional(),
+    currentPrice: z.number().nullable().optional(),
+    bestPriceTracked: z.number().nullable().optional(),
+    notificationsEnabled: z.boolean().optional(),
+    status: z.enum(['active', 'paused']).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.searchMode === 'dated') {
+      if (!data.departureDate) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['departureDate'], message: 'Data de ida é obrigatória no modo com datas' });
+      }
+      if (!data.returnDate) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['returnDate'], message: 'Data de volta é obrigatória no modo com datas' });
+      }
+    }
+  });
 
 export async function monitorsRoutes(app: FastifyInstance) {
   app.get('/api/monitors', { preHandler: authenticate }, async (request) => {
