@@ -7,6 +7,7 @@ Architectural and technical decisions for FlySpot.
 Platform-level runtime and enabling capabilities.
 
 - [001-cloud-run-deploy-architecture](platform/001-cloud-run-deploy-architecture.md) — Cloud Run (not Cloud Functions), native Artifact Registry (not gcr.io), GitHub Actions workflow_dispatch (not Cloud Shell)
+- [002-scheduler-polling-and-internal-auth](platform/002-scheduler-polling-and-internal-auth.md) — Fase 4's scheduler is a polling loop in a new `generator` service, triggering scans on `api` via a shared-secret internal route
 
 ## data
 

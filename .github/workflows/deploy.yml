@@ -6,11 +6,12 @@ on:
 env:
   AR_LOCATION: southamerica-east1
   AR_REPOSITORY: flyspot
-  IMAGE: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-api
+  IMAGE_API: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-api
+  IMAGE_GENERATOR: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-generator
 
 jobs:
   deploy:
-    name: Build & Deploy flyspot-api
+    name: Build & Deploy flyspot-api + flyspot-generator
     runs-on: ubuntu-latest
 
     steps:
@@ -39,28 +40,62 @@ jobs:
       - name: Configurar Docker para o Artifact Registry
         run: gcloud auth configure-docker ${{ env.AR_LOCATION }}-docker.pkg.dev --quiet
 
-      - name: Build da imagem Docker
+      # ── flyspot-api ──────────────────────────────────────────────────────
+      - name: Build da imagem Docker — api
         run: |
           docker build \
             -f services/api/Dockerfile \
-            -t ${{ env.IMAGE }}:${{ github.sha }} \
-            -t ${{ env.IMAGE }}:latest \
+            -t ${{ env.IMAGE_API }}:${{ github.sha }} \
+            -t ${{ env.IMAGE_API }}:latest \
             .
 
-      - name: Push para o Artifact Registry
-        run: docker push --all-tags ${{ env.IMAGE }}
+      - name: Push para o Artifact Registry — api
+        run: docker push --all-tags ${{ env.IMAGE_API }}
 
-      - name: Deploy para Cloud Run
+      - name: Deploy para Cloud Run — api
+        id: deploy-api
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: flyspot-api
-          image: ${{ env.IMAGE }}:latest
+          image: ${{ env.IMAGE_API }}:latest
           region: southamerica-east1
           project_id: lista-ai-f2916
           flags: --allow-unauthenticated
           env_vars: |
             NODE_ENV=production
             FIREBASE_PROJECT_ID=lista-ai-f2916
+            INTERNAL_SCAN_TOKEN=${{ secrets.INTERNAL_SCAN_TOKEN }}
 
-      - name: URL do serviço
-        run: echo "✅ Deploy concluído"
+      # ── flyspot-generator (Fase 4 — scheduler) ──────────────────────────
+      - name: Build da imagem Docker — generator
+        run: |
+          docker build \
+            -f services/generator/Dockerfile \
+            -t ${{ env.IMAGE_GENERATOR }}:${{ github.sha }} \
+            -t ${{ env.IMAGE_GENERATOR }}:latest \
+            .
+
+      - name: Push para o Artifact Registry — generator
+        run: docker push --all-tags ${{ env.IMAGE_GENERATOR }}
+
+      - name: Deploy para Cloud Run — generator
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: flyspot-generator
+          image: ${{ env.IMAGE_GENERATOR }}:latest
+          region: southamerica-east1
+          project_id: lista-ai-f2916
+          # min-instances=1 é obrigatório: o loop de polling do scheduler
+          # só existe enquanto o processo está de pé, e Cloud Run escala
+          # a zero por padrão quando não há requisição HTTP chegando.
+          flags: --allow-unauthenticated --min-instances=1
+          env_vars: |
+            NODE_ENV=production
+            FIREBASE_PROJECT_ID=lista-ai-f2916
+            API_INTERNAL_URL=${{ steps.deploy-api.outputs.url }}
+            INTERNAL_SCAN_TOKEN=${{ secrets.INTERNAL_SCAN_TOKEN }}
+
+      - name: URLs dos serviços
+        run: |
+          echo "✅ Deploy concluído"
+          echo "api: ${{ steps.deploy-api.outputs.url }}"

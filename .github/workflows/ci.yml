@@ -28,3 +28,6 @@ jobs:
 
       - name: Build api service
         run: npm run build --workspace=@mpa/api
+
+      - name: Build generator service
+        run: npm run build --workspace=@mpa/generator

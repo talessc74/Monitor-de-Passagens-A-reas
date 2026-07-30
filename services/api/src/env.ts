@@ -7,6 +7,11 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default('gemini-3.5-flash'),
   APP_URL: z.string().url().optional(),
+  // Segredo compartilhado com services/generator para autenticar chamadas
+  // de serviço-a-serviço na rota /internal/scan/:id (sem token de usuário
+  // Firebase, já que quem chama é o loop de polling, não um usuário
+  // logado). Ver _local-adr-policy-002.
+  INTERNAL_SCAN_TOKEN: z.string().min(16).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
