@@ -20,7 +20,7 @@ Sistema de monitoramento de preços de passagens aéreas em tempo real. Configur
 - **Backend:** Fastify + TypeScript, monorepo com npm workspaces (`services/api`)
 - **AI:** Google Gemini API (simulação de preços — temporário)
 - **Banco de dados:** Firestore (Firebase), projeto `lista-ai-f2916`, coleções com prefixo `mpa_`
-- **Deploy:** Cloud Run (backend) + Vercel (frontend, a partir da Fase 2)
+- **Deploy:** Cloud Run (backend e frontend — ver `CLAUDE.md`)
 
 ## Pré-requisitos
 

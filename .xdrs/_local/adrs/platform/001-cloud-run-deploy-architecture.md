@@ -1,7 +1,7 @@
 ---
 name: _local-adr-policy-001-cloud-run-deploy-architecture
-description: Backend deploys to Cloud Run (not Firebase Cloud Functions), via a native Artifact Registry repository (not legacy gcr.io), through a GitHub Actions workflow_dispatch pipeline (not manual gcloud/Cloud Shell). Use when touching services/api's Dockerfile, deploy.yml, or any new service (generator, publisher) that needs the same deploy path.
-apply-to: services/api, and any future services/generator or services/publisher deploy setup
+description: Backend deploys to Cloud Run (not Firebase Cloud Functions), via a native Artifact Registry repository (not legacy gcr.io), through a GitHub Actions workflow_dispatch pipeline (not manual gcloud/Cloud Shell). Amended to bring the apps/web (Next.js) frontend onto the same Cloud Run path instead of Vercel. Use when touching services/api's Dockerfile, deploy.yml, or any service (generator, publisher, web) that needs the same deploy path.
+apply-to: services/api, services/generator, services/publisher, and apps/web deploy setup
 valid-from: 2026-07-30
 ---
 
@@ -44,6 +44,30 @@ Run in `southamerica-east1`, all triggered by a GitHub Actions workflow with a m
   the same generic push failure, so all four are a hard requirement, not a nice-to-have.
 - Same pattern as the sibling project `multi-agent-system` (`lexforum-ai-studio`) — reuse it
   rather than inventing a new deploy shape when `generator`/`publisher` are created.
+
+## Amendment: apps/web deploys to Cloud Run, not Vercel
+
+`CLAUDE.md`'s stack table and `ROADMAP.md`'s Fase 2 task 7 originally named Vercel as the
+frontend deploy target. No ADR ever justified that choice — it was carried forward as the
+reflexive Next.js/Vercel pairing (Vercel is the company that makes Next.js) from early planning,
+never re-examined against this specific product. It was also never actually executed: `apps/web`
+has never been deployed anywhere, Vercel or otherwise; the only thing live in production has been
+`services/api` serving the older pre-Fase-2 Vite SPA from `web-dist/`.
+
+When this gap surfaced (the product owner asking "where is our page?"), reviewing what Vercel
+would actually add for this project found nothing FlySpot uses: every page in `apps/web` is
+`export const dynamic = 'force-dynamic'` (fully client-rendered, no static generation or ISR to
+accelerate), there is no `next/image` usage, no Edge Middleware. Every other GCP-project the
+product owner runs already lives on Cloud Run, and Vercel's Hobby tier explicitly prohibits
+commercial use in its terms — a paid Vercel plan (~US$20/month) would be a new recurring cost and
+a new account relationship for a feature set Cloud Run already serves for the rest of this
+monorepo at no additional cost.
+
+**Decision: `apps/web` deploys as its own Cloud Run service (`flyspot-web`), same pattern as
+`api`/`generator`/`publisher`** — Next.js in standalone output mode (`next start` in a
+minimal Docker image), added as a fourth block in `deploy.yml`. `services/api` stops serving
+`web-dist/` (the old Vite SPA) once `flyspot-web` is live — Fase 2 task 7's original intent
+("`api` vira API pura"), just via Cloud Run instead of Vercel.
 
 ## Considered Options
 

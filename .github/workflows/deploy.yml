@@ -9,10 +9,11 @@ env:
   IMAGE_API: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-api
   IMAGE_GENERATOR: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-generator
   IMAGE_PUBLISHER: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-publisher
+  IMAGE_WEB: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-web
 
 jobs:
   deploy:
-    name: Build & Deploy flyspot-api + flyspot-generator + flyspot-publisher
+    name: Build & Deploy flyspot-api + flyspot-generator + flyspot-publisher + flyspot-web
     runs-on: ubuntu-latest
 
     steps:
@@ -130,7 +131,34 @@ jobs:
             EMAIL_ACTION_SECRET=${{ secrets.EMAIL_ACTION_SECRET }}
             RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
 
+      # ── flyspot-web (Fase 2 — frontend Next.js, Cloud Run em vez de
+      # Vercel, ver _local-adr-policy-001 amendment) ──────────────────────
+      - name: Build da imagem Docker — web
+        run: |
+          docker build \
+            -f apps/web/Dockerfile \
+            --build-arg NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }} \
+            --build-arg API_URL=${{ steps.deploy-api.outputs.url }} \
+            -t ${{ env.IMAGE_WEB }}:${{ github.sha }} \
+            -t ${{ env.IMAGE_WEB }}:latest \
+            .
+
+      - name: Push para o Artifact Registry — web
+        run: docker push --all-tags ${{ env.IMAGE_WEB }}
+
+      - name: Deploy para Cloud Run — web
+        id: deploy-web
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: flyspot-web
+          image: ${{ env.IMAGE_WEB }}:latest
+          region: southamerica-east1
+          project_id: lista-ai-f2916
+          flags: --allow-unauthenticated
+
       - name: URLs dos serviços
         run: |
           echo "✅ Deploy concluído"
           echo "api: ${{ steps.deploy-api.outputs.url }}"
+          echo "web: ${{ steps.deploy-web.outputs.url }}"

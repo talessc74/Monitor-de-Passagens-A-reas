@@ -34,3 +34,6 @@ jobs:
 
       - name: Build publisher service
         run: npm run build --workspace=@mpa/publisher
+
+      - name: Build web (Next.js)
+        run: npm run build --workspace=@mpa/web

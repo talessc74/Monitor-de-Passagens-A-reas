@@ -46,7 +46,7 @@ O conteúdo técnico de cada fase (tarefas, critérios de aceite, arquitetura) �
 | Pagamentos | Stripe |
 | E-mail | Resend + React Email |
 | Deploy backend | Cloud Run (contêiner Docker — não Firebase Cloud Functions) |
-| Deploy frontend | Vercel |
+| Deploy frontend | Cloud Run (mesmo padrão do backend — decisão corrigida de Vercel, ver `_local-adr-policy-001`) |
 
 ## Estrutura de monorepo alvo
 
@@ -142,7 +142,7 @@ Estes itens são **baratos de fazer desde o início e caros de adicionar depois*
 4. [x] Todas as queries de `monitors`/`notifications` filtram por `userId`; removido `CURRENT_USER_EMAIL` hardcoded
 5. [x] Documento `users/{uid}` criado no primeiro login (e-mail, nome, `plan: 'free'`, `createdAt`)
 6. [x] Tela de perfil com "Deletar minha conta" (apaga user + monitores + notificações — obrigatório LGPD)
-7. [ ] Deploy do `apps/web` na Vercel; `api` no Firebase passa a ser API pura (remove o serving de estáticos) — pendente: registrar Web App no Firebase Console para gerar `NEXT_PUBLIC_FIREBASE_API_KEY`/`NEXT_PUBLIC_FIREBASE_APP_ID` reais, criar projeto na Vercel
+7. [ ] Deploy do `apps/web` em **Cloud Run** (não Vercel — decisão corrigida, ver `_local-adr-policy-001`); `api` vira API pura (remove o serving de estáticos de `web-dist/`) — pendente: registrar Web App no Firebase Console para gerar `NEXT_PUBLIC_FIREBASE_API_KEY`/`NEXT_PUBLIC_FIREBASE_APP_ID` reais, adicionar o domínio do novo serviço `flyspot-web` aos domínios autorizados do Firebase Auth
 
 **Gate de UX (desenhar e aprovar antes de implementar):** login/cadastro, recuperação de senha, perfil.
 
@@ -290,7 +290,7 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 - [ ] Criar produto/preço recorrente (R$29/mês) no Stripe Dashboard em modo test e copiar o `price_id` para `STRIPE_PRICE_ID_PRO`
 - [ ] Configurar o endpoint de webhook no Stripe Dashboard apontando para `https://<url-do-flyspot-api>/webhooks/stripe` e copiar o `whsec_...` para `STRIPE_WEBHOOK_SECRET`
 - [ ] Adicionar secrets no GitHub Actions: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_PRO`
-- [ ] Adicionar secret `APP_URL` no GitHub Actions com a URL de produção do frontend (Vercel) — usada para montar os links de retorno do Checkout/Portal do Stripe; sem ele o redirecionamento cai em `http://localhost:5173` (fallback de dev, incorreto em produção)
+- [ ] Adicionar secret `APP_URL` no GitHub Actions com a URL de produção do frontend (`flyspot-web` no Cloud Run, ver Fase 2 tarefa 7) — usada para montar os links de retorno do Checkout/Portal do Stripe; sem ele o redirecionamento cai em `http://localhost:5173` (fallback de dev, incorreto em produção)
 - [ ] **Verificar também `EMAIL_ACTION_SECRET` (pendente desde a Fase 5)** antes de rodar o deploy — sem ele configurado, o `services/api` agora normaliza o valor ausente como opcional de fato (ver `_local-adr-policy-003`), mas a rota de pausar monitor sem login fica desabilitada (401 sempre) até ser definido
 - [ ] Rodar `deploy.yml` para publicar a versão do `flyspot-api` com as rotas de billing
 
@@ -344,7 +344,7 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 ### Testes e CI/CD
 - Vitest: testes de integração por serviço (prioridade: regras de plano, scheduler, outbox, webhook Stripe)
 - Playwright E2E: cadastro → criar monitor → scan → notificação
-- GitHub Actions completo: lint + testes bloqueando merge; deploy automático Firebase/Vercel só com pipeline verde
+- GitHub Actions completo: lint + testes bloqueando merge; deploy automático (Cloud Run, todos os serviços) só com pipeline verde
 
 ### Segurança (hardening final)
 - Auditoria de regras do Firestore (acesso só via backend — regras negam client direto, exceto o que o Auth exigir)
@@ -365,7 +365,7 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 ```
 Fase 1: Monorepo + Firestore + api no Firebase      ← fundação
-Fase 2: Next.js 14 + Firebase Auth (Vercel)        ← precisa da 1
+Fase 2: Next.js 14 + Firebase Auth (Cloud Run)     ← precisa da 1
 Fase 3 (escopo 7): UX/UI                           ← contínua; roda sobre o simulador
 Fase 4: Scheduler de varreduras                    ← precisa de uma fonte de preço (simulada ou real)
 Fase 5: E-mail (publisher + outbox)                ← precisa da 4; domínio/DNS pode andar em paralelo desde já

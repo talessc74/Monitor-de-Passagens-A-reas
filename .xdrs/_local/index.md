@@ -18,7 +18,7 @@ FlySpot é um SaaS de monitoramento de preços de passagens aéreas, operando so
 - Stack: Fastify (Node.js/TypeScript) + Next.js 14 (App Router) + Firestore (`firebase-admin`) + Google Gemini + Stripe
 - Projeto Firebase: `lista-ai-f2916` (compartilhado com o produto Lista Aí, hoje inativo), coleções com prefixo `mpa_`
 - Deploy backend: Cloud Run (`southamerica-east1`), via GitHub Actions (`workflow_dispatch`)
-- Deploy frontend: Vercel (pendente)
+- Deploy frontend: Cloud Run, mesmo padrão do backend (pendente — ver `_local-adr-policy-001` amendment)
 - Ver `CLAUDE.md` e `ROADMAP.md` na raiz do repositório para o contexto completo do produto e do roadmap de fases
 
 ## How to add a policy

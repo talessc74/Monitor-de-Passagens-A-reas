@@ -14,7 +14,6 @@
     "@fastify/cors": "^10.0.1",
     "@fastify/helmet": "^12.0.1",
     "@fastify/rate-limit": "^10.1.1",
-    "@fastify/static": "^8.0.2",
     "@google/genai": "^2.4.0",
     "@mpa/types": "*",
     "fastify": "^5.1.0",

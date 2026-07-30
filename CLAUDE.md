@@ -143,19 +143,21 @@ Vigilância Permanente, `.seeds/ARGUS.md` §I).
 
 | Camada | Tecnologia |
 |--------|-----------|
-| Frontend | Next.js 14 (App Router) + React + Tailwind CSS — **ainda não migrado**, hoje é Vite SPA (Fase 2) |
+| Frontend | Next.js 14 (App Router) + React + Tailwind CSS — código pronto em `apps/web`, deploy pendente (ver Fase 2, tarefa 7) |
 | Backend | Fastify (Node.js/TypeScript) — 3 serviços independentes |
 | Banco de dados | Firestore (Firebase) via `firebase-admin` — projeto **`lista-ai-f2916`**, compartilhado com o produto Lista Aí |
 | IA | Google Gemini API |
 | Pagamentos | Stripe |
 | Deploy backend | Cloud Run (contêiner Docker — não Firebase Cloud Functions) |
-| Deploy frontend | Vercel |
+| Deploy frontend | Cloud Run (mesmo padrão do backend — não Vercel; decisão corrigida, ver `_local-adr-policy-001`) |
 
 ## Estrutura do monorepo (Fase 5 — em vigor)
 
 ```
 ├── apps/
 │   └── web/                # @mpa/web — Next.js 14 (App Router), frontend definitivo (Fase 2)
+│       ├── next.config.mjs # output: 'standalone' (build p/ Cloud Run) + rewrite de /api/* para o api
+│       └── Dockerfile       # build multi-stage, mesmo padrão dos services/* — deploy em Cloud Run, não Vercel
 ├── src/                    # frontend Vite/React antigo (sendo descontinuado; apps/web é o atual)
 ├── packages/
 │   └── types/              # @mpa/types — fonte da verdade dos tipos, compartilhada com todo o backend
@@ -217,7 +219,7 @@ npm run seed                # popula a coleção mpa_sites no Firestore (idempot
 npm run lint                 # type-check do frontend + do serviço api
 ```
 
-Em dev, o Vite faz proxy de `/api/*` para `http://localhost:8080` (ver `vite.config.ts`). Em produção, o próprio `api` serve o build estático do frontend (`web-dist/`, copiado pelo Dockerfile) — mesmo padrão do MVP original, até a migração para Next.js/Vercel na Fase 2.
+Em dev, o `src/` antigo (Vite) faz proxy de `/api/*` para `http://localhost:8080` (ver `vite.config.ts`) — descontinuado, `apps/web` é o frontend atual. O `apps/web` (Next.js) faz o mesmo via `rewrites()` em `next.config.mjs`. Em produção, cada um roda como seu próprio serviço Cloud Run (`flyspot-api`, `flyspot-web`) — o `api` não serve mais estático, é API pura desde a Fase 2 (tarefa 7).
 
 ## Variáveis de ambiente
 
