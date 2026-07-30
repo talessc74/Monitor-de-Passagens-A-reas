@@ -51,6 +51,17 @@ by both the user-authenticated route (manual "Varrer Agora") and the new interna
   search — at that point this internal-auth pattern gets reused, not redesigned, just pointed
   the other way.
 
+## Validated in production (2026-07-30)
+
+- `flyspot-generator` deployed via `deploy.yml` run #9, `--min-instances=1` applied
+- Composite Firestore index (`mpa_monitors`, `status` + `nextScanAt`, both ascending)
+  created via the auto-generated link from the first `FAILED_PRECONDITION` error in
+  `flyspot-generator`'s Cloud Run logs — no Firebase CLI needed. Index ID `CICAgOjXh4EK`,
+  confirmed "Ativado" (enabled).
+- Confirmed the polling loop is really running against production Firestore: the
+  `FAILED_PRECONDITION` error was recurring every tick (~60-70s) before the index existed,
+  and stopped appearing in the logs immediately once the index finished building.
+
 ## References
 
 - `ROADMAP.md`, Fase 4 — full architecture rationale (why polling, why not `onSchedule`)

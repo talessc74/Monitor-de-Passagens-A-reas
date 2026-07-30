@@ -176,7 +176,7 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 ## Fase 4 (escopo: Fase 4) — Varreduras Automáticas (scheduler)
 
-**Status: código concluído — falta configuração de infraestrutura (ver "Ações fora do código").**
+**Status: ✅ CONCLUÍDA — código, deploy e infraestrutura confirmados em produção.**
 
 **O que será construído:** O sistema varre preços sozinho, respeitando a frequência do plano de cada usuário — testado contra o simulador (sem custo).
 
@@ -196,19 +196,21 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 **Tarefas:**
 
-1. [x] Índice composto Firestore (`status` + `nextScanAt`) — declarado em `firestore.indexes.json`/`firebase.json`; falta aplicar no projeto real (ver "Ações fora do código")
+1. [x] Índice composto Firestore (`status` + `nextScanAt`) — declarado em `firestore.indexes.json`/`firebase.json`; criado no projeto real via o link automático do erro `FAILED_PRECONDITION` (ID `CICAgOjXh4EK`), confirmado "Ativado"
 2. [x] Loop de polling com lease, concorrência limitada e shutdown gracioso — `services/generator/src/scheduler.ts`
-3. [ ] Configurar Cloud Run do `generator` com min-instances = 1 — já no `deploy.yml` (`--min-instances=1`); falta rodar o deploy de verdade
+3. [x] Configurar Cloud Run do `generator` com min-instances = 1 — `deploy.yml` (`--min-instances=1`), deploy rodado com sucesso (run #9)
 4. [x] Intervalo por plano lido de `mpa_users/{uid}.plan` (free: 6h, pro: 1h — configurável via env)
 5. [x] Ao criar monitor: `nextScanAt = now` (já era o comportamento desde a Fase 1)
 6. [x] Telemetria mínima: doc `system/schedulerHealth` com último tick e contagem de scans/erros
 
 **Arquitetura implementada (detalhe que não estava decidido antes de construir — ver `_local-adr-policy-002`):** como o `generator` não tem usuário Firebase logado para autenticar como, ele dispara o scan chamando uma nova rota interna do `api` (`POST /internal/scan/:id`), autenticada por segredo compartilhado (`INTERNAL_SCAN_TOKEN`) em vez de token de usuário. A lógica de scan foi extraída para `services/api/src/executeScan.ts`, reaproveitada tanto pela rota autenticada (clique manual) quanto pela interna (scheduler).
 
-**Ações fora do código (pendentes):**
-- [ ] Criar o índice composto no Firestore real — mais simples deixar o Firestore gerar o link automático: rodar o `generator` localmente/em produção uma vez, a primeira query vencida sem índice retorna um erro com um link direto do console para criar o índice exato com um clique (não precisa da CLI do Firebase)
-- [ ] Gerar um valor para `INTERNAL_SCAN_TOKEN` (ex.: `openssl rand -hex 32`) e cadastrar como secret `INTERNAL_SCAN_TOKEN` no GitHub Actions (mesmo padrão do `GCP_SA_KEY`) — o `deploy.yml` já está configurado para injetá-lo nos dois serviços
-- [ ] Rodar o `deploy.yml` (botão "Run workflow") para publicar `flyspot-generator` pela primeira vez
+**Ações fora do código — todas concluídas:**
+- [x] Índice composto criado no Firestore real (via link automático do erro, sem precisar da CLI do Firebase)
+- [x] `INTERNAL_SCAN_TOKEN` gerado e cadastrado como secret no GitHub Actions
+- [x] `deploy.yml` rodado com sucesso, publicando `flyspot-api` e `flyspot-generator` (run #9, 2026-07-30)
+
+**Validado em produção:** erro `FAILED_PRECONDITION` (índice ausente) recorrente a cada tick desde antes do índice existir; parou de aparecer nos logs do `flyspot-generator` assim que o índice ficou "Ativado" — confirma que o loop de polling está rodando de verdade contra o Firestore de produção.
 
 **Critérios de aceite (QA):**
 - Monitor criado é varrido em ≤ 2 min sem clique
