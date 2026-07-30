@@ -151,27 +151,42 @@ Vigilância Permanente, `.seeds/ARGUS.md` §I).
 | Deploy backend | Cloud Run (contêiner Docker — não Firebase Cloud Functions) |
 | Deploy frontend | Vercel |
 
-## Estrutura do monorepo (Fase 1 — em vigor)
+## Estrutura do monorepo (Fase 4 — em vigor)
 
 ```
-├── src/                    # frontend Vite/React atual (migra pra apps/web na Fase 2)
+├── apps/
+│   └── web/                # @mpa/web — Next.js 14 (App Router), frontend definitivo (Fase 2)
+├── src/                    # frontend Vite/React antigo (sendo descontinuado; apps/web é o atual)
 ├── packages/
-│   └── types/              # @mpa/types — fonte da verdade dos tipos, compartilhada com o backend
+│   └── types/              # @mpa/types — fonte da verdade dos tipos, compartilhada com todo o backend
 └── services/
-    └── api/                # @mpa/api — Fastify: gateway REST, CRUD de monitores, scan (simulado)
+    ├── api/                # @mpa/api — Fastify: gateway REST, auth, CRUD de monitores, scan (simulado)
+    │   ├── src/
+    │   │   ├── index.ts          # bootstrap Fastify (helmet, rate-limit, cors, static em produção)
+    │   │   ├── env.ts            # validação de ambiente com Zod — não sobe com config faltando
+    │   │   ├── firestore.ts      # inicialização do firebase-admin + nomes das coleções (prefixo mpa_)
+    │   │   ├── auth.ts           # verifica ID Token Firebase; internalAuth.ts verifica o segredo de serviço-a-serviço
+    │   │   ├── executeScan.ts    # lógica de um scan (Gemini + notificação + stats) — reaproveitada por /api e /internal
+    │   │   ├── scanSimulator.ts  # simulação de preços via Gemini (temporário — Fase 7 troca por Duffel/Amadeus)
+    │   │   ├── routeStats.ts     # estimativa de preço (média/mín/máx) antes de o monitor existir
+    │   │   ├── geminiClient.ts   # cliente Gemini único, compartilhado entre scanSimulator e routeStats
+    │   │   ├── purchaseLink.ts   # deep-links de compra por companhia
+    │   │   ├── repositories/     # única camada que fala com o Firestore
+    │   │   ├── routes/           # rotas Fastify com validação Zod (inclui /internal/scan/:id)
+    │   │   └── seed.ts           # popula mpa_sites (LATAM, GOL, Azul, Decolar, Skyscanner)
+    │   └── Dockerfile            # build multi-stage para Cloud Run
+    └── generator/          # @mpa/generator — Fastify mínimo + loop de polling do scheduler (Fase 4)
         ├── src/
-        │   ├── index.ts          # bootstrap Fastify (helmet, rate-limit, cors, static em produção)
-        │   ├── env.ts            # validação de ambiente com Zod — não sobe com config faltando
-        │   ├── firestore.ts      # inicialização do firebase-admin + nomes das coleções (prefixo mpa_)
-        │   ├── scanSimulator.ts  # simulação de preços via Gemini (temporário — Fase 3 troca por Duffel/Amadeus)
-        │   ├── purchaseLink.ts   # deep-links de compra por companhia
-        │   ├── repositories/     # única camada que fala com o Firestore
-        │   ├── routes/           # rotas Fastify com validação Zod
-        │   └── seed.ts           # popula mpa_sites (LATAM, GOL, Azul, Decolar, Skyscanner)
-        └── Dockerfile            # build multi-stage para Cloud Run
+        │   ├── index.ts          # bootstrap Fastify (só /health) + inicia/encerra o scheduler
+        │   ├── env.ts            # POLL_INTERVAL_MS, MAX_CONCURRENT_SCANS, intervalo por plano, etc.
+        │   ├── firestore.ts      # mesmo projeto/coleções do api (leitura de mpa_monitors/mpa_users)
+        │   └── scheduler.ts      # tick: query de vencidos, lease por transação, chama /internal/scan/:id
+        └── Dockerfile
 ```
 
-Gerenciado via **npm workspaces** (`services/*`, `packages/*`) — sem ferramenta extra de monorepo. `services/generator` e `services/publisher` nascem nas Fases 3 e 5, respectivamente.
+Gerenciado via **npm workspaces** (`services/*`, `packages/*`, `apps/*`) — sem ferramenta extra de monorepo. `services/publisher` nasce na Fase 5.
+
+**Autenticação de serviço-a-serviço:** `generator` não tem usuário Firebase logado para autenticar como (quem dispara o scan é o scheduler, não um clique). Por isso ele chama `POST /internal/scan/:id` no `api`, autenticado por um segredo compartilhado (`INTERNAL_SCAN_TOKEN`, mesmo valor nos dois serviços) em vez de ID Token — ver `_local-adr-policy-002` no XDRS.
 
 Cada serviço é empacotado em contêiner Docker e deployado no **Cloud Run** — mesmo padrão já usado no projeto irmão `multi-agent-system` (repo `lexforum-ai-studio`). Escolha deliberada: **não** usar o produto "Cloud Functions" do Firebase, porque ele exige o projeto estar no plano Blaze; o Cloud Run publicado diretamente via contêiner não exige essa mudança de plano no Firebase e mantém `lista-ai-f2916` no Spark.
 
