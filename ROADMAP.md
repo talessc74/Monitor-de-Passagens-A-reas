@@ -283,7 +283,7 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 - Webhook reenviado pelo Stripe não duplica efeito
 - Usuário free não consegue criar 3º monitor nem via chamada direta à API
 
-**Decisões do produto:** preço R$29/mês confirmado · tabela de limites confirmada como proposta · trial ainda não decidido
+**Decisões do produto:** preço R$29/mês confirmado · tabela de limites confirmada como proposta · trial de 10 dias grátis (só na primeira assinatura por usuário)
 
 **Ações fora do código:**
 - [x] Conta Stripe — confirmado pelo dono do produto: já recebe pagamentos no Brasil sem CNPJ (validado no projeto irmão EAI Jurídico)

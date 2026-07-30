@@ -124,6 +124,9 @@ function PlansPageContent() {
             <p className="mt-2 text-2xl font-black text-slate-800">
               R$ 29<span className="text-sm font-semibold text-slate-400">/mês</span>
             </p>
+            {!isPro && !profile?.stripeSubscriptionId && (
+              <p className="mt-1 text-xs font-bold text-emerald-600">10 dias grátis para testar antes de pagar</p>
+            )}
             <ul className="mt-4 space-y-2">
               {PRO_FEATURES.map((f) => (
                 <li key={f} className="flex items-start gap-2 text-xs text-slate-600 font-medium">
@@ -139,7 +142,7 @@ function PlansPageContent() {
                 disabled={isRedirecting}
                 className="mt-5 w-full rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:bg-slate-100 disabled:text-slate-400"
               >
-                {isRedirecting ? 'Redirecionando...' : 'Assinar Pro'}
+                {isRedirecting ? 'Redirecionando...' : !profile?.stripeSubscriptionId ? 'Começar trial de 10 dias' : 'Assinar Pro'}
               </button>
             )}
             {isPro && (

@@ -21,12 +21,19 @@ export async function billingRoutes(app: FastifyInstance) {
     const user = await getUser(request.userId);
     const appUrl = env.APP_URL ?? 'http://localhost:5173';
 
+    // Trial de 10 dias — só para quem nunca assinou antes (checado via
+    // stripeSubscriptionId já gravado), para fechar o loop óbvio de
+    // cancelar e reassinar em busca de trial infinito. Ver
+    // _local-adr-policy-003.
+    const isFirstSubscription = !user?.stripeSubscriptionId;
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       client_reference_id: request.userId,
       customer: user?.stripeCustomerId,
       customer_email: user?.stripeCustomerId ? undefined : (request.userEmail ?? undefined),
       line_items: [{ price: env.STRIPE_PRICE_ID_PRO, quantity: 1 }],
+      subscription_data: isFirstSubscription ? { trial_period_days: 10 } : undefined,
       success_url: `${appUrl}/plans?checkout=success`,
       cancel_url: `${appUrl}/plans?checkout=canceled`,
     });
