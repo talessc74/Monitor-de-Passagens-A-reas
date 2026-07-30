@@ -8,7 +8,7 @@ import { Plane } from 'lucide-react';
 import { useAuth } from '../../lib/auth-context';
 
 export default function LoginPage() {
-  const { user, loading, signIn, signUp, signInWithGoogle } = useAuth();
+  const { user, loading, redirectError, signIn, signUp, signInWithGoogle } = useAuth();
   const router = useRouter();
 
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -22,6 +22,12 @@ export default function LoginPage() {
       router.replace('/dashboard');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (redirectError) {
+      setError(traduzErro({ code: redirectError }));
+    }
+  }, [redirectError]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -147,6 +153,8 @@ function traduzErro(err: unknown): string {
     'auth/email-already-in-use': 'Este e-mail já está cadastrado.',
     'auth/weak-password': 'A senha precisa ter pelo menos 6 caracteres.',
     'auth/popup-closed-by-user': 'Login cancelado.',
+    'auth/unauthorized-domain': 'Este domínio não está autorizado para login. Fale com o suporte.',
+    'auth/account-exists-with-different-credential': 'Este e-mail já está cadastrado com outro método de login.',
   };
   return map[code] ?? 'Não foi possível autenticar. Tente novamente.';
 }
