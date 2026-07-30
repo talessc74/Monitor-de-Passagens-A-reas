@@ -16,9 +16,10 @@ subscription state changes, and enforcement of the plan's limits that cannot be 
 calling the API directly (UI-only enforcement is not enforcement).
 
 The product owner confirmed the plan table as proposed (Free: 2 monitors/6h scans/7-day history;
-Pro: 10 monitors/1h scans/90-day history, R$29/month) and confirmed their existing Stripe account
-already receives payments in Brazil without a CNPJ (validated on a sibling project), removing the
-business blocker the roadmap flagged before any code in this phase.
+Pro: 10 monitors/1h scans/90-day history, R$29/month), confirmed a 10-day free trial, and
+confirmed their existing Stripe account already receives payments in Brazil without a CNPJ
+(validated on a sibling project), removing the business blocker the roadmap flagged before any
+code in this phase.
 
 Questions: how is the webhook trusted and processed exactly once per event; what exactly does
 "monitor limit" count; what happens to a user's monitors when they downgrade.
@@ -34,7 +35,10 @@ new limit, keeping the oldest by `createdAt`.**
 
 - `POST /billing/checkout` (authenticated): creates a Stripe Checkout Session for the Pro price,
   with `client_reference_id` set to the Firebase `uid` — this is how the webhook maps a Stripe
-  event back to a `UserProfile` without trusting any client-supplied identifier.
+  event back to a `UserProfile` without trusting any client-supplied identifier. Includes
+  `subscription_data.trial_period_days: 10` **only** when the user has no `stripeSubscriptionId`
+  on record yet (first subscription) — without this guard, cancel-and-resubscribe would grant an
+  unlimited trial.
 - `POST /billing/portal` (authenticated): creates a Stripe Customer Portal session for the user's
   `stripeCustomerId`, so the user can update payment method or cancel without us building UI for it.
 
