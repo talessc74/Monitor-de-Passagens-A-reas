@@ -290,6 +290,8 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 - [ ] Criar produto/preço recorrente (R$29/mês) no Stripe Dashboard em modo test e copiar o `price_id` para `STRIPE_PRICE_ID_PRO`
 - [ ] Configurar o endpoint de webhook no Stripe Dashboard apontando para `https://<url-do-flyspot-api>/webhooks/stripe` e copiar o `whsec_...` para `STRIPE_WEBHOOK_SECRET`
 - [ ] Adicionar secrets no GitHub Actions: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_PRO`
+- [ ] Adicionar secret `APP_URL` no GitHub Actions com a URL de produção do frontend (Vercel) — usada para montar os links de retorno do Checkout/Portal do Stripe; sem ele o redirecionamento cai em `http://localhost:5173` (fallback de dev, incorreto em produção)
+- [ ] **Verificar também `EMAIL_ACTION_SECRET` (pendente desde a Fase 5)** antes de rodar o deploy — sem ele configurado, o `services/api` agora normaliza o valor ausente como opcional de fato (ver `_local-adr-policy-003`), mas a rota de pausar monitor sem login fica desabilitada (401 sempre) até ser definido
 - [ ] Rodar `deploy.yml` para publicar a versão do `flyspot-api` com as rotas de billing
 
 ---

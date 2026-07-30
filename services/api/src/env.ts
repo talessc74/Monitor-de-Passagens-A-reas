@@ -28,8 +28,17 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+/**
+ * O Cloud Run/GitHub Actions injeta `env_vars` de secrets não configurados
+ * como string vazia, não como variável ausente — o que quebraria qualquer
+ * campo `.optional()` combinado com um validador adicional (`.url()`,
+ * `.min()`), derrubando o boot por um segredo que deveria ser
+ * legitimamente opcional. Normaliza string vazia para `undefined` antes
+ * do parse para que `.optional()` signifique o que diz.
+ */
 function loadEnv(): Env {
-  const parsed = envSchema.safeParse(process.env);
+  const sanitized = Object.fromEntries(Object.entries(process.env).map(([key, value]) => [key, value === '' ? undefined : value]));
+  const parsed = envSchema.safeParse(sanitized);
   if (!parsed.success) {
     console.error('Configuração de ambiente inválida:');
     console.error(parsed.error.flatten().fieldErrors);

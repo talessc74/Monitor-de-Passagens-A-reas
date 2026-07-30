@@ -66,6 +66,14 @@ unpaused, reactivate in bulk), so `PLAN_LIMITS[plan].maxMonitors` is checked aga
 upgrade-oriented message when the count is already at the limit — enforced server-side, not only
 hidden in the UI.
 
+**Known accepted limitation:** the count-then-create sequence is not wrapped in a Firestore
+transaction, so two concurrent `POST /api/monitors` requests from the same user at exactly the
+limit could both read a count below the limit and both succeed, landing one monitor over. This is
+a low-probability race (a single user firing genuinely concurrent creation requests against
+themselves) rather than an externally exploitable bypass, and closing it fully would require
+moving monitor creation into a transaction that also reads the user's current count — deferred
+until a real occurrence or a stricter compliance requirement justifies the added complexity.
+
 ### Downgrade behavior
 
 `pauseExcessMonitorsForUser(userId, newLimit)` is a pure, independently testable function (not
