@@ -43,6 +43,10 @@ though nothing here currently runs `firebase deploy --only firestore:indexes` â€
 and gives a reference if that ever changes, consistent with why the Fase 4 index was added there
 too even though it was actually created via the Firestore Console error link.
 
+**Confirmed in production (2026-07-30):** both indexes created directly from the
+`FAILED_PRECONDITION` error links found in `flyspot-api`'s Cloud Run logs â€” no manual field
+entry needed. Both reached status "Ativado" within ~4 minutes of creation.
+
 ### Details
 
 - Acceptance criterion (verifiable): a real user (not the internal scan path) logging in and
