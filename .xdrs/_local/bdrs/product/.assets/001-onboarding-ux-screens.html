@@ -1,0 +1,1501 @@
+<title>FlySpot — Telas (UX)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg: #eef0ea;
+    --bg-raised: #e4e7de;
+    --ink: #1c2018;
+    --ink-soft: #565f4e;
+    --ink-faint: #8b9280;
+    --line: rgba(28, 32, 24, 0.14);
+    --line-strong: rgba(28, 32, 24, 0.28);
+    --amber: #b9760f;
+    --amber-ink: #6e4408;
+    --teal: #2c6e60;
+    --teal-bg: #dbe9e2;
+    --brick: #a8442f;
+    --brick-bg: #f1ded9;
+    --card: #f7f6f0;
+    --shadow: 0 1px 0 rgba(28,32,24,0.05), 0 8px 20px -12px rgba(28,32,24,0.25);
+    --radius: 3px;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Consolas", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12140f;
+      --bg-raised: #191c14;
+      --ink: #e9e7db;
+      --ink-soft: #b3b6a2;
+      --ink-faint: #767a67;
+      --line: rgba(233, 231, 219, 0.14);
+      --line-strong: rgba(233, 231, 219, 0.26);
+      --amber: #e0a340;
+      --amber-ink: #f4d59b;
+      --teal: #6cbba8;
+      --teal-bg: #1b2f29;
+      --brick: #d97b64;
+      --brick-bg: #33221e;
+      --card: #191c14;
+      --shadow: 0 1px 0 rgba(233,231,219,0.04), 0 12px 28px -14px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12140f; --bg-raised: #191c14; --ink: #e9e7db; --ink-soft: #b3b6a2; --ink-faint: #767a67;
+    --line: rgba(233, 231, 219, 0.14); --line-strong: rgba(233, 231, 219, 0.26);
+    --amber: #e0a340; --amber-ink: #f4d59b; --teal: #6cbba8; --teal-bg: #1b2f29;
+    --brick: #d97b64; --brick-bg: #33221e; --card: #191c14;
+    --shadow: 0 1px 0 rgba(233,231,219,0.04), 0 12px 28px -14px rgba(0,0,0,0.6);
+  }
+  :root[data-theme="light"] {
+    --bg: #eef0ea; --bg-raised: #e4e7de; --ink: #1c2018; --ink-soft: #565f4e; --ink-faint: #8b9280;
+    --line: rgba(28, 32, 24, 0.14); --line-strong: rgba(28, 32, 24, 0.28);
+    --amber: #b9760f; --amber-ink: #6e4408; --teal: #2c6e60; --teal-bg: #dbe9e2;
+    --brick: #a8442f; --brick-bg: #f1ded9; --card: #f7f6f0;
+    --shadow: 0 1px 0 rgba(28,32,24,0.05), 0 8px 20px -12px rgba(28,32,24,0.25);
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+  }
+  body { -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--amber); color: #14140f; }
+  :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 20px 80px;
+  }
+
+  /* ---- masthead ---- */
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line-strong);
+    margin-bottom: 28px;
+  }
+  .masthead h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(1.5rem, 2.4vw, 2rem);
+    letter-spacing: 0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .masthead h1 em {
+    font-style: normal;
+    color: var(--amber);
+  }
+  .masthead .tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ---- screen switcher ---- */
+  .switcher {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 26px;
+  }
+  .switcher button {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+  }
+  .switcher button:hover { border-color: var(--line-strong); color: var(--ink); }
+  .switcher button[aria-selected="true"] {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+
+  .screen { display: none; }
+  .screen[data-active="true"] { display: block; animation: fade .25s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  .frame-note {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+    margin: 0 0 14px;
+  }
+
+  /* ---- phone frame ---- */
+  .phone {
+    width: 100%;
+    max-width: 392px;
+    margin: 0 auto;
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 10px;
+    box-shadow: var(--shadow);
+  }
+  .phone__screen {
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 18px 16px 26px;
+    min-height: 620px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ---- wide dashboard layout ---- */
+  .wide {
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+
+  /* ===================== app chrome ===================== */
+  .app-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .brand { display: flex; align-items: center; gap: 8px; }
+  .brand__mark {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 1.5px solid var(--amber);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .brand__mark::after {
+    content: "";
+    width: 3px; height: 3px; border-radius: 50%;
+    background: var(--amber);
+  }
+  .brand__name {
+    font-family: var(--serif);
+    font-size: 16px;
+    letter-spacing: 0.01em;
+  }
+  .brand__name em { font-style: normal; color: var(--amber); }
+  .app-top__actions { display: flex; align-items: center; gap: 10px; }
+  .avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--teal-bg); color: var(--teal);
+    font-family: var(--mono); font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line);
+  }
+  .icon-btn {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 1px solid var(--line);
+    background: transparent; color: var(--ink-soft);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+
+  /* eyebrow / section label */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 6px;
+  }
+  h2.section-title {
+    font-family: var(--serif);
+    font-size: 19px;
+    font-weight: 500;
+    margin: 0 0 4px;
+    text-wrap: balance;
+  }
+  .section-sub { font-size: 12.5px; color: var(--ink-soft); margin: 0 0 16px; }
+
+  /* ---- status pill ---- */
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em;
+    padding: 3px 8px; border-radius: 20px;
+    border: 1px solid transparent;
+  }
+  .pill--active { background: var(--teal-bg); color: var(--teal); }
+  .pill--paused { background: var(--bg); color: var(--ink-faint); border-color: var(--line); }
+  .pill--alert { background: var(--brick-bg); color: var(--brick); }
+  .pill::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  /* ===================== ticket card ===================== */
+  .ticket {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+  }
+  .ticket__main { padding: 14px 16px 12px; }
+  .ticket__route {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.02em;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .ticket__route .code { font-weight: 600; }
+  .ticket__route .arrow { color: var(--ink-faint); }
+  .ticket__meta { font-size: 11.5px; color: var(--ink-faint); margin-bottom: 10px; }
+
+  .ticket__price-row {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 10px; margin-bottom: 10px;
+  }
+  .flap-price { display: flex; gap: 2px; }
+  .flap {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 1;
+    background: var(--bg-raised);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 4px 3px 3px;
+    min-width: 16px;
+    text-align: center;
+    position: relative;
+    font-variant-numeric: tabular-nums;
+  }
+  .flap.currency { background: transparent; border-color: transparent; color: var(--ink-faint); font-size: 12px; padding-top: 8px; }
+  .flap.sep { background: transparent; border-color: transparent; color: var(--ink-faint); padding: 4px 0 3px; }
+  .flap::after {
+    content: "";
+    position: absolute; left: 0; right: 0; top: 50%;
+    height: 1px; background: var(--bg);
+    opacity: .5;
+  }
+  .price-target { text-align: right; }
+  .price-target .label { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); display:block; }
+  .price-target .value { font-family: var(--mono); font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .price-target .value.hit { color: var(--teal); font-weight: 600; }
+
+  canvas.spark { display: block; width: 100%; height: 46px; margin-bottom: 8px; }
+
+  .ticket__divider {
+    position: relative;
+    border-top: 1px dashed var(--line-strong);
+    margin: 0 0;
+  }
+  .ticket__divider::before, .ticket__divider::after {
+    content: "";
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--bg-raised);
+  }
+  .wide .ticket__divider::before, .wide .ticket__divider::after { background: var(--bg-raised); }
+  .ticket__divider::before { left: -8px; }
+  .ticket__divider::after { right: -8px; }
+
+  .ticket__stub {
+    padding: 10px 16px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; flex-wrap: wrap;
+  }
+  .ticket__stub .stub-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .stub-note { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); }
+  .stub-since { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); }
+  .stub-since::before { content: "· "; }
+  .spark-legend {
+    display: flex; align-items: center; gap: 12px;
+    font-family: var(--mono); font-size: 9px; color: var(--ink-faint);
+    margin: -4px 0 8px;
+  }
+  .spark-legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .spark-legend .swatch { width: 10px; height: 2px; background: currentColor; display: inline-block; }
+  .spark-legend .swatch.dashed { background: none; border-top: 2px dashed currentColor; height: 0; }
+  .stub-actions { display: flex; gap: 6px; }
+  .stub-actions button {
+    font-family: var(--sans); font-size: 11.5px; font-weight: 600;
+    background: transparent; border: 1px solid var(--line);
+    color: var(--ink-soft); border-radius: 4px; padding: 5px 9px; cursor: pointer;
+  }
+  .stub-actions button:hover { border-color: var(--line-strong); color: var(--ink); }
+  .stub-actions button.primary {
+    background: var(--ink); color: var(--bg); border-color: var(--ink);
+  }
+
+  /* ===================== onboarding ===================== */
+  .boarding-steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 18px; }
+  .b-step { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .b-step:last-child { border-bottom: none; }
+  .b-step__num {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-faint);
+    width: 18px; padding-top: 2px; flex-shrink: 0;
+  }
+  .b-step__num.done { color: var(--teal); }
+  .b-step.current .b-step__num { color: var(--amber); font-weight: 700; }
+  .b-step__body { flex: 1; }
+  .b-step__label { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .b-step.done .b-step__label { color: var(--ink-soft); font-weight: 500; text-decoration: line-through; text-decoration-color: var(--line-strong); }
+
+  .field-row { display: flex; gap: 8px; }
+  .field { flex: 1; }
+  .field label {
+    display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--ink-faint); margin-bottom: 4px;
+  }
+  .field input, .field select {
+    width: 100%;
+    font-family: var(--sans); font-size: 13.5px;
+    background: var(--card); color: var(--ink);
+    border: 1px solid var(--line-strong); border-radius: 4px;
+    padding: 8px 9px;
+  }
+  .field input:focus, .field select:focus { border-color: var(--amber); }
+  .field select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink-faint) 50%), linear-gradient(135deg, var(--ink-faint) 50%, transparent 50%); background-position: calc(100% - 14px) center, calc(100% - 9px) center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 24px; }
+
+  .date-flex { display: flex; gap: 6px; }
+  .date-flex input[type="date"] { flex: 1.4; }
+  .date-flex select { flex: 1; }
+
+  .stepper-row { display: flex; flex-direction: column; gap: 10px; }
+  .stepper {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 2px;
+    border-bottom: 1px solid var(--line);
+  }
+  .stepper:last-child { border-bottom: none; }
+  .stepper__label { font-size: 13px; }
+  .stepper__label .hint { display: block; font-size: 10.5px; color: var(--ink-faint); margin-top: 1px; }
+  .stepper__control { display: flex; align-items: center; gap: 10px; }
+  .stepper__btn {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 1px solid var(--line-strong); background: var(--card); color: var(--ink);
+    font-family: var(--mono); font-size: 13px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .stepper__btn:hover { border-color: var(--amber); color: var(--amber); }
+  .stepper__count { font-family: var(--mono); font-size: 14px; min-width: 14px; text-align: center; font-variant-numeric: tabular-nums; }
+
+  .cta-primary {
+    width: 100%;
+    background: var(--amber); color: #211500;
+    font-family: var(--sans); font-weight: 700; font-size: 13.5px;
+    border: none; border-radius: 4px; padding: 11px; cursor: pointer;
+    margin-top: 14px;
+  }
+  .cta-primary:hover { filter: brightness(1.06); }
+
+  .aha-card {
+    margin-top: 16px;
+    background: var(--teal-bg); border: 1px solid var(--teal);
+    border-radius: 6px; padding: 12px 14px;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .aha-card .dot { color: var(--teal); font-size: 16px; line-height: 1.1; }
+  .aha-card p { margin: 0; font-size: 12px; color: var(--ink); line-height: 1.5; }
+  .aha-card strong { color: var(--teal); }
+
+  .price-insight {
+    background: var(--bg-raised); border: 1px solid var(--line);
+    border-radius: 6px; padding: 12px 14px; margin: 4px 0 14px;
+  }
+  .price-insight__head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+  .price-insight__head .eyebrow { margin: 0; }
+  .price-insight__head .n-obs { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); }
+  .price-insight__range { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .price-insight__range .avg { font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .price-insight__range .band { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .price-insight__bar {
+    position: relative; height: 5px; border-radius: 3px;
+    background: linear-gradient(90deg, var(--teal-bg), var(--amber) 55%, var(--brick-bg));
+    margin-bottom: 10px;
+  }
+  .price-insight__bar .marker {
+    position: absolute; top: -3px; width: 2px; height: 11px; background: var(--ink);
+  }
+  .price-insight__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .price-insight__foot p { margin: 0; font-size: 11px; color: var(--ink-soft); }
+  .use-suggestion {
+    font-family: var(--sans); font-size: 11.5px; font-weight: 700;
+    background: transparent; border: 1px solid var(--amber); color: var(--amber-ink);
+    border-radius: 4px; padding: 5px 10px; cursor: pointer; white-space: nowrap;
+  }
+  .use-suggestion:hover { background: var(--amber); color: #211500; }
+
+  /* ===================== empty state — painel tipo torre de controle ===================== */
+  .hud {
+    position: relative;
+    width: min(322px, 100%);
+    aspect-ratio: 1 / 1;
+    margin: 4px auto 16px;
+    padding: 15px;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    background: var(--bg-raised);
+  }
+  .hud-corner {
+    position: absolute; width: 9px; height: 9px;
+    border: 1.5px solid var(--amber);
+  }
+  .hud-corner.tl { top: 3px; left: 3px; border-right: none; border-bottom: none; }
+  .hud-corner.tr { top: 3px; right: 3px; border-left: none; border-bottom: none; }
+  .hud-corner.bl { bottom: 3px; left: 3px; border-right: none; border-top: none; }
+  .hud-corner.br { bottom: 3px; right: 3px; border-left: none; border-top: none; }
+
+  .hud-ruler-h {
+    position: absolute; left: 16px; right: 16px; height: 6px;
+    background: repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 7px);
+  }
+  .hud-ruler-h.top { top: 5px; } .hud-ruler-h.bottom { bottom: 5px; }
+  .hud-ruler-v {
+    position: absolute; top: 16px; bottom: 16px; width: 6px;
+    background: repeating-linear-gradient(0deg, var(--line-strong) 0 1px, transparent 1px 7px);
+  }
+  .hud-ruler-v.left { left: 5px; } .hud-ruler-v.right { right: 5px; }
+
+  .hud-panel {
+    position: absolute; width: 66px;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 3px; padding: 5px 6px;
+    z-index: 2;
+  }
+  .hud-panel.tl { top: 13px; left: 13px; }
+  .hud-panel.tr { top: 13px; right: 13px; text-align: right; width: 70px; }
+  .hud-panel.bl { bottom: 13px; left: 13px; }
+  .hud-panel.br { bottom: 13px; right: 13px; text-align: right; }
+  .hud-map { display: block; width: 100%; height: 32px; }
+  .hud-panel__label {
+    display: block; font-family: var(--mono); font-size: 7px; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--ink-faint); margin-bottom: 4px;
+  }
+  .hud-panel__code {
+    display: block; font-family: var(--mono); font-size: 8px; color: var(--ink-soft);
+    margin-top: 3px; font-variant-numeric: tabular-nums;
+  }
+  .mini-bars { display: flex; align-items: flex-end; gap: 2px; height: 20px; }
+  .hud-panel.tr .mini-bars { justify-content: flex-end; }
+  .mini-bars span { display: block; width: 5px; height: var(--h); background: var(--amber); opacity: .75; border-radius: 1px 1px 0 0; transition: height .7s ease; }
+  .mini-route { display: flex; align-items: center; gap: 0; height: 8px; justify-content: flex-end; }
+  .mini-route .node { width: 4px; height: 4px; border-radius: 50%; background: var(--ink-faint); flex-shrink: 0; }
+  .mini-route .node.hub { background: var(--amber); width: 5px; height: 5px; }
+  .mini-route .link { width: 9px; height: 1px; background: var(--line-strong); }
+  .mini-gauge {
+    width: 9px; height: 24px; border: 1px solid var(--line-strong); border-radius: 2px;
+    position: relative; overflow: hidden; background: var(--bg);
+  }
+  .mini-gauge__fill { position: absolute; bottom: 0; left: 0; right: 0; background: var(--teal); opacity: .8; transition: height .9s ease; }
+  .hud-codes { display: flex; flex-direction: column; gap: 1px; align-items: flex-end; transition: opacity .22s ease; }
+  .hud-codes span { font-family: var(--mono); font-size: 7px; color: var(--ink-faint); letter-spacing: 0.02em; display: block; transition: opacity .35s ease, color .35s ease; }
+  .hud-codes span.on { color: var(--teal); }
+
+  .radar-wrap {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .radar-stack {
+    position: relative;
+    width: 92%; height: 92%;
+    max-width: 100%;
+  }
+  .radar-ticks {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: repeating-conic-gradient(var(--line-strong) 0deg 1deg, transparent 1deg 6deg);
+    -webkit-mask-image: radial-gradient(circle, transparent 91%, #000 91% 97%, transparent 97%);
+    mask-image: radial-gradient(circle, transparent 91%, #000 91% 97%, transparent 97%);
+  }
+  .radar {
+    position: absolute; inset: 18px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    background:
+      radial-gradient(circle, transparent 0 30%, var(--line) 30% 30.6%, transparent 30.6%),
+      radial-gradient(circle, transparent 0 60%, var(--line) 60% 60.6%, transparent 60.6%),
+      radial-gradient(circle, transparent 0 84%, var(--line) 84% 84.6%, transparent 84.6%);
+  }
+  .radar::before {
+    content: "";
+    position: absolute; inset: 0; border-radius: 50%;
+    background: conic-gradient(from 0deg, var(--amber) 0deg, transparent 46deg 360deg);
+    opacity: 0.32;
+    animation: sweep 4.2s linear infinite;
+  }
+  .radar::after {
+    content: "";
+    position: absolute; left: 50%; top: 50%; width: 5px; height: 5px;
+    background: var(--amber); border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--amber) 18%, transparent);
+  }
+  @keyframes sweep { to { transform: rotate(360deg); } }
+
+  .radar-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  .empty-copy { text-align: center; }
+  .empty-copy h3 { font-family: var(--serif); font-size: 17px; font-weight: 500; margin: 0 0 6px; }
+  .empty-copy p { font-size: 12.5px; color: var(--ink-soft); max-width: 280px; margin: 0 auto 16px; line-height: 1.55; }
+
+  /* ===================== detail / history screen ===================== */
+  .detail-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .back-link { font-family: var(--mono); font-size: 12px; color: var(--ink-faint); text-decoration: none; cursor: pointer; }
+  .back-link:hover { color: var(--ink); }
+
+  .big-price-block { text-align: center; margin: 18px 0 6px; }
+  .big-price-block .flap { font-size: 34px; padding: 8px 6px 6px; min-width: 22px; }
+  .big-price-block .flap.currency { font-size: 16px; padding-top: 16px; }
+  .big-price-block .flap-price { justify-content: center; }
+  .trend-line { text-align: center; font-size: 12px; color: var(--teal); margin: 8px 0 20px; font-weight: 600; }
+  .trend-line.down::before { content: "↓ "; }
+
+  canvas.spark-lg { width: 100%; height: 120px; display: block; margin-bottom: 6px; }
+  .axis-labels { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--ink-faint); margin-bottom: 20px; }
+
+  .stat-row { display: flex; gap: 10px; margin-bottom: 20px; }
+  .stat {
+    flex: 1; background: var(--card); border: 1px solid var(--line);
+    border-radius: 5px; padding: 10px 11px;
+  }
+  .stat .label { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-bottom: 4px; }
+  .stat .value { font-family: var(--mono); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .sites-list { display: flex; flex-direction: column; gap: 0; margin-bottom: 6px; }
+  .site-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+  .site-row:last-child { border-bottom: none; }
+  .site-row .name { display: flex; align-items: center; gap: 8px; }
+  .site-row .price { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .site-row .price.best { color: var(--teal); font-weight: 700; }
+
+  /* ===================== error state ===================== */
+  .error-card {
+    background: var(--brick-bg); border: 1px solid var(--brick);
+    border-radius: 6px; padding: 16px; margin-bottom: 16px;
+  }
+  .error-card h3 { font-family: var(--serif); font-size: 15px; margin: 0 0 6px; color: var(--brick); }
+  .error-card p { font-size: 12.5px; color: var(--ink); margin: 0 0 12px; line-height: 1.5; }
+  .error-card .retry {
+    font-family: var(--sans); font-size: 12px; font-weight: 700;
+    background: transparent; border: 1px solid var(--brick); color: var(--brick);
+    border-radius: 4px; padding: 7px 12px; cursor: pointer;
+  }
+
+  /* ===================== wide dashboard ===================== */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 22px;
+  }
+  @media (max-width: 800px) { .dash-grid { grid-template-columns: 1fr; } }
+  .kpi-strip { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+  .kpi {
+    flex: 1; min-width: 130px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 6px;
+    padding: 12px 14px;
+  }
+  .kpi .label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); }
+  .kpi .value { font-family: var(--serif); font-size: 22px; margin-top: 4px; }
+  .kpi .value.amber { color: var(--amber); }
+  .kpi .value.teal { color: var(--teal); }
+
+  .side-panel {
+    background: var(--card); border: 1px solid var(--line); border-radius: 6px;
+    padding: 16px;
+    align-self: start;
+  }
+
+  footer.credit {
+    margin-top: 40px; text-align: center;
+    font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint);
+    letter-spacing: 0.06em;
+  }
+</style>
+
+<div class="shell">
+  <div class="masthead">
+    <h1>Fly<em>Spot</em> — telas para revisão de UX</h1>
+    <span class="tag">Fase 3 · escopo original: Fase 7 · sobre o simulador Gemini</span>
+  </div>
+
+  <div class="switcher" role="tablist" aria-label="Selecionar tela">
+    <button role="tab" aria-selected="true" data-target="s-onboarding">01 · Onboarding</button>
+    <button role="tab" aria-selected="false" data-target="s-empty">02 · Estado vazio</button>
+    <button role="tab" aria-selected="false" data-target="s-dashboard">03 · Dashboard (mobile)</button>
+    <button role="tab" aria-selected="false" data-target="s-detail">04 · Histórico do monitor</button>
+    <button role="tab" aria-selected="false" data-target="s-error">05 · Erro amigável</button>
+    <button role="tab" aria-selected="false" data-target="s-wide">06 · Dashboard (desktop)</button>
+  </div>
+
+  <!-- 01 ONBOARDING -->
+  <section class="screen" id="s-onboarding" data-active="true">
+    <p class="frame-note">375px · primeiro acesso, sem monitores ainda</p>
+    <div class="phone"><div class="phone__screen">
+      <div class="app-top">
+        <div class="brand"><div class="brand__mark"></div><span class="brand__name">Fly<em>Spot</em></span></div>
+        <div class="avatar">TS</div>
+      </div>
+
+      <p class="eyebrow">Primeiro alerta</p>
+      <h2 class="section-title">Vamos rastrear sua primeira rota</h2>
+      <p class="section-sub">Três passos e você já sai daqui com um alerta rodando.</p>
+
+      <div class="boarding-steps">
+        <div class="b-step done">
+          <div class="b-step__num done">✓</div>
+          <div class="b-step__body"><div class="b-step__label">Conta criada — talessc@mac.com</div></div>
+        </div>
+        <div class="b-step current">
+          <div class="b-step__num">02</div>
+          <div class="b-step__body">
+            <div class="b-step__label">Origem e destino</div>
+            <div class="field-row" style="margin-bottom:12px;">
+              <div class="field"><label for="orig">Origem</label><input id="orig" value="GRU" /></div>
+              <div class="field"><label for="dest">Destino</label><input id="dest" value="REC" /></div>
+            </div>
+
+            <div class="b-step__label" style="margin-top:2px;">Quando você pode ir?</div>
+            <p class="section-sub" style="margin:2px 0 8px;">Dê uma folga na data — quanto mais flexível, mais barato o alerta encontra.</p>
+            <div class="date-flex" style="margin-bottom:8px;">
+              <div class="field"><label for="ida">Data de ida</label><input id="ida" type="date" value="2026-12-14" /></div>
+              <div class="field"><label for="ida-flex">Ou entre</label>
+                <select id="ida-flex">
+                  <option>data exata</option>
+                  <option selected>± 3 dias</option>
+                  <option>± 5 dias</option>
+                  <option>± 7 dias</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="b-step__label" style="margin-top:10px;">Quando você volta?</div>
+            <div class="date-flex">
+              <div class="field"><label for="volta">Data de volta</label><input id="volta" type="date" value="2026-12-21" /></div>
+              <div class="field"><label for="volta-flex">Ou entre</label>
+                <select id="volta-flex">
+                  <option>data exata</option>
+                  <option selected>± 3 dias</option>
+                  <option>± 5 dias</option>
+                  <option>± 7 dias</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="b-step">
+          <div class="b-step__num">03</div>
+          <div class="b-step__body">
+            <div class="b-step__label">Quem vai viajar?</div>
+            <div class="stepper-row">
+              <div class="stepper">
+                <div class="stepper__label">Adultos<span class="hint">12 anos ou mais</span></div>
+                <div class="stepper__control"><button class="stepper__btn">−</button><span class="stepper__count">2</span><button class="stepper__btn">+</button></div>
+              </div>
+              <div class="stepper">
+                <div class="stepper__label">Crianças<span class="hint">2 a 11 anos</span></div>
+                <div class="stepper__control"><button class="stepper__btn">−</button><span class="stepper__count">1</span><button class="stepper__btn">+</button></div>
+              </div>
+              <div class="stepper">
+                <div class="stepper__label">Bebês<span class="hint">até 2 anos, no colo</span></div>
+                <div class="stepper__control"><button class="stepper__btn">−</button><span class="stepper__count">0</span><button class="stepper__btn">+</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="b-step">
+          <div class="b-step__num">04</div>
+          <div class="b-step__body">
+            <div class="b-step__label">Qual o preço dos sonhos?</div>
+
+            <div class="price-insight">
+              <div class="price-insight__head">
+                <p class="eyebrow">Histórico para GRU → REC, ± 3 dias</p>
+                <span class="n-obs">últimos 60 dias · 3 pax</span>
+              </div>
+              <div class="price-insight__range">
+                <span class="avg">R$ 2.480</span>
+                <span class="band">média · faixa R$ 2.190 – R$ 2.990</span>
+              </div>
+              <div class="price-insight__bar"><div class="marker" style="left:38%;"></div></div>
+              <div class="price-insight__foot">
+                <p>Metas abaixo de <strong style="color:var(--ink)">R$ 2.190</strong> podem demorar mais para disparar.</p>
+                <button class="use-suggestion">Usar R$ 2.190 como meta</button>
+              </div>
+            </div>
+
+            <div class="field"><label for="meta">Meta pelo total (3 passageiros)</label><input id="meta" placeholder="R$ 2.190" /></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="cta-primary">Ativar monitor</button>
+
+      <div class="aha-card">
+        <span class="dot">✈</span>
+        <p>Assim que <strong>GRU → REC</strong> cair para o valor da sua meta, avisamos por e-mail — com o link direto para comprar.</p>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 02 EMPTY STATE -->
+  <section class="screen" id="s-empty">
+    <p class="frame-note">375px · dashboard sem nenhum monitor ativo (caso raro após onboarding)</p>
+    <div class="phone"><div class="phone__screen">
+      <div class="app-top">
+        <div class="brand"><div class="brand__mark"></div><span class="brand__name">Fly<em>Spot</em></span></div>
+        <div class="icon-btn">＋</div>
+      </div>
+      <div class="hud">
+        <span class="hud-corner tl"></span><span class="hud-corner tr"></span>
+        <span class="hud-corner bl"></span><span class="hud-corner br"></span>
+        <div class="hud-ruler-h top"></div><div class="hud-ruler-h bottom"></div>
+        <div class="hud-ruler-v left"></div><div class="hud-ruler-v right"></div>
+
+        <div class="hud-panel tl">
+          <span class="hud-panel__label">Scans/min</span>
+          <div class="mini-bars">
+            <span style="--h:45%"></span><span style="--h:70%"></span><span style="--h:55%"></span><span style="--h:85%"></span><span style="--h:62%"></span>
+          </div>
+        </div>
+        <div class="hud-panel tr">
+          <span class="hud-panel__label">Malha global</span>
+          <canvas class="hud-map" aria-hidden="true"></canvas>
+        </div>
+        <div class="hud-panel bl">
+          <span class="hud-panel__label">Cobertura</span>
+          <div class="mini-gauge"><span class="mini-gauge__fill" style="height:68%"></span></div>
+          <span class="hud-panel__code">68%</span>
+        </div>
+        <div class="hud-panel br">
+          <span class="hud-panel__label">Fontes on-line</span>
+          <div class="hud-codes" id="hud-sources">
+            <span class="on" data-name="LTM">LTM · 01</span>
+            <span class="on" data-name="GOL">GOL · 01</span>
+            <span class="on" data-name="AZU">AZU · 01</span>
+            <span data-name="DEC">DEC · 00</span>
+            <span class="on" data-name="SKY">SKY · 01</span>
+          </div>
+        </div>
+
+        <div class="radar-wrap">
+          <div class="radar-stack">
+            <div class="radar-ticks"></div>
+            <div class="radar"><canvas class="radar-canvas" aria-hidden="true"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <div class="empty-copy">
+        <h3>Nenhum voo no radar ainda</h3>
+        <p>Já estamos vigiando o mercado — LATAM, GOL, Azul, Decolar e Skyscanner. Cadastre sua primeira rota para começar a receber alertas.</p>
+        <button class="cta-primary" style="max-width:220px;margin:0 auto;">Rastrear uma rota</button>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 03 DASHBOARD MOBILE -->
+  <section class="screen" id="s-dashboard">
+    <p class="frame-note">375px · alertas ativos, ordenados por proximidade da meta</p>
+    <div class="phone"><div class="phone__screen">
+      <div class="app-top">
+        <div class="brand"><div class="brand__mark"></div><span class="brand__name">Fly<em>Spot</em></span></div>
+        <div class="app-top__actions"><div class="icon-btn">🔔</div><div class="avatar">TS</div></div>
+      </div>
+      <p class="eyebrow">3 rotas rastreadas</p>
+      <h2 class="section-title">Seus alertas</h2>
+
+      <div class="ticket">
+        <div class="ticket__main">
+          <div class="ticket__route"><span class="code">GRU</span><span class="arrow">→</span><span class="code">LIS</span><span class="pill pill--alert" style="margin-left:auto;">meta batida</span></div>
+          <div class="ticket__meta">14 mar – 28 mar · 2 passageiros · LATAM</div>
+          <div class="ticket__price-row">
+            <div class="flap-price">
+              <span class="flap currency">R$</span>
+              <span class="flap">3</span><span class="flap">1</span><span class="flap">8</span><span class="flap sep">,</span><span class="flap">0</span><span class="flap">0</span>
+            </div>
+            <div class="price-target"><span class="label">Meta</span><span class="value hit">R$ 3.400</span></div>
+          </div>
+          <div class="spark-legend"><span style="color:var(--brick)"><span class="swatch"></span>preço</span><span><span class="swatch dashed"></span>meta</span></div>
+          <canvas class="spark" data-series="420,405,398,370,360,345,318" data-target="3400" data-color="brick"></canvas>
+        </div>
+        <div class="ticket__divider"></div>
+        <div class="ticket__stub">
+          <div class="stub-left"><span class="pill pill--active">ativo</span><span class="stub-note">próxima varredura em 41min</span><span class="stub-since">monitorando há 19 dias</span></div>
+          <div class="stub-actions"><button>Pausar</button><button class="primary">Comprar</button></div>
+        </div>
+      </div>
+
+      <div class="ticket">
+        <div class="ticket__main">
+          <div class="ticket__route"><span class="code">CGH</span><span class="arrow">→</span><span class="code">REC</span></div>
+          <div class="ticket__meta">02 abr – 09 abr · 1 passageiro · GOL</div>
+          <div class="ticket__price-row">
+            <div class="flap-price">
+              <span class="flap currency">R$</span>
+              <span class="flap">8</span><span class="flap">4</span><span class="flap">9</span><span class="flap sep">,</span><span class="flap">0</span><span class="flap">0</span>
+            </div>
+            <div class="price-target"><span class="label">Meta</span><span class="value">R$ 700</span></div>
+          </div>
+          <div class="spark-legend"><span style="color:var(--amber)"><span class="swatch"></span>preço</span><span><span class="swatch dashed"></span>meta</span></div>
+          <canvas class="spark" data-series="720,760,810,790,830,849" data-target="700" data-color="amber"></canvas>
+        </div>
+        <div class="ticket__divider"></div>
+        <div class="ticket__stub">
+          <div class="stub-left"><span class="pill pill--active">ativo</span><span class="stub-note">próxima varredura em 3h</span><span class="stub-since">monitorando há 4 dias</span></div>
+          <div class="stub-actions"><button>Pausar</button><button>Ver</button></div>
+        </div>
+      </div>
+
+      <div class="ticket">
+        <div class="ticket__main">
+          <div class="ticket__route"><span class="code">GIG</span><span class="arrow">→</span><span class="code">GRU</span></div>
+          <div class="ticket__meta">18 mai – 22 mai · 1 passageiro · Azul</div>
+          <div class="ticket__price-row">
+            <div class="flap-price">
+              <span class="flap currency">R$</span>
+              <span class="flap">5</span><span class="flap">2</span><span class="flap">0</span><span class="flap sep">,</span><span class="flap">0</span><span class="flap">0</span>
+            </div>
+            <div class="price-target"><span class="label">Meta</span><span class="value">R$ 450</span></div>
+          </div>
+          <div class="spark-legend"><span style="color:var(--teal)"><span class="swatch"></span>preço</span><span><span class="swatch dashed"></span>meta</span></div>
+          <canvas class="spark" data-series="540,530,525,528,520" data-target="450" data-color="teal"></canvas>
+        </div>
+        <div class="ticket__divider"></div>
+        <div class="ticket__stub">
+          <div class="stub-left"><span class="pill pill--paused">pausado</span><span class="stub-note">retomado manualmente</span></div>
+          <div class="stub-actions"><button class="primary">Retomar</button><button>Ver</button></div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 04 DETAIL -->
+  <section class="screen" id="s-detail">
+    <p class="frame-note">375px · toque em um alerta abre o histórico completo</p>
+    <div class="phone"><div class="phone__screen">
+      <div class="detail-head"><span class="back-link">‹ voltar</span></div>
+      <p class="eyebrow" style="margin-top:10px;">GRU → LIS · LATAM · 14 mar–28 mar</p>
+      <h2 class="section-title">Meta batida — hora de comprar</h2>
+
+      <div class="big-price-block">
+        <div class="flap-price">
+          <span class="flap currency">R$</span>
+          <span class="flap">3</span><span class="flap">1</span><span class="flap">8</span><span class="flap sep">,</span><span class="flap">0</span><span class="flap">0</span>
+        </div>
+      </div>
+      <p class="trend-line down">R$ 102 abaixo da sua meta de R$ 3.400</p>
+
+      <div class="spark-legend" style="margin-top:2px;"><span style="color:var(--teal)"><span class="swatch"></span>preço (eixo Y) por data (eixo X)</span><span><span class="swatch dashed"></span>meta R$ 3.400</span></div>
+      <canvas class="spark-lg" data-series="420,417,405,398,388,370,362,360,352,345,330,318" data-target="3400" data-color="teal"></canvas>
+      <div class="axis-labels"><span>14 fev</span><span>hoje</span></div>
+
+      <div class="stat-row">
+        <div class="stat"><span class="label">Mínima</span><span class="value">R$ 318</span></div>
+        <div class="stat"><span class="label">Média 30d</span><span class="value">R$ 371</span></div>
+        <div class="stat"><span class="label">Variação</span><span class="value" style="color:var(--teal)">−24%</span></div>
+      </div>
+
+      <p class="eyebrow">Preço por site agora</p>
+      <div class="sites-list">
+        <div class="site-row"><span class="name">LATAM</span><span class="price best">R$ 318</span></div>
+        <div class="site-row"><span class="name">Decolar</span><span class="price">R$ 329</span></div>
+        <div class="site-row"><span class="name">Skyscanner</span><span class="price">R$ 341</span></div>
+      </div>
+
+      <button class="cta-primary" style="margin-top:14px;">Comprar na LATAM</button>
+    </div></div>
+  </section>
+
+  <!-- 05 ERROR -->
+  <section class="screen" id="s-error">
+    <p class="frame-note">375px · falha temporária ao consultar os provedores de preço</p>
+    <div class="phone"><div class="phone__screen">
+      <div class="app-top">
+        <div class="brand"><div class="brand__mark"></div><span class="brand__name">Fly<em>Spot</em></span></div>
+        <div class="avatar">TS</div>
+      </div>
+      <p class="eyebrow">GRU → LIS</p>
+      <h2 class="section-title">Sua varredura</h2>
+
+      <div class="error-card">
+        <h3>Não conseguimos consultar os preços agora</h3>
+        <p>A LATAM e a Decolar não responderam a tempo. Vamos tentar de novo automaticamente em alguns minutos — nenhum dado do seu monitor foi perdido.</p>
+        <button class="retry">Tentar novamente agora</button>
+      </div>
+
+      <p class="eyebrow">Última leitura confiável</p>
+      <div class="ticket" style="opacity:.75">
+        <div class="ticket__main">
+          <div class="ticket__route"><span class="code">GRU</span><span class="arrow">→</span><span class="code">LIS</span></div>
+          <div class="ticket__meta">Registrado há 6 horas</div>
+          <div class="ticket__price-row">
+            <div class="flap-price">
+              <span class="flap currency">R$</span>
+              <span class="flap">3</span><span class="flap">4</span><span class="flap">5</span><span class="flap sep">,</span><span class="flap">0</span><span class="flap">0</span>
+            </div>
+            <div class="price-target"><span class="label">Meta</span><span class="value">R$ 3.400</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 06 WIDE DASHBOARD -->
+  <section class="screen" id="s-wide">
+    <p class="frame-note">≥1024px · versão desktop, mesma hierarquia da tela mobile</p>
+    <div class="wide">
+      <div class="app-top">
+        <div class="brand"><div class="brand__mark"></div><span class="brand__name">Fly<em>Spot</em></span></div>
+        <div class="app-top__actions"><div class="icon-btn">🔔</div><button class="cta-primary" style="width:auto;margin:0;padding:8px 14px;">＋ Nova rota</button><div class="avatar">TS</div></div>
+      </div>
+
+      <div class="kpi-strip">
+        <div class="kpi"><span class="label">Rotas ativas</span><div class="value">3</div></div>
+        <div class="kpi"><span class="label">Metas batidas</span><div class="value amber">1</div></div>
+        <div class="kpi"><span class="label">Economia estimada</span><div class="value teal">R$ 224</div></div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="side-panel">
+          <p class="eyebrow">Nova rota</p>
+          <div class="field-row" style="margin-bottom:12px;">
+            <div class="field"><label for="wo">Origem</label><input id="wo" value="GRU" /></div>
+            <div class="field"><label for="wd">Destino</label><input id="wd" value="" placeholder="Para onde?" /></div>
+          </div>
+
+          <div class="b-step__label" style="margin-top:2px;">Quando você pode ir?</div>
+          <div class="date-flex" style="margin-bottom:10px;">
+            <div class="field"><label for="w-ida">Data de ida</label><input id="w-ida" type="date" value="2026-12-14" /></div>
+            <div class="field"><label for="w-ida-flex">Ou entre</label>
+              <select id="w-ida-flex"><option>data exata</option><option selected>± 3 dias</option><option>± 5 dias</option><option>± 7 dias</option></select>
+            </div>
+          </div>
+
+          <div class="b-step__label">Quando você volta?</div>
+          <div class="date-flex" style="margin-bottom:12px;">
+            <div class="field"><label for="w-volta">Data de volta</label><input id="w-volta" type="date" value="2026-12-21" /></div>
+            <div class="field"><label for="w-volta-flex">Ou entre</label>
+              <select id="w-volta-flex"><option>data exata</option><option selected>± 3 dias</option><option>± 5 dias</option><option>± 7 dias</option></select>
+            </div>
+          </div>
+
+          <div class="b-step__label">Quem vai viajar?</div>
+          <div class="stepper-row" style="margin-bottom:12px;">
+            <div class="stepper">
+              <div class="stepper__label">Adultos<span class="hint">12 anos ou mais</span></div>
+              <div class="stepper__control"><button class="stepper__btn">−</button><span class="stepper__count">2</span><button class="stepper__btn">+</button></div>
+            </div>
+            <div class="stepper">
+              <div class="stepper__label">Crianças<span class="hint">2 a 11 anos</span></div>
+              <div class="stepper__control"><button class="stepper__btn">−</button><span class="stepper__count">1</span><button class="stepper__btn">+</button></div>
+            </div>
+            <div class="stepper">
+              <div class="stepper__label">Bebês<span class="hint">até 2 anos, no colo</span></div>
+              <div class="stepper__control"><button class="stepper__btn">−</button><span class="stepper__count">0</span><button class="stepper__btn">+</button></div>
+            </div>
+          </div>
+
+          <div class="price-insight">
+            <div class="price-insight__head">
+              <p class="eyebrow">Histórico para GRU → ?, ± 3 dias</p>
+              <span class="n-obs">últimos 60 dias · 3 pax</span>
+            </div>
+            <div class="price-insight__range">
+              <span class="avg">R$ 2.480</span>
+              <span class="band">média · faixa R$ 2.190 – R$ 2.990</span>
+            </div>
+            <div class="price-insight__bar"><div class="marker" style="left:38%;"></div></div>
+            <div class="price-insight__foot">
+              <p>Metas abaixo de <strong style="color:var(--ink)">R$ 2.190</strong> podem demorar mais para disparar.</p>
+              <button class="use-suggestion">Usar R$ 2.190</button>
+            </div>
+          </div>
+
+          <div class="field"><label for="wm">Meta pelo total (3 passageiros)</label><input id="wm" placeholder="R$ 2.190" /></div>
+          <button class="cta-primary">Ativar monitor</button>
+        </div>
+
+        <div>
+          <p class="eyebrow">Alertas</p>
+          <div class="ticket">
+            <div class="ticket__main">
+              <div class="ticket__route"><span class="code">GRU</span><span class="arrow">→</span><span class="code">LIS</span><span class="pill pill--alert" style="margin-left:auto;">meta batida</span></div>
+              <div class="ticket__meta">14 mar – 28 mar · 2 passageiros · LATAM</div>
+              <div class="ticket__price-row">
+                <div class="flap-price">
+                  <span class="flap currency">R$</span>
+                  <span class="flap">3</span><span class="flap">1</span><span class="flap">8</span><span class="flap sep">,</span><span class="flap">0</span><span class="flap">0</span>
+                </div>
+                <div class="price-target"><span class="label">Meta</span><span class="value hit">R$ 3.400</span></div>
+              </div>
+              <div class="spark-legend"><span style="color:var(--brick)"><span class="swatch"></span>preço</span><span><span class="swatch dashed"></span>meta</span></div>
+              <canvas class="spark" data-series="420,405,398,370,360,345,318" data-target="3400" data-color="brick"></canvas>
+            </div>
+            <div class="ticket__divider"></div>
+            <div class="ticket__stub">
+              <div class="stub-left"><span class="pill pill--active">ativo</span><span class="stub-note">próxima varredura em 41min</span><span class="stub-since">monitorando há 19 dias</span></div>
+              <div class="stub-actions"><button>Pausar</button><button class="primary">Comprar</button></div>
+            </div>
+          </div>
+          <div class="ticket">
+            <div class="ticket__main">
+              <div class="ticket__route"><span class="code">CGH</span><span class="arrow">→</span><span class="code">REC</span></div>
+              <div class="ticket__meta">02 abr – 09 abr · 1 passageiro · GOL</div>
+              <div class="ticket__price-row">
+                <div class="flap-price">
+                  <span class="flap currency">R$</span>
+                  <span class="flap">8</span><span class="flap">4</span><span class="flap">9</span><span class="flap sep">,</span><span class="flap">0</span><span class="flap">0</span>
+                </div>
+                <div class="price-target"><span class="label">Meta</span><span class="value">R$ 700</span></div>
+              </div>
+              <div class="spark-legend"><span style="color:var(--amber)"><span class="swatch"></span>preço</span><span><span class="swatch dashed"></span>meta</span></div>
+              <canvas class="spark" data-series="720,760,810,790,830,849" data-target="700" data-color="amber"></canvas>
+            </div>
+            <div class="ticket__divider"></div>
+            <div class="ticket__stub">
+              <div class="stub-left"><span class="pill pill--active">ativo</span><span class="stub-note">próxima varredura em 3h</span><span class="stub-since">monitorando há 4 dias</span></div>
+              <div class="stub-actions"><button>Pausar</button><button>Ver</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="credit">FlySpot · rascunho de telas para aprovação de UX · sem dados reais</footer>
+</div>
+
+<script>
+  // ---- radar animado: aviões cruzando a tela com preços, o mais barato pisca ----
+  function tokenColor(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#b9760f';
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // ---- mini-mapa mundi: continentes estilizados + arcos de rota com pontos em trânsito ----
+  function quadPoint(p0, p1, pm, t) {
+    const u = 1 - t;
+    return {
+      x: u * u * p0.x + 2 * u * t * pm.x + t * t * p1.x,
+      y: u * u * p0.y + 2 * u * t * pm.y + t * t * p1.y,
+    };
+  }
+
+  function initWorldMap(canvas) {
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function box() { return canvas.getBoundingClientRect(); }
+    function resize() {
+      const rect = box();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const blobs = [
+      { cx: 0.16, cy: 0.55, rx: 0.11, ry: 0.32, rot: -0.25 }, // Américas
+      { cx: 0.47, cy: 0.4, rx: 0.09, ry: 0.24, rot: 0.1 },     // Europa/África
+      { cx: 0.53, cy: 0.62, rx: 0.07, ry: 0.16, rot: 0.3 },
+      { cx: 0.78, cy: 0.48, rx: 0.13, ry: 0.28, rot: -0.1 },   // Ásia/Oceania
+      { cx: 0.88, cy: 0.75, rx: 0.05, ry: 0.08, rot: 0 },
+    ];
+    const nodes = [
+      { x: 0.15, y: 0.5 }, { x: 0.48, y: 0.32 }, { x: 0.8, y: 0.42 }, { x: 0.6, y: 0.7 },
+    ];
+    const arcs = [[0, 1], [1, 2], [0, 2], [2, 3]].map(([a, b], i) => {
+      const p0 = nodes[a], p1 = nodes[b];
+      const pm = { x: (p0.x + p1.x) / 2, y: Math.min(p0.y, p1.y) - 0.16 };
+      return { p0, p1, pm, dur: 3200 + i * 700, offset: i * 900 };
+    });
+
+    function frame(t) {
+      const rect = box();
+      const w = rect.width, h = rect.height;
+      const line = tokenColor('--line-strong');
+      const amber = tokenColor('--amber');
+      const teal = tokenColor('--teal');
+
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.fillStyle = line;
+      ctx.globalAlpha = 0.55;
+      for (const b of blobs) {
+        ctx.beginPath();
+        ctx.ellipse(b.cx * w, b.cy * h, b.rx * w, b.ry * h, b.rot, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      ctx.strokeStyle = amber;
+      ctx.globalAlpha = 0.45;
+      ctx.lineWidth = 0.8;
+      for (const arc of arcs) {
+        ctx.beginPath();
+        ctx.moveTo(arc.p0.x * w, arc.p0.y * h);
+        ctx.quadraticCurveTo(arc.pm.x * w, arc.pm.y * h, arc.p1.x * w, arc.p1.y * h);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      nodes.forEach((n, i) => {
+        ctx.beginPath();
+        ctx.arc(n.x * w, n.y * h, i === 0 ? 1.8 : 1.3, 0, Math.PI * 2);
+        ctx.fillStyle = i === 0 ? teal : amber;
+        ctx.fill();
+      });
+
+      // pontos viajando pelos arcos, simulando aviões em rota
+      for (const arc of arcs) {
+        const local = ((t + arc.offset) % arc.dur) / arc.dur;
+        const pt = quadPoint(arc.p0, arc.p1, arc.pm, local);
+        ctx.beginPath();
+        ctx.arc(pt.x * w, pt.y * h, 1.6, 0, Math.PI * 2);
+        ctx.fillStyle = teal;
+        ctx.fill();
+      }
+
+      if (!reduceMotion) requestAnimationFrame(frame);
+    }
+
+    if (reduceMotion) frame(0);
+    else requestAnimationFrame(frame);
+  }
+
+  // ---- silhueta de avião (vista de cima), colorível, sem depender de emoji ----
+  function drawPlaneShape(ctx, scale) {
+    const pts = [
+      [10, 0], [3, 1.1], [1, 8], [-3.5, 1.6],
+      [-8, 3.2], [-7, 0.8], [-10, 0], [-7, -0.8],
+      [-8, -3.2], [-3.5, -1.6], [1, -8], [3, -1.1],
+    ];
+    ctx.beginPath();
+    pts.forEach(([px, py], i) => {
+      const x = px * scale, y = py * scale;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function initRadarCanvas(canvas) {
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const prices = [318, 375, 480, 540, 690, 810, 940, 1230, 1560, 2050, 2480];
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let planes = [];
+    let nextId = 0;
+    let lastSpawn = 0;
+    const spawnEvery = 1500;
+    const maxPlanes = 5;
+
+    function box() { return canvas.getBoundingClientRect(); }
+
+    function resize() {
+      const rect = box();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function spawnPlane(now) {
+      const rect = box();
+      const w = rect.width, h = rect.height;
+      const cx = w / 2, cy = h / 2;
+      const R = Math.min(w, h) / 2;
+      const entryAngle = Math.random() * Math.PI * 2;
+      const spawnR = R + 22;
+      const x0 = cx + Math.cos(entryAngle) * spawnR;
+      const y0 = cy + Math.sin(entryAngle) * spawnR;
+      const jitter = (Math.random() - 0.5) * 1.3;
+      const exitAngle = entryAngle + Math.PI + jitter;
+      const exitR = R + 36;
+      const x1 = cx + Math.cos(exitAngle) * exitR;
+      const y1 = cy + Math.sin(exitAngle) * exitR;
+      const dx = x1 - x0, dy = y1 - y0;
+      const dist = Math.hypot(dx, dy);
+      const speed = 9 + Math.random() * 6; // px/s — voo lento, contemplativo
+      const dur = (dist / speed) * 1000;
+      planes.push({
+        id: nextId++, x0, y0, x1, y1,
+        start: now, dur,
+        price: prices[Math.floor(Math.random() * prices.length)],
+        angle: Math.atan2(dy, dx),
+      });
+    }
+
+    function bestId() {
+      if (!planes.length) return null;
+      return planes.reduce((a, b) => (b.price < a.price ? b : a)).id;
+    }
+
+    function drawPlane(x, y, angle, price, isBest, t) {
+      const amber = tokenColor('--amber');
+      const teal = tokenColor('--teal');
+      const ink = tokenColor('--ink-soft');
+      const card = tokenColor('--card');
+      const line = tokenColor('--line');
+      const blinkAlpha = 0.5 + Math.sin(t / 170) * 0.5;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.globalAlpha = isBest ? Math.max(0.25, blinkAlpha) : 0.95;
+      ctx.fillStyle = isBest ? teal : amber;
+      drawPlaneShape(ctx, 0.85);
+      if (isBest) {
+        ctx.beginPath();
+        ctx.arc(0, 0, 9 + blinkAlpha * 3, 0, Math.PI * 2);
+        ctx.strokeStyle = teal;
+        ctx.globalAlpha = blinkAlpha * 0.5;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      const label = 'R$ ' + price.toLocaleString('pt-BR');
+      ctx.save();
+      ctx.font = (isBest ? '700 9.5px ' : '600 9px ') + 'ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(label).width;
+      const boxW = tw + 8, boxH = 13;
+      const bx = x - boxW / 2, by = y + 9;
+      ctx.globalAlpha = isBest ? Math.max(0.55, blinkAlpha) : 0.92;
+      ctx.fillStyle = card;
+      ctx.strokeStyle = isBest ? teal : line;
+      ctx.lineWidth = isBest ? 1.4 : 1;
+      roundRect(ctx, bx, by, boxW, boxH, 3.5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = isBest ? teal : ink;
+      ctx.fillText(label, x, by + boxH / 2 + 0.5);
+      ctx.restore();
+    }
+
+    function frame(t) {
+      const rect = box();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+
+      if (t - lastSpawn > spawnEvery && planes.length < maxPlanes) {
+        spawnPlane(t);
+        lastSpawn = t;
+      }
+      planes = planes.filter((p) => t - p.start < p.dur);
+      const best = bestId();
+
+      for (const p of planes) {
+        const progress = (t - p.start) / p.dur;
+        const x = p.x0 + (p.x1 - p.x0) * progress;
+        const y = p.y0 + (p.y1 - p.y0) * progress;
+        drawPlane(x, y, p.angle, p.price, p.id === best, t);
+      }
+
+      if (!reduceMotion) requestAnimationFrame(frame);
+    }
+
+    if (reduceMotion) {
+      const t0 = performance.now();
+      for (let i = 0; i < 4; i++) { spawnPlane(t0); planes[planes.length - 1].start = t0 - planes[planes.length - 1].dur * 0.4; }
+      frame(t0);
+    } else {
+      requestAnimationFrame(frame);
+    }
+  }
+
+  // ---- painéis de telemetria "vivos": barras, gauge e lista reordenando ----
+  function livenHudPanels() {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
+
+    const bars = document.querySelectorAll('.mini-bars span');
+    setInterval(() => {
+      bars.forEach((b) => { b.style.setProperty('--h', 30 + Math.random() * 65 + '%'); });
+    }, 900);
+
+    const gaugeFill = document.querySelector('.mini-gauge__fill');
+    const gaugeLabel = document.querySelector('.hud-panel.bl .hud-panel__code');
+    setInterval(() => {
+      const pct = Math.round(45 + Math.random() * 45);
+      if (gaugeFill) gaugeFill.style.height = pct + '%';
+      if (gaugeLabel) gaugeLabel.textContent = pct + '%';
+    }, 1600);
+
+    const sourcesList = document.getElementById('hud-sources');
+    setInterval(() => {
+      if (!sourcesList) return;
+      const items = Array.from(sourcesList.children);
+      // sorteia um novo status para cada fonte e embaralha a ordem
+      items.forEach((el) => {
+        const on = Math.random() > 0.18;
+        el.classList.toggle('on', on);
+        el.textContent = el.dataset.name + ' · ' + (on ? '01' : '00');
+      });
+      items.sort(() => Math.random() - 0.5);
+      sourcesList.style.opacity = '0';
+      setTimeout(() => {
+        items.forEach((el) => sourcesList.appendChild(el));
+        sourcesList.style.opacity = '1';
+      }, 220);
+    }, 2600);
+  }
+
+  let radarInited = false;
+  function ensureRadar() {
+    if (radarInited) return;
+    const canvas = document.querySelector('.radar-canvas');
+    const map = document.querySelector('.hud-map');
+    if (canvas && canvas.getBoundingClientRect().width > 0) {
+      initRadarCanvas(canvas);
+      if (map) initWorldMap(map);
+      livenHudPanels();
+      radarInited = true;
+    }
+  }
+
+  // preenche a meta sugerida a partir do histórico de preço
+  document.querySelectorAll('.use-suggestion').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const match = btn.textContent.match(/R\$\s?[\d.,]+/);
+      const container = btn.closest('.b-step__body, .side-panel');
+      const metaInput = container ? container.querySelector('input[id$="meta"], #meta, #wm') : null;
+      if (match && metaInput) metaInput.value = match[0];
+    });
+  });
+
+  // tab switching
+  const buttons = document.querySelectorAll('.switcher button');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.setAttribute('aria-selected', 'false'));
+      btn.setAttribute('aria-selected', 'true');
+      document.querySelectorAll('.screen').forEach(s => s.removeAttribute('data-active'));
+      document.getElementById(btn.dataset.target).setAttribute('data-active', 'true');
+    });
+  });
+
+  // sparkline canvas renderer
+  function colorToken(name) {
+    const map = { brick: '--brick', amber: '--amber', teal: '--teal' };
+    return getComputedStyle(document.documentElement).getPropertyValue(map[name] || '--amber').trim();
+  }
+
+  function drawSpark(canvas, big) {
+    const series = canvas.dataset.series.split(',').map(Number);
+    const color = colorToken(canvas.dataset.color);
+    const target = canvas.dataset.target ? Number(canvas.dataset.target) : null;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const w = rect.width, h = rect.height;
+    const pad = big ? 6 : 4;
+    let min = Math.min(...series), max = Math.max(...series);
+    if (target !== null) { min = Math.min(min, target); max = Math.max(max, target); }
+    const range = (max - min) || 1;
+    const pts = series.map((v, i) => [
+      pad + (i / (series.length - 1)) * (w - pad * 2),
+      h - pad - ((v - min) / range) * (h - pad * 2)
+    ]);
+
+    ctx.clearRect(0, 0, w, h);
+
+    // faint grid
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--line').trim();
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, h - pad); ctx.lineTo(w, h - pad);
+    ctx.stroke();
+
+    // linha de meta — sempre visível, mesmo se fora da faixa observada
+    if (target !== null) {
+      const ty = h - pad - ((target - min) / range) * (h - pad * 2);
+      ctx.save();
+      ctx.setLineDash(big ? [5, 3] : [3, 2]);
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--ink-faint').trim();
+      ctx.lineWidth = big ? 1.2 : 1;
+      ctx.beginPath();
+      ctx.moveTo(pad, ty);
+      ctx.lineTo(w - pad, ty);
+      ctx.stroke();
+      if (big) {
+        ctx.setLineDash([]);
+        ctx.font = '600 9px ui-monospace, monospace';
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ink-faint').trim();
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('meta', w - pad, ty - 3);
+      }
+      ctx.restore();
+    }
+
+    // area fill
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, color + '55');
+    grad.addColorStop(1, color + '00');
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], h - pad);
+    pts.forEach(p => ctx.lineTo(p[0], p[1]));
+    ctx.lineTo(pts[pts.length - 1][0], h - pad);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // line
+    ctx.beginPath();
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = big ? 2 : 1.6;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // emphasized endpoint
+    const last = pts[pts.length - 1];
+    ctx.beginPath();
+    ctx.arc(last[0], last[1], big ? 4 : 3, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  function renderAll() {
+    document.querySelectorAll('canvas.spark').forEach(c => drawSpark(c, false));
+    document.querySelectorAll('canvas.spark-lg').forEach(c => drawSpark(c, true));
+  }
+  renderAll();
+  window.addEventListener('resize', renderAll);
+  // redraw when a hidden screen becomes visible (canvas has 0 size while display:none)
+  document.querySelectorAll('.switcher button').forEach(btn => btn.addEventListener('click', () => setTimeout(() => { renderAll(); ensureRadar(); }, 30)));
+</script>

@@ -47,8 +47,10 @@ meta" action that fills the field with the observed minimum.
 
 ## References
 
-- FlySpot UX screens artifact (Fase 3, approved 2026-07-30) — screens 01 (onboarding) and
-  06 (desktop dashboard, "Nova rota" panel)
+- [FlySpot UX screens artifact](.assets/001-onboarding-ux-screens.html) (Fase 3, approved
+  2026-07-30) — self-contained HTML mockup of all six reviewed screens; open in a browser.
+  Screens 01 (onboarding) and 06 (desktop dashboard, "Nova rota" panel) are the ones this
+  policy governs.
 - `ROADMAP.md`, Fase 3, item 1 and item 7
 - `_local-adr-policy-001` — data model this decision requires
 - `_local-edr-policy-001` — endpoint that serves the price-history card
