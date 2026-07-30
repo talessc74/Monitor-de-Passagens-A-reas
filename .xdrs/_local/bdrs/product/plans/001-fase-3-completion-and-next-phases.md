@@ -44,16 +44,22 @@ The approved UX artifact (`_local-bdr-policy-001`'s asset) has six screens. Four
 edit modal). Two are not:
 
 **Acceptance checklist:**
-- [ ] Screen 04 (histórico do monitor) — a dedicated detail view per monitor: big price,
-  full sparkline with target line, min/média/variação stats, price-by-site breakdown. Today
-  clicking a card does nothing; this view doesn't exist in code yet.
-- [ ] Screen 05 (erro amigável) — today errors render as a plain red banner
-  (`errorMessage` state in `dashboard/page.tsx`). The approved screen has a dedicated card
-  with retry action and "última leitura confiável" fallback; not implemented.
-- [ ] The onboarding fields today live as an always-visible sidebar form, not the stepped
-  full-screen wizard shown in screen 01 of the mockup — decide explicitly whether this
-  divergence is accepted permanently (simpler, no extra state machine) or the stepped wizard
-  should still be built for first-time users. Not yet decided either way.
+- [x] Screen 04 (histórico do monitor) — `MonitorDetailModal.tsx`, opened via the "Ver
+  histórico" action on `MonitorCard`. Big price, sparkline with target line, min/média/
+  variação stats, and price-by-site breakdown from the new `FlightMonitor.lastScanResults`
+  field (persisted by the scan route). Done 2026-07-30.
+- [x] Screen 05 (erro amigável) — `ErrorCard.tsx` replaces the plain red banner in
+  `dashboard/page.tsx`, with an explicit "Tentar novamente agora" action wired to `fetchData`.
+  The mockup's "última leitura confiável" fallback was scoped out: that section is
+  per-monitor (it shows one ticket's last known price), while this error surfaces at the
+  whole-page fetch level (monitors/sites/notifications failing together) — no single
+  monitor to show a fallback for at that point. Revisit if a monitor-scoped error surface
+  (e.g. a failed scan) gets its own UI later.
+- [x] The onboarding fields today live as an always-visible sidebar form, not the stepped
+  full-screen wizard shown in screen 01 of the mockup — **decided 2026-07-30: keep the
+  persistent form.** It already ships, works, and no usability complaint has surfaced; a
+  stepped wizard would add a state machine for a first-run case that the persistent form
+  already serves adequately. Revisit only if user feedback says otherwise.
 
 ### Milestone 2: Fase 3's other UX/UI items (ROADMAP.md, item 2 and 6)
 Owner: Galera de UX
