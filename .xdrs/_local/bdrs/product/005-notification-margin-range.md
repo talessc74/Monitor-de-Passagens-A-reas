@@ -57,6 +57,12 @@ The control must appear with the same label and unit in both the onboarding flow
 - `price_in_range` is a new value that must be added everywhere `NotificationLog['type']` and
   `OutboxEvent['type']` are enumerated (see `_local-adr-policy-002`) — the e-mail template for
   it is distinct from "meta atingida," per Fase 5's publisher.
+- Acceptance criterion (verifiable): the margin has no lower bound and never delays or
+  substitutes the "target reached" alert — `isUnderTarget` (`currentPrice ≤ targetPrice`) is
+  evaluated first in `executeScan.ts`, and `isInMarginRange` is only ever considered when
+  `isUnderTarget` is false. A sharp price drop far below the target (e.g. `targetPrice = 4000`,
+  `currentPrice = 1500`) still produces `type: 'target_reached'` — unthrottled, same as any
+  other price at or below the target — never `'price_in_range'` and never suppressed by it.
 
 ## Considered Options
 
