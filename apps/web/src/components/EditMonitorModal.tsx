@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X, Calendar, CalendarX, Users, DollarSign, Mail } from 'lucide-react';
 import type { AirlineSite, FlightMonitor } from '@mpa/types';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
+import MarginPresetControl from './MarginPresetControl';
 
 interface EditMonitorModalProps {
   monitor: FlightMonitor;
@@ -34,6 +35,7 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
   const [children, setChildren] = useState(monitor.children);
   const [infants, setInfants] = useState(monitor.infants ?? 0);
   const [targetPrice, setTargetPrice] = useState(String(monitor.targetPrice));
+  const [targetPriceMarginPercent, setTargetPriceMarginPercent] = useState(monitor.targetPriceMarginPercent ?? 0);
   const [email, setEmail] = useState(monitor.email);
   const [selectedSites, setSelectedSites] = useState<string[]>(monitor.trackedSites);
   const [isSaving, setIsSaving] = useState(false);
@@ -64,6 +66,7 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
       children,
       infants,
       targetPrice: Number(targetPrice),
+      targetPriceMarginPercent,
       trackedSites: selectedSites,
       email,
     };
@@ -295,6 +298,12 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
               />
             </div>
           </div>
+
+          <MarginPresetControl
+            targetPrice={Number(targetPrice) || 0}
+            value={targetPriceMarginPercent}
+            onChange={setTargetPriceMarginPercent}
+          />
 
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">

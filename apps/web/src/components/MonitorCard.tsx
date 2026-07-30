@@ -80,9 +80,12 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
       );
     }
 
+    const marginCeiling = monitor.targetPrice * (1 + monitor.targetPriceMarginPercent / 100);
+    const hasMargin = monitor.targetPriceMarginPercent > 0;
+
     const prices = points.map((p) => p.price);
     const minPrice = Math.min(...prices, monitor.targetPrice);
-    const maxPrice = Math.max(...prices, monitor.targetPrice);
+    const maxPrice = Math.max(...prices, monitor.targetPrice, hasMargin ? marginCeiling : monitor.targetPrice);
     const range = maxPrice - minPrice === 0 ? 1 : maxPrice - minPrice;
 
     const width = 280;
@@ -102,6 +105,8 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
 
     const targetRatio = (monitor.targetPrice - minPrice) / range;
     const targetY = padding + chartHeight - targetRatio * chartHeight;
+    const marginRatio = (marginCeiling - minPrice) / range;
+    const marginY = padding + chartHeight - marginRatio * chartHeight;
 
     return (
       <div className="rounded-xl border border-slate-100 bg-slate-50/30 p-3">
@@ -121,6 +126,11 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
           <span className="flex items-center gap-1">
             <span className="inline-block h-0 w-2.5 border-t-2 border-dashed border-slate-400" /> meta (R$ {monitor.targetPrice})
           </span>
+          {hasMargin && (
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-0 w-2.5 border-t-2 border-dashed border-amber-400" /> aviso (R$ {marginCeiling.toFixed(0)})
+            </span>
+          )}
         </div>
         <div className="relative">
           <svg className="w-full" viewBox={`0 0 ${width} ${height}`} height={height}>
@@ -140,6 +150,17 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
               strokeWidth="1.5"
               strokeDasharray="4 3"
             />
+            {hasMargin && (
+              <line
+                x1={padding}
+                y1={marginY}
+                x2={width - padding}
+                y2={marginY}
+                stroke="#f59e0b"
+                strokeWidth="1.5"
+                strokeDasharray="4 3"
+              />
+            )}
             <polyline fill="none" stroke="#2563eb" strokeWidth="2" points={svgPoints} strokeLinecap="round" strokeLinejoin="round" />
             {points.map((p, index) => {
               const x = padding + (index / (points.length - 1)) * chartWidth;
@@ -221,6 +242,11 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
           <div className="border-l border-slate-200 pl-2 text-right">
             <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Meta Desejada</span>
             <span className="text-xs font-bold text-blue-600">R$ {monitor.targetPrice}</span>
+            {monitor.targetPriceMarginPercent > 0 && (
+              <span className="block text-[9px] font-semibold text-amber-600">
+                aviso até R$ {Math.round(monitor.targetPrice * (1 + monitor.targetPriceMarginPercent / 100)).toLocaleString('pt-BR')} (+{monitor.targetPriceMarginPercent}%)
+              </span>
+            )}
           </div>
         </div>
       </div>

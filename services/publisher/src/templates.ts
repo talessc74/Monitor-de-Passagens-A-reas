@@ -31,6 +31,16 @@ export function targetReachedEmail(notification: NotificationLog): { subject: st
   return { subject, html: layout(notification.monitorId, 'Sua meta de preço foi atingida! 🎉', body) };
 }
 
+export function priceInRangeEmail(notification: NotificationLog): { subject: string; html: string } {
+  const subject = `Preço na faixa de aviso: ${notification.origin} → ${notification.destination} por R$ ${notification.price}`;
+  const body = `
+    <p>${notification.message}</p>
+    <p><strong>Preço encontrado: R$ ${notification.price}</strong> (meta: R$ ${notification.targetPrice})</p>
+    ${notification.purchaseUrl ? `<p><a href="${notification.purchaseUrl}">Ver e comprar</a></p>` : ''}
+  `;
+  return { subject, html: layout(notification.monitorId, 'O preço entrou na sua faixa de aviso', body) };
+}
+
 export function priceUpdateEmail(notification: NotificationLog): { subject: string; html: string } {
   const subject = `Preço atualizado: ${notification.origin} → ${notification.destination}`;
   const body = `
