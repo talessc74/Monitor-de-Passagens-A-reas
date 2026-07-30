@@ -5,7 +5,8 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   type User,
@@ -16,6 +17,8 @@ import { apiFetch } from './api';
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
+  /** Erro capturado ao voltar do redirect do Google (signInWithRedirect não rejeita uma promise local — o resultado só existe depois que a página recarrega). */
+  redirectError: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -27,6 +30,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [redirectError, setRedirectError] = useState<string | null>(null);
 
   useEffect(() => {
     return onAuthStateChanged(auth, (firebaseUser) => {
@@ -39,9 +43,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  useEffect(() => {
+    // Login com Google usa signInWithRedirect (não popup) — mais robusto
+    // em produção, sem depender de popup/iframe entre três domínios
+    // diferentes. O resultado só chega aqui, na volta do redirect.
+    getRedirectResult(auth).catch((err) => {
+      setRedirectError((err as { code?: string })?.code ?? 'auth/internal-error');
+    });
+  }, []);
+
   const value: AuthContextValue = {
     user,
     loading,
+    redirectError,
     signIn: async (email, password) => {
       await signInWithEmailAndPassword(auth, email, password);
     },
@@ -49,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await createUserWithEmailAndPassword(auth, email, password);
     },
     signInWithGoogle: async () => {
-      await signInWithPopup(auth, new GoogleAuthProvider());
+      await signInWithRedirect(auth, new GoogleAuthProvider());
     },
     signOut: async () => {
       await firebaseSignOut(auth);
