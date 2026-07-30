@@ -33,9 +33,14 @@ export async function createMonitor(monitor: FlightMonitor): Promise<FlightMonit
   return monitor;
 }
 
+/**
+ * O patch aceita `FieldValue.delete()` além dos valores normais de
+ * `FlightMonitor` — necessário para remover de fato campos de data ao
+ * editar um monitor para o modo `anytime`. Ver _local-edr-policy-003.
+ */
 export async function updateMonitor(
   id: string,
-  patch: Partial<FlightMonitor>
+  patch: Partial<Record<keyof FlightMonitor, unknown>>
 ): Promise<FlightMonitor | null> {
   const ref = collection().doc(id);
   const doc = await ref.get();
