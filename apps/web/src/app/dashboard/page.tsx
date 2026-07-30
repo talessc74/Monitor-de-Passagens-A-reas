@@ -14,6 +14,7 @@ import MonitorCard from '../../components/MonitorCard';
 import SitesList from '../../components/SitesList';
 import NotificationFeed from '../../components/NotificationFeed';
 import EmailModal from '../../components/EmailModal';
+import RadarEmptyState from '../../components/RadarEmptyState';
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
@@ -274,13 +275,7 @@ export default function DashboardPage() {
 
                 {activeTab === 'monitors' ? (
                   monitors.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-500">
-                      <Plane className="h-8 w-8 stroke-slate-300 mx-auto mb-3 transform rotate-45 text-slate-400" />
-                      <h3 className="font-bold text-slate-800 text-sm">Nenhum monitor configurado</h3>
-                      <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto font-medium">
-                        Use o painel lateral para definir origem, destino, datas e preço alvo.
-                      </p>
-                    </div>
+                    <RadarEmptyState />
                   ) : (
                     <div className="grid grid-cols-1 gap-6">
                       {monitors.map((monitor) => (

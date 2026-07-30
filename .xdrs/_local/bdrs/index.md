@@ -1,0 +1,17 @@
+# _local BDRs Index
+
+Business process and product decisions for FlySpot.
+
+## principles
+
+Business principles and decision criteria that guide all product areas.
+
+- [001-product-naming-flyspot](principles/001-product-naming-flyspot.md) — FlySpot is the brand; repo, Firebase project, and `mpa_` prefix keep their inherited internal names, never renamed for branding
+
+## product
+
+Product behavior, lifecycle, and offering decisions.
+
+- [001-onboarding-flexible-search-and-price-estimate](product/001-onboarding-flexible-search-and-price-estimate.md) — Onboarding collects flexible date windows and age-banded passengers, and shows a price estimate before the user sets a target
+- [002-build-order-defer-paid-apis](product/002-build-order-defer-paid-apis.md) — Build the whole product on the free Gemini simulator first; integrate paid Duffel/Amadeus APIs last
+- [003-auth-both-email-and-google](product/003-auth-both-email-and-google.md) — Login accepts both e-mail/senha and Google, not one or the other

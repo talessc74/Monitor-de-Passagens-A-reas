@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { PlaneTakeoff, PlaneLanding, Users, Calendar, DollarSign, ListFilter, Mail, Plus } from 'lucide-react';
-import type { AirlineSite } from '@mpa/types';
+import { useEffect, useState } from 'react';
+import { PlaneTakeoff, PlaneLanding, Users, Calendar, DollarSign, ListFilter, Mail, Plus, TrendingUp } from 'lucide-react';
+import type { AirlineSite, RouteStats } from '@mpa/types';
+import { apiFetch } from '../lib/api';
 
 interface MonitorFormProps {
   airlineSites: AirlineSite[];
@@ -20,45 +21,66 @@ const POPULAR_AIRPORTS = [
   { code: 'CDG', city: 'Paris', name: 'Charles de Gaulle' },
 ];
 
+const FLEX_OPTIONS = [
+  { value: 0, label: 'Data exata' },
+  { value: 3, label: '± 3 dias' },
+  { value: 5, label: '± 5 dias' },
+  { value: 7, label: '± 7 dias' },
+];
+
 export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }: MonitorFormProps) {
   const [origin, setOrigin] = useState('GRU');
   const [destination, setDestination] = useState('LIS');
   const [departureDate, setDepartureDate] = useState('2026-10-12');
+  const [departFlexDays, setDepartFlexDays] = useState(3);
   const [returnDate, setReturnDate] = useState('2026-10-26');
+  const [returnFlexDays, setReturnFlexDays] = useState(3);
   const [adults, setAdults] = useState<number>(1);
   const [children, setChildren] = useState<number>(0);
+  const [infants, setInfants] = useState<number>(0);
   const [targetPrice, setTargetPrice] = useState<string>('4000');
   const [email, setEmail] = useState(currentUserEmail);
   const [selectedSites, setSelectedSites] = useState<string[]>(['latam', 'gol', 'azul', 'decolar']);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const getAveragePrice = () => {
-    const o = (origin || '').toUpperCase().trim();
-    const d = (destination || '').toUpperCase().trim();
-    if (!o || !d) return 0;
+  const [routeStats, setRouteStats] = useState<RouteStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
 
-    let basePrice = 1200;
-
-    const isDomestic = (airport: string) => ['GRU', 'GIG', 'BSB'].includes(airport);
-    const isEurope = (airport: string) => ['LIS', 'CDG'].includes(airport);
-    const isUSA = (airport: string) => ['MIA'].includes(airport);
-    const isSouthAmerica = (airport: string) => ['EZE'].includes(airport);
-
-    if (isEurope(d) || isEurope(o)) {
-      basePrice = 4800;
-    } else if (isUSA(d) || isUSA(o)) {
-      basePrice = 3300;
-    } else if (isSouthAmerica(d) || isSouthAmerica(o)) {
-      basePrice = 1800;
-    } else if (!isDomestic(o) || !isDomestic(d)) {
-      basePrice = 3500;
+  useEffect(() => {
+    const o = origin.toUpperCase().trim();
+    const d = destination.toUpperCase().trim();
+    if (o.length < 3 || d.length < 3 || !departureDate || !returnDate) {
+      setRouteStats(null);
+      return;
     }
 
-    const multiplier = adults + children * 0.7;
-    return Math.round(basePrice * multiplier);
-  };
+    const timeout = setTimeout(async () => {
+      setStatsLoading(true);
+      try {
+        const params = new URLSearchParams({
+          origin: o,
+          destination: d,
+          departureDate,
+          departFlexDays: String(departFlexDays),
+          returnDate,
+          returnFlexDays: String(returnFlexDays),
+          adults: String(adults),
+          children: String(children),
+          infants: String(infants),
+        });
+        const response = await apiFetch(`/api/route-stats?${params.toString()}`);
+        if (response.ok) {
+          setRouteStats(await response.json());
+        }
+      } catch (err) {
+        console.error('Erro ao buscar histórico de preço da rota:', err);
+      } finally {
+        setStatsLoading(false);
+      }
+    }, 500);
 
-  const avgMarketPrice = getAveragePrice();
+    return () => clearTimeout(timeout);
+  }, [origin, destination, departureDate, departFlexDays, returnDate, returnFlexDays, adults, children, infants]);
 
   const resolveCityName = (code: string) => {
     const found = POPULAR_AIRPORTS.find((a) => a.code.toUpperCase() === code.toUpperCase());
@@ -85,9 +107,12 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
       destination: destination.toUpperCase().trim(),
       destinationCity: resolveCityName(destination),
       departureDate,
+      departFlexDays,
       returnDate,
+      returnFlexDays,
       adults,
       children,
+      infants,
       targetPrice: Number(targetPrice),
       trackedSites: selectedSites,
       email: email || currentUserEmail,
@@ -164,37 +189,59 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-3">
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5 text-slate-400" />
-              Ida Provável
+              Quando você pode ir?
             </label>
-            <input
-              type="date"
-              value={departureDate}
-              onChange={(e) => setDepartureDate(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold transition"
-              required
-            />
+            <div className="grid grid-cols-[1.4fr_1fr] gap-2">
+              <input
+                type="date"
+                value={departureDate}
+                onChange={(e) => setDepartureDate(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold transition"
+                required
+              />
+              <select
+                value={departFlexDays}
+                onChange={(e) => setDepartFlexDays(Number(e.target.value))}
+                className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
+              >
+                {FLEX_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5 text-slate-400" />
-              Volta Provável
+              Quando você volta?
             </label>
-            <input
-              type="date"
-              value={returnDate}
-              onChange={(e) => setReturnDate(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold transition"
-              required
-            />
+            <div className="grid grid-cols-[1.4fr_1fr] gap-2">
+              <input
+                type="date"
+                value={returnDate}
+                onChange={(e) => setReturnDate(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold transition"
+                required
+              />
+              <select
+                value={returnFlexDays}
+                onChange={(e) => setReturnFlexDays(Number(e.target.value))}
+                className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
+              >
+                {FLEX_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 rounded-xl bg-slate-50 p-3 border border-slate-200/60">
+        <div className="grid grid-cols-3 gap-2 rounded-xl bg-slate-50 p-3 border border-slate-200/60">
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
               <Users className="h-3 w-3 text-slate-400" />
@@ -206,17 +253,16 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
               className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-800 focus:border-blue-500 focus:outline-none"
             >
               {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                <option key={num} value={num}>
-                  {num} {num === 1 ? 'Adulto' : 'Adultos'}
-                </option>
+                <option key={num} value={num}>{num}</option>
               ))}
             </select>
+            <p className="mt-0.5 text-[9px] text-slate-400">12 anos ou mais</p>
           </div>
 
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
               <Users className="h-3 w-3 text-slate-400" />
-              Crianças (0-12 anos)
+              Crianças
             </label>
             <select
               value={children}
@@ -224,31 +270,71 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
               className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-800 focus:border-blue-500 focus:outline-none"
             >
               {[0, 1, 2, 3, 4, 5].map((num) => (
-                <option key={num} value={num}>
-                  {num} {num === 1 ? 'Criança' : 'Crianças'}
-                </option>
+                <option key={num} value={num}>{num}</option>
               ))}
             </select>
+            <p className="mt-0.5 text-[9px] text-slate-400">2 a 11 anos</p>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+              <Users className="h-3 w-3 text-slate-400" />
+              Bebês
+            </label>
+            <select
+              value={infants}
+              onChange={(e) => setInfants(Number(e.target.value))}
+              className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-800 focus:border-blue-500 focus:outline-none"
+            >
+              {[0, 1, 2, 3, 4].map((num) => (
+                <option key={num} value={num}>{num}</option>
+              ))}
+            </select>
+            <p className="mt-0.5 text-[9px] text-slate-400">Até 2 anos, no colo</p>
           </div>
         </div>
 
-        <div>
-          <div className="flex justify-between items-center mb-1.5 flex-wrap gap-1">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <DollarSign className="h-3.5 w-3.5 text-blue-600" />
-              Valor Alvo Máximo (BRL)
-            </label>
-            {avgMarketPrice > 0 && (
-              <button
-                type="button"
-                onClick={() => setTargetPrice(avgMarketPrice.toString())}
-                className="text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-100/80 hover:bg-blue-100 hover:text-blue-700 rounded px-2 py-0.5 transition flex items-center gap-1 cursor-pointer"
-                title="Clique para preencher com a média de mercado"
-              >
-                Média: <span className="font-extrabold text-blue-700">R$ {avgMarketPrice.toLocaleString('pt-BR')}</span>
-              </button>
-            )}
+        {(routeStats || statsLoading) && (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <TrendingUp className="h-3 w-3 text-blue-600" />
+                Histórico de preço para esta rota
+              </span>
+              {routeStats && <span className="text-[9px] text-slate-400">últimos {routeStats.sampleWindowDays} dias</span>}
+            </div>
+            {statsLoading && !routeStats ? (
+              <p className="text-xs text-slate-400 font-medium">Consultando o histórico...</p>
+            ) : routeStats ? (
+              <>
+                <div className="mb-1 flex items-baseline gap-2">
+                  <span className="text-lg font-extrabold text-slate-800">R$ {routeStats.average.toLocaleString('pt-BR')}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    média · faixa R$ {routeStats.min.toLocaleString('pt-BR')} – R$ {routeStats.max.toLocaleString('pt-BR')}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] text-slate-500">
+                    Metas abaixo de <strong className="text-slate-700">R$ {routeStats.min.toLocaleString('pt-BR')}</strong> podem demorar mais para disparar.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setTargetPrice(String(routeStats.min))}
+                    className="whitespace-nowrap rounded px-2 py-1 text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-100 hover:bg-blue-100 transition"
+                  >
+                    Usar R$ {routeStats.min.toLocaleString('pt-BR')}
+                  </button>
+                </div>
+              </>
+            ) : null}
           </div>
+        )}
+
+        <div>
+          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <DollarSign className="h-3.5 w-3.5 text-blue-600" />
+            Valor Alvo Máximo (BRL)
+          </label>
           <div className="relative">
             <span className="absolute top-1/2 left-3 -translate-y-1/2 text-sm font-bold text-slate-400">R$</span>
             <input

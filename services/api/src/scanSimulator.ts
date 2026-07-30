@@ -1,20 +1,14 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import { Type } from '@google/genai';
 import type { ScanResult } from '@mpa/types';
 import { env } from './env.js';
+import { getGeminiClient } from './geminiClient.js';
 
 /**
  * Simulação de preços via Gemini (fallback offline se indisponível).
- * TEMPORÁRIO: esta é a Fase 1/2 do roadmap — a Fase 3 substitui esta
+ * TEMPORÁRIO: esta é a Fase 1/2 do roadmap — a Fase 7 substitui esta
  * peça por buscas reais (Duffel/Amadeus) atrás da mesma assinatura,
- * sem tocar no resto do sistema.
+ * sem tocar no resto do sistema. Ver _local-adr-policy-001 (application).
  */
-
-const ai = env.GEMINI_API_KEY
-  ? new GoogleGenAI({
-      apiKey: env.GEMINI_API_KEY,
-      httpOptions: { headers: { 'User-Agent': 'aistudio-build' } },
-    })
-  : null;
 
 interface ScanParams {
   originCity: string;
@@ -52,6 +46,7 @@ function offlineSimulation(params: ScanParams, note: string): ScanOutcome {
 }
 
 export async function runScanSimulation(params: ScanParams): Promise<ScanOutcome> {
+  const ai = getGeminiClient();
   if (!ai) {
     return offlineSimulation(
       params,

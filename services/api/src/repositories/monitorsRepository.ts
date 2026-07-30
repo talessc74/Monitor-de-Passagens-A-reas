@@ -3,14 +3,26 @@ import { db, COLLECTIONS } from '../firestore.js';
 
 const collection = () => db.collection(COLLECTIONS.monitors);
 
+/**
+ * Monitores criados antes do campo `infants` existir não têm esse
+ * dado gravado no Firestore. Ver _local-adr-policy-001 (data): sem
+ * script de backfill, os campos ausentes são normalizados na leitura.
+ */
+function normalizeMonitor(data: FlightMonitor): FlightMonitor {
+  return {
+    ...data,
+    infants: data.infants ?? 0,
+  };
+}
+
 export async function listMonitorsForUser(userId: string): Promise<FlightMonitor[]> {
   const snapshot = await collection().where('userId', '==', userId).orderBy('createdAt', 'desc').get();
-  return snapshot.docs.map((doc) => doc.data() as FlightMonitor);
+  return snapshot.docs.map((doc) => normalizeMonitor(doc.data() as FlightMonitor));
 }
 
 export async function getMonitor(id: string): Promise<FlightMonitor | null> {
   const doc = await collection().doc(id).get();
-  return doc.exists ? (doc.data() as FlightMonitor) : null;
+  return doc.exists ? normalizeMonitor(doc.data() as FlightMonitor) : null;
 }
 
 export async function createMonitor(monitor: FlightMonitor): Promise<FlightMonitor> {
@@ -29,7 +41,7 @@ export async function updateMonitor(
   }
   await ref.set(patch, { merge: true });
   const updated = await ref.get();
-  return updated.data() as FlightMonitor;
+  return normalizeMonitor(updated.data() as FlightMonitor);
 }
 
 export async function deleteMonitor(id: string): Promise<void> {
