@@ -248,7 +248,7 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 **Ações fora do código:**
 - [ ] Conta Resend + API key — sem isso, o envio real de e-mail continua em modo no-op (só loga)
-- [x] Domínio registrado: **`flyspot.com.br`** — falta configurar DNS (SPF/DKIM) para o Resend
+- [x] Domínio registrado: **`flyspot.com.br`** — falta configurar DNS (SPF/DKIM) para o Resend e o cutover do site/auth pro domínio próprio; checklist pronto em `_local-edr-policy-009` (Cloud Run domain mapping, DNS, Firebase authorized domains, OAuth origins, `APP_URL`)
 - [x] Secret `EMAIL_ACTION_SECRET` no GitHub Actions — confirmado ativo; verificado em produção que `flyspot-publisher` está estável (sem crash-loop) rodando com ele (2026-07-30, revisão `flyspot-publisher-00003-nff`)
 - [ ] `RESEND_API_KEY` — ainda não configurado no GitHub Actions
 - [x] Rodar `deploy.yml` para publicar `flyspot-publisher` no Cloud Run — feito; serviço saudável em produção

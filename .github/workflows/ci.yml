@@ -7,6 +7,18 @@ on:
     branches: [main]
 
 jobs:
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for leaked secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   lint-and-build:
     runs-on: ubuntu-latest
     steps:
@@ -22,6 +34,12 @@ jobs:
 
       - name: Lint (type-check)
         run: npm run lint
+
+      - name: Test types package
+        run: npm run test --workspace=@mpa/types
+
+      - name: Test api service
+        run: npm run test --workspace=@mpa/api
 
       - name: Build frontend
         run: npm run build
