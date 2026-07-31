@@ -93,16 +93,17 @@ FlySpot's `apps/web` now follows the identical pattern:
   Sign-in method → Google → Web SDK configuration, or Google Cloud Console → APIs & Services →
   Credentials). Like the other `NEXT_PUBLIC_*` vars, it is embedded at Next.js build time via
   `--build-arg`, not injected at Cloud Run runtime.
-- **Ops action required, not yet done:** the `flyspot-web` origin
-  (`https://flyspot-web-1039076887535.southamerica-east1.run.app`) must be added to that OAuth
-  client's "Authorized JavaScript origins" in Google Cloud Console — GIS's `renderButton` fails
-  client-side (usually a console error naming the unauthorized origin, not the generic app-level
-  fallback) if the calling origin isn't registered there. This is a different setting from
-  Firebase's own "Authorized domains" list (already confirmed configured) and must be checked
-  separately.
+- **Confirmed done:** the `flyspot-web` origin
+  (`https://flyspot-web-1039076887535.southamerica-east1.run.app`) was added to the OAuth client
+  "Web client (auto created by Google Service)"'s Authorized JavaScript origins (alongside the
+  existing `localhost`, `localhost:5000`, and `lista-ai-f2916.firebaseapp.com` entries — none
+  removed), `NEXT_PUBLIC_GOOGLE_CLIENT_ID` added as a GitHub Actions secret, and `deploy.yml`
+  re-run (run #15, success, 4m27s) to rebuild `flyspot-web` with it embedded.
 
-Real end-to-end confirmation still depends on the product owner testing live after this deploys,
-same limitation as the superseded `signInWithRedirect` attempt — this sandbox has no browser.
+**Confirmed working in production (2026-07-31):** the product owner tested "Continuar com Google"
+live on `flyspot-web` and logged in successfully via Google. This closes both the original
+`signInWithPopup` incident and the `signInWithRedirect` amendment above — Google Identity Services
+is the final, working mechanism.
 
 ## References
 
