@@ -336,7 +336,7 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 **Ações fora do código:**
 - [ ] Conta Duffel (aprovação pode levar dias — **iniciar já**)
-- [ ] Conta Amadeus for Developers (automática)
+- [ ] Conta Amadeus — portal self-service foi descontinuado em 17/07/2026; agora é via "Amadeus Enterprise API Portal", fluxo assistido por vendas (não mais automático). Ver `_local-bdr-plan-002`
 
 ---
 

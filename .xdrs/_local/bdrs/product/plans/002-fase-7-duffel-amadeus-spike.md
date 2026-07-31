@@ -91,6 +91,35 @@ and Duffel remains blocked on incorporation country, that alone is enough per th
 decision rule to make Amadeus primary, independent of the route-coverage matrix outcome, since an
 API that can't be onboarded isn't a candidate regardless of how well it might cover BR routes.
 
+## Amendment (2026-07-31): Amadeus self-service portal decommissioned July 17th 2026
+
+Attempting the Amadeus signup this plan's original text assumed would be straightforward
+(`developers.amadeus.com/register`, "automática" per `ROADMAP.md`) found instead: **the Amadeus for
+Developers self-service portal was decommissioned on July 17th 2026.** `developers.amadeus.com` now
+serves an "Amadeus Enterprise API Portal" with no free instant sandbox signup — only a "Get started
+with enterprise APIs" flow that reads as sales-assisted onboarding (the page's own copy: "Get
+support from one of our experienced travel consultants, who will guide you through our full APIs
+portfolio").
+
+Combined with the Duffel incorporation-country block above, **both candidate APIs now require human/
+sales engagement before any sandbox access exists** — neither offers the instant self-serve signup
+this plan's original matrix-execution assumption depended on. This is a materially different
+starting condition than `ROADMAP.md`'s "Ações fora do código" line assumed ("Conta Amadeus for
+Developers (automática)" — no longer true as of this amendment).
+
+### Revised near-term plan
+
+1. Submit the Amadeus "Get started with enterprise APIs" request now, same spirit as the Duffel
+   sales contact already sent — both are now lead-gen/sales-qualification flows, not blocking
+   coordination, so they can run in parallel and don't block other Fase 8/Fase 9 work.
+2. The route-coverage matrix (this plan's core content, above) does not change — it's still exactly
+   what gets executed once either API grants sandbox access. Only the *path to get there* changed
+   from "instant signup" to "sales conversation."
+3. If both remain slow/unresponsive for an extended period, this becomes a product-owner scope
+   decision (worth revisiting `ROADMAP.md`'s Fase 7 timeline expectation), not a technical one to
+   route around silently (e.g., no scraping fallback — already ruled out in `ROADMAP.md`'s own
+   table, "Scraping direto ❌ Descartada").
+
 ## Considered Options
 
 - **Just start Duffel first since it has no per-call charge** — rejected: `ROADMAP.md` explicitly
