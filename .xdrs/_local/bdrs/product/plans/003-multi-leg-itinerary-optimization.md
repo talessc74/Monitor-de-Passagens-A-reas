@@ -175,6 +175,34 @@ itinerary notification e-mails for real is deferred until `services/publisher` i
 both collections (or the `OutboxEvent` shape gets a discriminator) — in-app notifications work today,
 e-mail delivery for them does not yet.
 
+### Amendment (2026-07-31): ARGUS deliberation — UX brief for the pending screen, QA validation gap closed
+
+Product owner convened Galera de UX (Compass, Empiricus, PolarBear) and Galera de QA (Pareto,
+Probe, Scaffold) to validate the feature before `apps/web` work starts. Converged output, no open
+tensions:
+
+**UX brief for whoever builds the `apps/web` creation screen:**
+- [COMPASS] `riskAcknowledged` cannot be a pre-checked or discreet checkbox — the forcing function
+  must be an explicit step (e.g. a modal requiring scroll-to-end before enabling "Create").
+- [EMPIRICUS] The scroll-forced-modal pattern itself needs empirical validation with real users
+  before being locked in as final — until then, the only hard requirement is that the disclaimer
+  cannot visually compete for attention with the rest of the form (no small grey footer text).
+- [POLARBEAR] The creation screen must be discoverable from the main dashboard nav today — there is
+  none yet — and, being Pro-only, needs a clear "Pro" label in navigation itself, not a surprise 403
+  only at submit time.
+
+**QA finding, already fixed in this same pass:** [PARETO] identified the actual defect-prone 20%
+here isn't the graph algorithm (already at 10 test cases) — it's `createItinerarySchema`'s validation
+(`riskAcknowledged` requirement, the `maxLayoverHours`-vs-`MIN_CONNECTION_HOURS` cross-field rule),
+which had zero test coverage. [SCAFFOLD] flagged the schema wasn't exported from the route module,
+making it untestable without booting Fastify — fixed by extracting it to
+`services/api/src/schemas/itinerary.ts` (same pattern as the existing `schemas/passengerDate.ts`).
+6 new tests added (`schemas/itinerary.test.ts`): `riskAcknowledged` required/rejected when
+false/absent, `maxLayoverHours` below the safety minimum rejected without overnight but accepted
+with it. [PROBE] additionally recommends a mission-based exploratory charter once the screen exists,
+specifically attempting to bypass the disclaimer forcing function via DevTools — noted here for
+whoever picks up the `apps/web` work, not yet executed (no screen to explore against).
+
 ### Phasing
 
 1. **v1 (this plan's scope):** simulated pricing, monitored, Pro-only, static hub candidate list,

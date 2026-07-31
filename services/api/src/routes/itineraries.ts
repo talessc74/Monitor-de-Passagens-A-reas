@@ -1,6 +1,5 @@
 import type { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import { z } from 'zod';
 import type { ItineraryMonitor } from '@mpa/types';
 import {
   listItineraryMonitorsForUser,
@@ -11,44 +10,9 @@ import {
 import { getUser } from '../repositories/usersRepository.js';
 import { authenticate } from '../auth.js';
 import { authenticateInternal } from '../internalAuth.js';
-import { MIN_CONNECTION_HOURS, LIABILITY_DISCLAIMER } from '../itinerarySearch.js';
+import { LIABILITY_DISCLAIMER } from '../itinerarySearch.js';
 import { executeItineraryScan } from '../executeItineraryScan.js';
-
-// Fase 9 ("Itinerários") — ver _local-bdr-plan-003. Exclusivo do plano
-// Pro: precificar um itinerário multi-trecho custa uma chamada por
-// trecho candidato, não uma só, como o scan de um FlightMonitor normal.
-const createItinerarySchema = z
-  .object({
-    origin: z.string().min(3).max(4),
-    finalDestination: z.string().min(3).max(4),
-    maxLegs: z.coerce.number().int().min(1).max(4).default(4),
-    maxLayoverHours: z.coerce.number().min(1).max(24).default(6),
-    allowOvernightLayovers: z.boolean().default(false),
-    dateWindowStart: z.string(),
-    dateWindowEnd: z.string(),
-    targetPrice: z.coerce.number().positive(),
-    adults: z.coerce.number().int().min(1).default(1),
-    children: z.coerce.number().int().min(0).default(0),
-    email: z.string().email(),
-    // Reconhecimento explícito do LIABILITY_DISCLAIMER — não é um
-    // checkbox pré-marcado nem um texto de rodapé ignorável, é campo
-    // obrigatório na criação. Decisão do dono do produto (2026-07-31).
-    riskAcknowledged: z.literal(true, {
-      errorMap: () => ({ message: 'É necessário confirmar que leu o aviso sobre risco de conexão e responsabilidade.' }),
-    }),
-  })
-  .superRefine((data, ctx) => {
-    // Sem pernoite habilitado, o teto de conexão do usuário precisa
-    // caber acima do mínimo de segurança — senão nenhuma aresta do grafo
-    // jamais passaria no filtro de MIN_CONNECTION_HOURS.
-    if (!data.allowOvernightLayovers && data.maxLayoverHours < MIN_CONNECTION_HOURS) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['maxLayoverHours'],
-        message: `maxLayoverHours precisa ser pelo menos ${MIN_CONNECTION_HOURS}h (mínimo de segurança de conexão) quando pernoite não é permitido.`,
-      });
-    }
-  });
+import { createItinerarySchema } from '../schemas/itinerary.js';
 
 export async function itinerariesRoutes(app: FastifyInstance) {
   app.get('/api/itineraries', { preHandler: authenticate }, async (request) => {
