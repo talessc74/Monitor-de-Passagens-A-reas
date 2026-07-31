@@ -107,6 +107,33 @@ brute-force enumeration of every possible routing (combinatorially explodes past
 - Baggage: separate tickets typically mean re-checking baggage at each stop (can't check through to
   final destination) — worth a line item in the itinerary display, not just the visa/delay risks.
 
+### Amendment (2026-07-31): minimum connection time is a hard filter, not a suggestion
+
+Two follow-up product decisions, made after v1's first implementation PR:
+
+1. **Minimum connection time is enforced by the algorithm itself, not surfaced as a warning after
+   the fact.** The graph search never generates an edge with less than `MIN_CONNECTION_HOURS`
+   between arrival and the next departure — if no path satisfies that floor, the itinerary search
+   falls back to whatever direct/baseline option exists rather than ever returning a route with an
+   unsafe connection. This is implemented in `services/api/src/itinerarySearch.ts` as
+   `MIN_CONNECTION_HOURS` (v1 value: 1.5h, a conservative single floor — v1 doesn't yet distinguish
+   domestic from international minimums, which typically differ; Fase 7's real schedule data can
+   refine this per airport-pair once it exists).
+2. **Explicit liability disclaimer, required acknowledgment, not fine print.** The API now exports
+   `LIABILITY_DISCLAIMER` (same file) and returns it on itinerary creation; the create endpoint
+   (`POST /api/itineraries`) requires `riskAcknowledged: true` in the request body and rejects the
+   request otherwise (Zod `z.literal(true)`) — this operationalizes the "requires acknowledgment
+   before an `ItineraryMonitor` can be created" acceptance criterion below into an actual API
+   contract, not just a UI-layer intention. The disclaimer text explicitly states FlySpot is not
+   responsible for delays, cancellations, or airline system failures that break a connection
+   between independently-ticketed legs.
+
+This changes the phasing note below only in scope, not structure: v1 already ships both the
+connection-time floor and the disclaimer/acknowledgment contract at the API level — what's still
+pending is the `apps/web` UI actually rendering the disclaimer and collecting the acknowledgment
+from a real user (today only the API-level contract exists; nothing stops a non-browser API caller
+from passing `riskAcknowledged: true` without having shown anything to a human).
+
 ### Phasing
 
 1. **v1 (this plan's scope):** simulated pricing, monitored, Pro-only, static hub candidate list,
