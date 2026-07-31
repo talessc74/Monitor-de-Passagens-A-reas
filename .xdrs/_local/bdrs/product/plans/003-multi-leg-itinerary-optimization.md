@@ -152,6 +152,29 @@ texto de análise" — narrates/enriches, never decides price or route). Fails o
 `GEMINI_API_KEY`, an empty response, or any API error all fall back to the static `CANDIDATE_HUBS`
 list alone — the suggestion step never blocks or breaks the search.
 
+### Amendment (2026-07-31): generator scheduler wired, e-mail delivery deferred
+
+`services/generator` now recomputes `ItineraryMonitor`s on its own, mirroring `FlightMonitor`'s
+existing scheduler (`itineraryScheduler.ts`, parallel loop to `scheduler.ts`): polls
+`mpa_itinerary_monitors` for `status: 'active'` + `nextScanAt <= now`, takes a per-document lease
+via transaction (same pattern, same `LEASE_DURATION_MS`), calls the new
+`POST /internal/itinerary-scan/:id` route (`authenticateInternal`, same shared secret as
+`/internal/scan/:id`), and reschedules using `PRO_SCAN_INTERVAL_HOURS` directly — no per-user plan
+lookup, since `ItineraryMonitor` creation is already Pro-gated (`routes/itineraries.ts`). Known gap,
+not resolved in this pass: a plan downgrade after creation doesn't auto-pause existing
+`ItineraryMonitor`s the way `pauseExcessMonitorsForUser` does for `FlightMonitor` — a future task if
+it turns out to matter in practice.
+
+The scan logic itself was extracted into `executeItineraryScan.ts` (shared between the authenticated
+and internal routes, same shape as `executeScan.ts`/`_local-adr-policy-002`) and now creates an
+in-app `NotificationLog` when the cheapest itinerary total drops at/below `targetPrice` or changes —
+**but does not yet create an outbox event**. Reason: `services/publisher`'s outbox consumer resolves
+`monitorId` by looking it up in `mpa_monitors` only (`outboxConsumer.ts`); pointing an outbox event
+at an `mpa_itinerary_monitors` id would create an event the publisher can never resolve. Sending
+itinerary notification e-mails for real is deferred until `services/publisher` is extended to check
+both collections (or the `OutboxEvent` shape gets a discriminator) — in-app notifications work today,
+e-mail delivery for them does not yet.
+
 ### Phasing
 
 1. **v1 (this plan's scope):** simulated pricing, monitored, Pro-only, static hub candidate list,
