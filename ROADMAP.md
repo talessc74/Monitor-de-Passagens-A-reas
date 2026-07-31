@@ -364,6 +364,21 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 ---
 
+## Fase 9 (novo — "Itinerários") — Otimização de trechos separados
+
+> Planejamento completo em `_local-bdr-plan-003`. Ideia do dono do produto: em vez de só precificar uma rota origem→destino, montar a combinação mais barata de **passagens separadas** (com escalas/pernoites em cidades intermediárias) quando isso bater um preço menor que qualquer passagem única — ex: Brasília→Miami pode perder pra Brasília→Lima→(pernoite)→Caiena→Orlando→Miami em 4 bilhetes distintos.
+
+**Decisões de produto já tomadas** (ver plano completo pra detalhe):
+- Monitorado (como um `FlightMonitor` normal), não busca pontual
+- v1 validado contra o simulador Gemini, sem depender da Fase 7 (Duffel/Amadeus) — troca de fonte de preço depois, mesmo padrão de `_local-adr-policy-001`
+- Exclusivo do plano Pro (custo de API é por trecho, não por rota — muito mais caro de rodar)
+
+**Escopo v1:** lista curada de hubs candidatos (não o grafo global de aeroportos), Dijkstra sobre no máximo `maxLegs` (padrão sugerido: 4), aviso de risco obrigatório (bilhetes separados = sem proteção de conexão, sem reembolso automático se perder o próximo trecho), tabela estática de alerta de visto de trânsito (não é aconselhamento jurídico), só recomenda o itinerário multi-trecho se bater a passagem direta por uma margem mínima (sugestão: 15-20%).
+
+**Não entra na v1:** grafo global de aeroportos, checagem automática de elegibilidade de visto, acesso no plano Free.
+
+---
+
 ## Dependências entre fases (arquitetura — independe da ordem física acima)
 
 ```
