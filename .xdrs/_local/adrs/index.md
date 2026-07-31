@@ -8,6 +8,7 @@ Platform-level runtime and enabling capabilities.
 
 - [001-cloud-run-deploy-architecture](platform/001-cloud-run-deploy-architecture.md) — Cloud Run (not Cloud Functions), native Artifact Registry (not gcr.io), GitHub Actions workflow_dispatch (not Cloud Shell); amended to bring `apps/web` onto Cloud Run instead of an unexamined default of Vercel
 - [002-scheduler-polling-and-internal-auth](platform/002-scheduler-polling-and-internal-auth.md) — Fase 4's scheduler is a polling loop in a new `generator` service, triggering scans on `api` via a shared-secret internal route
+- [003-firebase-hosting-custom-domain-rewrite](platform/003-firebase-hosting-custom-domain-rewrite.md) — Cloud Run's native domain mapping doesn't support `southamerica-east1`; `flyspot.com.br` fronts through Firebase Hosting with a wildcard rewrite into the existing `flyspot-web` service instead of moving regions or adding a load balancer
 
 ## data
 
