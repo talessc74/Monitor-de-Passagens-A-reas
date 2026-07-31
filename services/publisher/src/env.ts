@@ -8,6 +8,9 @@ const envSchema = z.object({
   // mesmo padrão de fallback do GEMINI_API_KEY. Ver _local-adr-policy-002.
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default('FlySpot <alertas@flyspot.com.br>'),
+  // alertas@ (EMAIL_FROM) só tem MX de bounce configurado, não recebe
+  // e-mail de verdade — sem isso, "Responder" bounceria silenciosamente.
+  EMAIL_REPLY_TO: z.string().default('contato@flyspot.com.br'),
   // URL pública do api — usada para montar o link de "pausar monitor"
   // no e-mail (GET /api/monitors/:id/pause?token=...).
   API_PUBLIC_URL: z.string().url().default('http://localhost:8080'),

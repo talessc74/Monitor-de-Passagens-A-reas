@@ -23,6 +23,11 @@ export async function sendEmail(params: { to: string; subject: string; html: str
       to: [params.to],
       subject: params.subject,
       html: params.html,
+      // alertas@ (EMAIL_FROM) não tem caixa de entrada de verdade — só o
+      // MX de bounce do Resend está configurado no DNS, não recebimento
+      // real. Sem reply_to, "Responder" iria para alertas@ e falharia
+      // silenciosamente (bounce). contato@ é a caixa que existe de fato.
+      reply_to: env.EMAIL_REPLY_TO,
     }),
   });
 
