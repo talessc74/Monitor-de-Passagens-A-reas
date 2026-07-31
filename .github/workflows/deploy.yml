@@ -158,6 +158,17 @@ jobs:
           project_id: lista-ai-f2916
           flags: --allow-unauthenticated
 
+      # ── Firebase Hosting (flyspot.com.br → rewrite pro flyspot-web, ver
+      # _local-adr-policy-003 platform) — Cloud Run domain mapping nativo
+      # não funciona em southamerica-east1, por isso o domínio custom é
+      # anexado no Hosting, não no Cloud Run. Reusa a mesma credencial
+      # GCP_SA_KEY do passo de autenticação acima; requer que essa service
+      # account tenha o papel "Firebase Hosting Admin"
+      # (roles/firebasehosting.admin) — se o deploy falhar por permissão,
+      # é isso que falta conceder no IAM do projeto lista-ai-f2916.
+      - name: Deploy do Firebase Hosting
+        run: npx --yes firebase-tools deploy --only hosting --project lista-ai-f2916 --non-interactive
+
       - name: URLs dos serviços
         run: |
           echo "✅ Deploy concluído"

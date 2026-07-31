@@ -32,10 +32,17 @@ Console) — no code change unblocks this.**
 1. **Firebase Hosting custom domain** (revised — Cloud Run's native domain mapping does not
    support `southamerica-east1`; see `_local-adr-policy-003` (platform) for why Firebase Hosting
    was chosen over moving the service's region or adding a load balancer):
-   - `firebase deploy --only hosting` first, to publish the `hosting` config in `firebase.json`
-     (wildcard rewrite into `flyspot-web`, already committed).
-   - Firebase Console → Hosting → Add custom domain → `flyspot.com.br` (and `www.flyspot.com.br`
-     if desired).
+   - `firebase deploy --only hosting` publishes the `hosting` config in `firebase.json` (wildcard
+     rewrite into `flyspot-web`) — this is now automated as a step in `deploy.yml` (runs on every
+     `workflow_dispatch`, right after the 4 Cloud Run services). It requires `GCP_SA_KEY`'s
+     service account to hold `roles/firebasehosting.admin` in the `lista-ai-f2916` project's IAM —
+     if the step fails with a permission error, that role is what's missing (Cloud Console → IAM →
+     find the deploy service account → Edit → Add Role → Firebase Hosting Admin). Confirmed
+     blocked once already: attempting "Add custom domain" in Firebase Console before this step
+     ever ran showed the Hosting product's first-time onboarding screen instead of a live site —
+     there was no Hosting site to attach a domain to.
+   - Once `deploy.yml` has run successfully with the Hosting step green: Firebase Console →
+     Hosting → Add custom domain → `flyspot.com.br` (and `www.flyspot.com.br` if desired).
    - Firebase gives back a TXT record for ownership verification, then the `A` records to point
      the domain at Firebase Hosting's edge (stable, documented IPs — not the Cloud Run service's
      own IP).
