@@ -12,6 +12,35 @@ import { runScanSimulation } from './scanSimulator.js';
 // v1" em _local-bdr-plan-003. Expansível por região no futuro.
 export const CANDIDATE_HUBS = ['GRU', 'LIM', 'BOG', 'SCL', 'PTY', 'MIA', 'MCO'] as const;
 
+/**
+ * Teto duro de segurança, não sugestão: nenhuma aresta do grafo é
+ * considerada com menos que isso de conexão. Decisão do dono do produto
+ * (2026-07-31) — o algoritmo não gera itinerário nenhum com conexão
+ * apertada demais, em vez de gerar e só avisar. Valor conservador (v1
+ * não distingue conexão doméstica de internacional, que tipicamente têm
+ * mínimos diferentes — Fase 7, com dados reais de horário, pode refinar
+ * por par de aeroportos).
+ */
+export const MIN_CONNECTION_HOURS = 1.5;
+
+/**
+ * Aviso de responsabilidade obrigatório — decisão do dono do produto
+ * (2026-07-31): bilhetes separados não têm proteção de conexão entre si
+ * (ao contrário de uma passagem única com trechos), e o FlySpot não se
+ * responsabiliza por atraso, cancelamento ou falha de qualquer sistema
+ * de voo que quebre a conexão entre bilhetes independentes. Retornado
+ * pela API e exigido como reconhecimento explícito na criação do
+ * itinerário (ver routes/itineraries.ts) — não é um texto de rodapé.
+ */
+export const LIABILITY_DISCLAIMER =
+  'Itinerários com trechos separados não têm proteção de conexão entre si: ' +
+  'se um voo atrasar ou for cancelado, você pode perder o próximo trecho sem ' +
+  'reacomodação nem reembolso automático, diferente de uma passagem única ' +
+  'com conexão. O FlySpot recomenda apenas conexões com tempo mínimo de ' +
+  `${MIN_CONNECTION_HOURS}h entre o pouso e a decolagem seguinte, mas não se ` +
+  'responsabiliza por atrasos, cancelamentos ou falhas de sistemas de voo ' +
+  'das companhias aéreas. Confirme exigências de visto de trânsito antes de comprar.';
+
 export interface ItinerarySearchParams {
   origin: string;
   finalDestination: string;
@@ -67,12 +96,18 @@ export async function findCheapestItinerary(params: ItinerarySearchParams): Prom
       for (const dest of candidates) {
         const { price, carrier } = await priceLeg(state.node, dest, params.adults, params.children);
         // v1 não tem malha horária real (preço vem do simulador) — usa um
-        // valor representativo de conexão same-day vs. pernoite, e só
-        // descarta a aresta quando o teto do usuário é mais restrito que
-        // isso. Fase 7 (dados reais) substitui por horários de voo de
-        // verdade, mesmo padrão de troca de fonte de _local-adr-policy-001.
+        // valor representativo de conexão same-day vs. pernoite. Fase 7
+        // (dados reais) substitui por horários de voo de verdade, mesmo
+        // padrão de troca de fonte de _local-adr-policy-001 — mas o piso
+        // MIN_CONNECTION_HOURS vale igual antes e depois dessa troca.
         const layoverHours = params.allowOvernightLayovers ? 18 : 3;
-        if (!params.allowOvernightLayovers && layoverHours > params.maxLayoverHours) continue;
+        // Filtro de segurança, não sugestão: descarta a aresta se a
+        // conexão for curta demais (< MIN_CONNECTION_HOURS) ou mais longa
+        // que o teto do usuário sem pernoite habilitado.
+        if (dest !== params.finalDestination) {
+          if (layoverHours < MIN_CONNECTION_HOURS) continue;
+          if (!params.allowOvernightLayovers && layoverHours > params.maxLayoverHours) continue;
+        }
 
         const leg: ItineraryLeg = {
           origin: state.node,
