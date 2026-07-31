@@ -248,7 +248,7 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 **Ações fora do código:**
 - [ ] Conta Resend + API key — sem isso, o envio real de e-mail continua em modo no-op (só loga)
-- [x] Domínio registrado: **`flyspot.com.br`** — falta configurar DNS (SPF/DKIM) para o Resend
+- [x] Domínio registrado: **`flyspot.com.br`** — falta configurar DNS (SPF/DKIM) para o Resend e o cutover do site/auth pro domínio próprio; checklist pronto em `_local-edr-policy-009` (Cloud Run domain mapping, DNS, Firebase authorized domains, OAuth origins, `APP_URL`)
 - [x] Secret `EMAIL_ACTION_SECRET` no GitHub Actions — confirmado ativo; verificado em produção que `flyspot-publisher` está estável (sem crash-loop) rodando com ele (2026-07-30, revisão `flyspot-publisher-00003-nff`)
 - [ ] `RESEND_API_KEY` — ainda não configurado no GitHub Actions
 - [x] Rodar `deploy.yml` para publicar `flyspot-publisher` no Cloud Run — feito; serviço saudável em produção
@@ -299,11 +299,13 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 
 ---
 
-## Fase 7 (escopo: Fase 3) — Busca Real de Passagens (serviço `generator`)
+## Fase 7 (escopo: Fase 3) — Busca Real de Passagens
 
 > ⚠️ **É só a partir desta fase que começa custo real de API** (contrato de produção Duffel/Amadeus). Todas as fases anteriores rodaram sobre o simulador Gemini de propósito, para validar o produto inteiro sem esse custo.
 
-**O que será construído:** Preços reais no lugar da simulação. Nasce o serviço `generator`.
+**O que será construído:** Preços reais no lugar da simulação.
+
+**Correção de arquitetura (texto original desatualizado, escrito antes da Fase 4 existir):** `services/generator` **já existe** desde a Fase 4 (o scheduler de varreduras) — esta fase não cria um serviço novo, estende o `executeScanForMonitor` do `api` (chamado pelo `generator` via `/internal/scan/:id`, não o contrário) para usar dados reais em vez do `scanSimulator.ts`. A direção da chamada de serviço-a-serviço já estabelecida (`generator` → `api`) permanece igual; só a fonte de preço dentro do `api` muda.
 
 **Realidade de custo das APIs (corrigido na revisão):**
 
@@ -319,13 +321,11 @@ Fluxo por item: **UX desenha → produto aprova → implementa → QA valida →
 **Tarefas:**
 
 1. **Spike de cobertura** Duffel × Amadeus em rotas BR (1-2 dias, relatório curto para decisão)
-2. Criar `services/generator` (Fastify)
-3. Interface comum em `packages/types`: `searchFlights(params: SearchParams): Promise<FlightResult[]>`
-4. Adaptadores: `duffel.ts`, `amadeus.ts` — com timeout, retry com backoff e circuit breaker simples por fonte
-5. **Cache de buscas no Firestore** (`searchCache`, chave = rota+datas+pax, TTL 30-60 min): dois usuários monitorando a mesma rota geram **uma** chamada de API — controle de custo essencial
-6. Gemini muda de papel: recebe os preços reais e gera o texto de análise de tendência (mantém a UX atual do scan)
-7. `api` chama `generator` via HTTP interno (service-to-service com token compartilhado via env)
-8. Fallback: se todas as fontes falharem, o scan retorna erro claro — **não volta para preço simulado** (preço inventado em produto real é pior que erro)
+2. Interface comum em `packages/types`: `searchFlights(params: SearchParams): Promise<FlightResult[]>`
+3. Adaptadores em `services/api` (substituem `scanSimulator.ts`, chamados por `executeScanForMonitor` — mesmo ponto de entrada de hoje): `duffel.ts`, `amadeus.ts` — com timeout, retry com backoff e circuit breaker simples por fonte
+4. **Cache de buscas no Firestore** (`searchCache`, chave = rota+datas+pax, TTL 30-60 min): dois usuários monitorando a mesma rota geram **uma** chamada de API — controle de custo essencial
+5. Gemini muda de papel: recebe os preços reais e gera o texto de análise de tendência (mantém a UX atual do scan)
+6. Fallback: se todas as fontes falharem, o scan retorna erro claro — **não volta para preço simulado** (preço inventado em produto real é pior que erro)
 
 **Critérios de aceite (QA):**
 - Scan de GRU→LIS e GRU→GIG retorna preços reais coerentes com busca manual nos sites

@@ -74,11 +74,38 @@ export interface AirlineSite {
 }
 
 export interface ScanResult {
+  /** Fase 1-6: id de site simulado (latam/gol/azul/decolar). Fase 7: código IATA da companhia aérea (LA/G3/AD) — Duffel/Amadeus retornam por companhia, não por site de venda. Ver ROADMAP.md Fase 7. */
   site: string;
   price: number;
   durationHours: number;
   stops: number;
   isPromotion: boolean;
+  details: string;
+}
+
+/**
+ * Parâmetros de busca de voo, comuns a qualquer fonte (simulador Gemini
+ * hoje; Duffel/Amadeus na Fase 7) — mesma assinatura, fonte trocável
+ * por trás. Ver _local-adr-policy-001 (application).
+ */
+export interface SearchParams {
+  origin: string;
+  destination: string;
+  /** Ausentes quando a busca é 'anytime' — sem data específica. */
+  departureDate?: string;
+  returnDate?: string;
+  adults: number;
+  children: number;
+  infants: number;
+}
+
+export interface FlightResult {
+  /** Código IATA da companhia operadora/marketing (ex: LA, G3, AD). */
+  carrier: string;
+  price: number;
+  currency: string;
+  durationHours: number;
+  stops: number;
   details: string;
 }
 

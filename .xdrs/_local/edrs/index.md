@@ -21,3 +21,9 @@ Code-level implementation patterns and application conventions.
 - [006-workspace-type-imports-crash-cloud-run](application/006-workspace-type-imports-crash-cloud-run.md) — First real deploy since Fase 4 crashed `flyspot-api` at `MODULE_NOT_FOUND`: `@mpa/types` has no build output and Docker never copies `packages/types/`, so Fase 6's first runtime (non-type) import of it (`PLAN_LIMITS`) exposed a dormant symlink bug; fixed by no longer marking `@mpa/types` external in each service's esbuild bundle
 - [007-missing-firestore-indexes-for-user-queries](application/007-missing-firestore-indexes-for-user-queries.md) — First real end-to-end login found `GET /api/monitors` and `GET /api/notifications` both 500ing for every user: neither query's composite index (`userId`+`createdAt`, `userId`+`sentAt`) was ever declared or created, unlike the Fase 4 scheduler index
 - [008-google-signin-popup-to-redirect](application/008-google-signin-popup-to-redirect.md) — "Continuar com Google" failed silently/generically in production; `signInWithPopup` and then `signInWithRedirect` both failed (Firebase's cross-origin iframe resolver blocked by third-party storage partitioning); fixed by moving to Google Identity Services + `signInWithCredential`, mirroring the sibling project SocialShelf's identical incident
+
+## infra
+
+External-dashboard runbooks — steps this sandbox has no credentials to execute itself.
+
+- [009-flyspot-com-br-cutover-checklist](infra/009-flyspot-com-br-cutover-checklist.md) — Prepared checklist to cut `flyspot-web`/e-mail over from `run.app` URLs to the registered `flyspot.com.br` domain: Cloud Run domain mapping, DNS records (site + Resend SPF/DKIM), Firebase authorized domains, OAuth authorized origins, `APP_URL` secret update — all external-dashboard steps for the product owner to execute directly

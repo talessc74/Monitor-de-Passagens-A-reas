@@ -20,3 +20,4 @@ Product behavior, lifecycle, and offering decisions.
 
 **Plans:**
 - [001-fase-3-completion-and-next-phases](product/plans/001-fase-3-completion-and-next-phases.md) — What's left of Fase 3 (screens 04/05, mobile/a11y audit, QA gate) and a milestone-level handoff to Fases 4-8
+- [002-fase-7-duffel-amadeus-spike](product/plans/002-fase-7-duffel-amadeus-spike.md) — Fixed route matrix (5 routes × 2 passenger configs × both APIs) and a scoring/decision rule for which of Duffel/Amadeus becomes primary, written ahead of having sandbox credentials
