@@ -1,5 +1,6 @@
 import type { ItineraryLeg } from '@mpa/types';
 import { runScanSimulation } from './scanSimulator.js';
+import { suggestAdditionalHubs } from './hubSuggestion.js';
 
 /**
  * Fase 9 ("Itinerários") — ver _local-bdr-plan-003. v1: grafo limitado a
@@ -73,13 +74,22 @@ async function priceLeg(origin: string, destination: string, adults: number, chi
 }
 
 /**
- * Dijkstra sobre o grafo origin -> CANDIDATE_HUBS -> finalDestination,
- * limitado a params.maxLegs saltos. Overnight só é permitido explicitamente
+ * Dijkstra sobre o grafo origin -> hubs -> finalDestination, limitado a
+ * params.maxLegs saltos. Overnight só é permitido explicitamente
  * (allowOvernightLayovers) — sem isso, layoverAfterHours > maxLayoverHours
  * descarta a aresta.
+ *
+ * O grafo é CANDIDATE_HUBS (lista curada, estável) + até 5 hubs extras
+ * sugeridos pelo Gemini para este par origin/finalDestination
+ * especificamente (hubSuggestion.ts) — o Gemini só amplia o espaço de
+ * busca, quem decide a combinação mais barata continua sendo o
+ * Dijkstra abaixo, nunca o modelo. Falha ou ausência de GEMINI_API_KEY
+ * na sugestão nunca impede a busca: cai de volta para só CANDIDATE_HUBS.
  */
 export async function findCheapestItinerary(params: ItinerarySearchParams): Promise<ItinerarySearchResult | null> {
-  const nodes = [params.origin, ...CANDIDATE_HUBS.filter((h) => h !== params.origin && h !== params.finalDestination), params.finalDestination];
+  const suggestedHubs = await suggestAdditionalHubs(params.origin, params.finalDestination, CANDIDATE_HUBS);
+  const allHubs = [...CANDIDATE_HUBS, ...suggestedHubs];
+  const nodes = [params.origin, ...allHubs.filter((h) => h !== params.origin && h !== params.finalDestination), params.finalDestination];
 
   // distância mínima e predecessor por (nó, número de saltos usados) —
   // maxLegs é um teto duro de comprimento de caminho, não só de custo.
