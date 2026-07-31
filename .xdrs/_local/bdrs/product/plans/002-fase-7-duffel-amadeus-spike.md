@@ -120,6 +120,21 @@ Developers (automática)" — no longer true as of this amendment).
    route around silently (e.g., no scraping fallback — already ruled out in `ROADMAP.md`'s own
    table, "Scraping direto ❌ Descartada").
 
+**Status (2026-07-31): both requests submitted, both pending human response.**
+
+- Duffel: support/sales contacted directly by e-mail about the Brazil incorporation-country block
+  (asking whether/how a Brazil-incorporated company can be onboarded, and about Brazilian domestic
+  carrier coverage).
+- Amadeus: "Request access" form on the Enterprise API Portal submitted — Country: Brazil (accepted
+  without issue, confirming the incorporation-country block is Duffel-specific, not shared), Job
+  level: CEO, Job function: Product Management, Product/s related: "Other, please specify" (the
+  dropdown's fixed list is airline-enterprise products — revenue management, loyalty, NDC, PSS —
+  none of which is the actual Search & Shopping product; specified `Meta Pricer Calendar Search`/
+  `Master Pricer Travelboard Search` by name in free text instead of picking a wrong-but-listed
+  option), submission confirmed via the site's "Thank you for getting in touch" page.
+- Next action is passive: wait for a response from either vendor. Nothing else in Fase 7 unblocks
+  until one grants sandbox/API access — Fase 8 and Fase 9 continue independently in the meantime.
+
 ## Considered Options
 
 - **Just start Duffel first since it has no per-call charge** — rejected: `ROADMAP.md` explicitly
