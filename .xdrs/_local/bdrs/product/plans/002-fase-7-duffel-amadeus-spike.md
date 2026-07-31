@@ -72,6 +72,25 @@ mis-pricing a passenger type).
   the spike's throwaway scripts should already target, even before the real adapters exist — so the
   spike's own code isn't thrown away, just formalized.
 
+## Amendment (2026-07-31): Duffel's self-service signup does not accept a Brazil-incorporated company
+
+Before any route-coverage testing could start, signup itself blocked: Duffel's "Country of
+incorporation" field (self-service signup form, `duffel.com`) offers only EU member states plus
+Australia, Canada, Mexico, UK, and US — **Brazil is not in the list**. This is a harder blocker than
+the already-flagged GOL/Azul coverage risk: it's not "the API might not cover routes we need," it's
+"the account can't be opened at all" through the standard signup flow for a Brazil-incorporated
+company (`Fly Spot`, per `CLAUDE.md`'s note that the legal/brand entity is Brazilian while technical
+identifiers stay as-is).
+
+This does not by itself eliminate Duffel from the spike — Duffel may have a sales/enterprise path
+for companies outside the self-service country list (worth checking for a "Contact us" / "Talk to
+sales" option before writing Duffel off) — but it means Duffel cannot be assumed reachable on the
+matrix's original timeline. Amadeus for Developers signup should be attempted next and does not
+appear to carry the same restriction (to be confirmed once attempted) — if Amadeus onboards cleanly
+and Duffel remains blocked on incorporation country, that alone is enough per this plan's existing
+decision rule to make Amadeus primary, independent of the route-coverage matrix outcome, since an
+API that can't be onboarded isn't a candidate regardless of how well it might cover BR routes.
+
 ## Considered Options
 
 - **Just start Duffel first since it has no per-call charge** — rejected: `ROADMAP.md` explicitly
