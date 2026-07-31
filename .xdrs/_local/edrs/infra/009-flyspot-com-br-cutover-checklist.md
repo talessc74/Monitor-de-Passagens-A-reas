@@ -29,11 +29,16 @@ Console) — no code change unblocks this.**
 
 ### Checklist
 
-1. **Cloud Run domain mapping** (`flyspot-web` service, `southamerica-east1`):
-   - Cloud Console → Cloud Run → `flyspot-web` → "Manage Custom Domains" → Add Mapping →
-     `flyspot.com.br` (and `www.flyspot.com.br` if desired).
-   - Google gives back the DNS records to create (typically an `A`/`AAAA` pair or a `CNAME`,
-     depending on whether it's an apex domain — apex domains need `A`/`AAAA`, `www` can use `CNAME`).
+1. **Firebase Hosting custom domain** (revised — Cloud Run's native domain mapping does not
+   support `southamerica-east1`; see `_local-adr-policy-003` (platform) for why Firebase Hosting
+   was chosen over moving the service's region or adding a load balancer):
+   - `firebase deploy --only hosting` first, to publish the `hosting` config in `firebase.json`
+     (wildcard rewrite into `flyspot-web`, already committed).
+   - Firebase Console → Hosting → Add custom domain → `flyspot.com.br` (and `www.flyspot.com.br`
+     if desired).
+   - Firebase gives back a TXT record for ownership verification, then the `A` records to point
+     the domain at Firebase Hosting's edge (stable, documented IPs — not the Cloud Run service's
+     own IP).
 2. **DNS records at the registrar** for `flyspot.com.br`:
    - The records from step 1 (site mapping).
    - SPF/DKIM records for Resend (`ROADMAP.md` Fase 5) — Resend's dashboard, once the domain is
