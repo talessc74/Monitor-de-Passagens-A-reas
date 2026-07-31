@@ -6,9 +6,10 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plane } from 'lucide-react';
 import { useAuth } from '../../lib/auth-context';
+import GoogleSignInButton from '../../components/GoogleSignInButton';
 
 export default function LoginPage() {
-  const { user, loading, redirectError, signIn, signUp, signInWithGoogle } = useAuth();
+  const { user, loading, signIn, signUp, signInWithGoogleCredential } = useAuth();
   const router = useRouter();
 
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -22,12 +23,6 @@ export default function LoginPage() {
       router.replace('/dashboard');
     }
   }, [user, loading, router]);
-
-  useEffect(() => {
-    if (redirectError) {
-      setError(traduzErro({ code: redirectError }));
-    }
-  }, [redirectError]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,11 +41,11 @@ export default function LoginPage() {
     }
   }
 
-  async function handleGoogle() {
+  async function handleGoogleCredential(idToken: string) {
     setError('');
     setSubmitting(true);
     try {
-      await signInWithGoogle();
+      await signInWithGoogleCredential(idToken);
     } catch (err) {
       setError(traduzErro(err));
     } finally {
@@ -121,13 +116,9 @@ export default function LoginPage() {
           <div className="h-px flex-1 bg-slate-200" />
         </div>
 
-        <button
-          onClick={handleGoogle}
-          disabled={submitting}
-          className="w-full rounded-lg border border-slate-300 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
-        >
-          Continuar com Google
-        </button>
+        <div className="flex justify-center">
+          <GoogleSignInButton onCredential={handleGoogleCredential} />
+        </div>
 
         <p className="mt-6 text-center text-sm text-slate-500">
           {mode === 'login' ? 'Ainda não tem conta?' : 'Já tem conta?'}{' '}
