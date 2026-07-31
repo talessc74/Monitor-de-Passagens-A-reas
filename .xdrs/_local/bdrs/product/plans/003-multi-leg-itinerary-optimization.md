@@ -134,6 +134,24 @@ pending is the `apps/web` UI actually rendering the disclaimer and collecting th
 from a real user (today only the API-level contract exists; nothing stops a non-browser API caller
 from passing `riskAcknowledged: true` without having shown anything to a human).
 
+### Amendment (2026-07-31): Gemini enriches the candidate hub list, never decides the route
+
+Product owner asked directly whether an LLM (or a specialized "itinerary agent") should drive the
+route selection. Decision: **no** — the price-optimal combination is a numeric shortest-path
+problem (Dijkstra), and an LLM reasoning over candidate routes in text would be slower, more
+expensive per call, non-deterministic, and carries no guarantee of finding the actual cheapest
+combination. The algorithm stays the sole decision-maker.
+
+Where an LLM does help, and is now wired in (`services/api/src/hubSuggestion.ts`): Gemini is asked,
+given the specific origin/finalDestination pair, to suggest up to 5 *additional* candidate hub
+airports beyond the static `CANDIDATE_HUBS` list — genuinely creative/regional routing knowledge an
+LLM has and a static list doesn't. Those suggestions are merged into the graph's node list before
+Dijkstra runs; Dijkstra still picks the cheapest path over that expanded graph. Same role-separation
+already established elsewhere in the codebase (Fase 7: "Gemini recebe os preços reais e gera o
+texto de análise" — narrates/enriches, never decides price or route). Fails open: no
+`GEMINI_API_KEY`, an empty response, or any API error all fall back to the static `CANDIDATE_HUBS`
+list alone — the suggestion step never blocks or breaks the search.
+
 ### Phasing
 
 1. **v1 (this plan's scope):** simulated pricing, monitored, Pro-only, static hub candidate list,
