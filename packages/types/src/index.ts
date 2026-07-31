@@ -171,3 +171,45 @@ export const PLAN_LIMITS: Record<UserProfile['plan'], PlanLimits> = {
   free: { maxMonitors: 2, scanIntervalHours: 6, historyRetentionDays: 7 },
   pro: { maxMonitors: 10, scanIntervalHours: 1, historyRetentionDays: 90 },
 };
+
+/**
+ * Fase 9 ("Itinerários") — ver _local-bdr-plan-003. Um trecho comprado
+ * separadamente dentro de um itinerário multi-trecho, distinto de um
+ * ScanResult (que é uma cotação, não um bilhete escolhido).
+ */
+export interface ItineraryLeg {
+  origin: string;
+  destination: string;
+  carrier: string;
+  departureDate: string;
+  price: number;
+  /** Ausente no último trecho. Presença de pernoite indicada por layoverAfterHours >= overnight threshold do caller, não um campo separado. */
+  layoverAfterHours?: number;
+}
+
+export interface ItineraryMonitor {
+  id: string;
+  userId: string;
+  origin: string;
+  finalDestination: string;
+  /** Teto de trechos separados no itinerário — v1 recomenda 4, ver _local-bdr-plan-003. */
+  maxLegs: number;
+  /** Teto de conexão no mesmo dia; pernoite (allowOvernightLayovers) é a via para exceder isso entre trechos. */
+  maxLayoverHours: number;
+  allowOvernightLayovers: boolean;
+  dateWindowStart: string;
+  dateWindowEnd: string;
+  targetPrice: number;
+  currentBestItinerary: ItineraryLeg[] | null;
+  currentBestTotal: number | null;
+  /** Preço da passagem direta equivalente, usado como baseline de comparação — ver critério de margem mínima em _local-bdr-plan-003. */
+  directBaselinePrice: number | null;
+  history: Array<{ date: string; total: number }>;
+  notificationsEnabled: boolean;
+  email: string;
+  createdAt: string;
+  lastScannedAt: string | null;
+  nextScanAt: string | null;
+  status: 'active' | 'paused';
+  scanningLockedUntil?: string;
+}
