@@ -6,13 +6,13 @@ import {
   listItineraryMonitorsForUser,
   getItineraryMonitor,
   createItineraryMonitor,
-  updateItineraryMonitor,
   deleteItineraryMonitor,
 } from '../repositories/itineraryMonitorsRepository.js';
 import { getUser } from '../repositories/usersRepository.js';
 import { authenticate } from '../auth.js';
-import { findCheapestItinerary, beatsBaselineByMargin, MIN_CONNECTION_HOURS, LIABILITY_DISCLAIMER } from '../itinerarySearch.js';
-import { getRouteStats } from '../routeStats.js';
+import { authenticateInternal } from '../internalAuth.js';
+import { MIN_CONNECTION_HOURS, LIABILITY_DISCLAIMER } from '../itinerarySearch.js';
+import { executeItineraryScan } from '../executeItineraryScan.js';
 
 // Fase 9 ("Itinerários") — ver _local-bdr-plan-003. Exclusivo do plano
 // Pro: precificar um itinerário multi-trecho custa uma chamada por
@@ -114,42 +114,32 @@ export async function itinerariesRoutes(app: FastifyInstance) {
     }
 
     try {
-      const [itinerary, baseline] = await Promise.all([
-        findCheapestItinerary({
-          origin: monitor.origin,
-          finalDestination: monitor.finalDestination,
-          maxLegs: monitor.maxLegs,
-          maxLayoverHours: monitor.maxLayoverHours,
-          allowOvernightLayovers: monitor.allowOvernightLayovers,
-          adults: 1,
-          children: 0,
-          targetPrice: monitor.targetPrice,
-        }),
-        getRouteStats({
-          origin: monitor.origin,
-          destination: monitor.finalDestination,
-          searchMode: 'anytime',
-          adults: 1,
-          children: 0,
-          infants: 0,
-        } as any),
-      ]);
-
-      const directBaselinePrice = baseline.average;
-      const worthRecommending = itinerary ? beatsBaselineByMargin(itinerary.total, directBaselinePrice) : false;
-
-      const patch: Partial<Record<keyof ItineraryMonitor, unknown>> = {
-        lastScannedAt: new Date().toISOString(),
-        directBaselinePrice,
-        currentBestItinerary: worthRecommending && itinerary ? itinerary.legs : null,
-        currentBestTotal: worthRecommending && itinerary ? itinerary.total : null,
-      };
-      const updated = await updateItineraryMonitor(monitor.id, patch);
-      return updated;
+      return await executeItineraryScan(monitor);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
       request.log.error({ err: error, itineraryId: monitor.id }, 'Falha durante o scan de itinerário');
       return reply.status(500).send({ error: 'Falha ao calcular itinerário', details: message });
     }
   });
+
+  // Rota de serviço-a-serviço, chamada pelo scheduler do services/generator
+  // — mesmo padrão de /internal/scan/:id (_local-adr-policy-002).
+  app.post<{ Params: { id: string } }>(
+    '/internal/itinerary-scan/:id',
+    { preHandler: authenticateInternal },
+    async (request, reply) => {
+      const monitor = await getItineraryMonitor(request.params.id);
+      if (!monitor) {
+        return reply.status(404).send({ error: 'Itinerário não encontrado' });
+      }
+
+      try {
+        return await executeItineraryScan(monitor);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Erro desconhecido';
+        request.log.error({ err: error, itineraryId: monitor.id }, 'Falha durante o scan de itinerário (interno)');
+        return reply.status(500).send({ error: 'Falha ao calcular itinerário', details: message });
+      }
+    }
+  );
 }

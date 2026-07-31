@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import { env } from './env.js';
 import { startScheduler, stopScheduler } from './scheduler.js';
+import { startItineraryScheduler, stopItineraryScheduler } from './itineraryScheduler.js';
 import { purgeHistory } from './purgeHistory.js';
 
 /**
@@ -21,6 +22,7 @@ async function main() {
   await app.listen({ port: env.PORT, host: '0.0.0.0' });
 
   startScheduler();
+  startItineraryScheduler();
 
   let purgeTimer: NodeJS.Timeout | null = null;
   const runPurge = async () => {
@@ -39,6 +41,7 @@ async function main() {
   const shutdown = async (signal: string) => {
     app.log.info(`[generator] recebido ${signal}, encerrando com graça...`);
     stopScheduler();
+    stopItineraryScheduler();
     if (purgeTimer) clearInterval(purgeTimer);
     await app.close();
     process.exit(0);

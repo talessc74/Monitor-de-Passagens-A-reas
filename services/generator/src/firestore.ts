@@ -8,6 +8,7 @@ import { env } from './env.js';
  */
 export const COLLECTIONS = {
   monitors: 'mpa_monitors',
+  itineraryMonitors: 'mpa_itinerary_monitors',
   users: 'mpa_users',
   system: 'system',
 } as const;
