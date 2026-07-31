@@ -139,6 +139,7 @@ jobs:
             -f apps/web/Dockerfile \
             --build-arg NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }} \
             --build-arg NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }} \
+            --build-arg NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }} \
             --build-arg API_URL=${{ steps.deploy-api.outputs.url }} \
             -t ${{ env.IMAGE_WEB }}:${{ github.sha }} \
             -t ${{ env.IMAGE_WEB }}:latest \

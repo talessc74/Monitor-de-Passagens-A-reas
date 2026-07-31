@@ -1,11 +1,11 @@
 ---
 name: _local-edr-policy-008-google-signin-popup-to-redirect
-description: "Continuar com Google" failed generically in production (no network request, no console error, popup mechanics never completed) while e-mail/senha worked fine and Google worked in earlier local testing. Switched from signInWithPopup to signInWithRedirect to remove the popup/iframe/three-origin coordination this failure class depends on.
-apply-to: apps/web/src/lib/auth-context.tsx, apps/web/src/app/login/page.tsx
+description: "Continuar com Google" failed generically in production (no network request, no console error, popup mechanics never completed) while e-mail/senha worked fine. First attempted signInWithPopup -> signInWithRedirect; that also failed in live testing, so the fix was amended to Google Identity Services + signInWithCredential, mirroring the sibling project SocialShelf's identical incident.
+apply-to: apps/web/src/lib/auth-context.tsx, apps/web/src/app/login/page.tsx, apps/web/src/components/GoogleSignInButton.tsx
 valid-from: 2026-07-30
 ---
 
-# _local-edr-policy-008: Google sign-in moved from popup to redirect
+# _local-edr-policy-008: Google sign-in moved off Firebase's popup/redirect resolver
 
 ## Context and Problem Statement
 
@@ -61,9 +61,52 @@ URL, where `getRedirectResult()` picks up the outcome.
   by `npm run lint --workspace=@mpa/web` and `npm run build --workspace=@mpa/web` passing clean;
   real confirmation depends on the product owner testing it live once deployed.
 
+## Amendment: signInWithRedirect also failed — moved to Google Identity Services
+
+The `signInWithRedirect` fix above did not resolve the issue in live testing: clicking "Continuar
+com Google" still ended in the same generic failure, and — critically — the browser Network tab
+showed **no navigation to `accounts.google.com` at all**, meaning the redirect never actually
+started; `signInWithRedirect` was failing before initiating navigation.
+
+Rather than continue diagnosing blind from screenshots, the sibling project SocialShelf's XDRS was
+checked for a matching incident, and one existed almost exactly:
+`_local-adr-policy-042-google-sign-in-identity-services` (SocialShelf), which documents Safari's
+third-party storage partitioning blocking Firebase Auth's `BrowserPopupRedirectResolver` — both
+`signInWithPopup` and `signInWithRedirect` retrieve their result through a cross-origin iframe
+(hosted on `authDomain`) that exchanges messages via `postMessage`, and modern browsers'
+third-party storage partitioning blocks that channel structurally, not intermittently. SocialShelf
+had already solved this by bypassing Firebase's resolver entirely: Google Identity Services (GIS)
+renders Google's own button, receives an ID token directly in a same-page JS callback (no iframe,
+no cross-origin channel to block), and finishes the Firebase session with
+`signInWithCredential(auth, GoogleAuthProvider.credential(idToken))`.
+
+FlySpot's `apps/web` now follows the identical pattern:
+
+- `GoogleSignInButton.tsx` (new): loads `https://accounts.google.com/gsi/client`, calls
+  `google.accounts.id.initialize({ client_id, callback })` and `renderButton(...)`; the callback
+  receives `response.credential` (the ID token JWT) and passes it up via an `onCredential` prop.
+- `auth-context.tsx`: `signInWithGoogle`/`getRedirectResult`/`redirectError` removed entirely,
+  replaced by `signInWithGoogleCredential(idToken)`, which calls `signInWithCredential`.
+- `login/page.tsx`: the old "Continuar com Google" button replaced by `<GoogleSignInButton />`.
+- New environment variable `NEXT_PUBLIC_GOOGLE_CLIENT_ID` — the Web application OAuth 2.0 Client
+  ID Firebase already provisioned for Google sign-in (found in Firebase Console → Authentication →
+  Sign-in method → Google → Web SDK configuration, or Google Cloud Console → APIs & Services →
+  Credentials). Like the other `NEXT_PUBLIC_*` vars, it is embedded at Next.js build time via
+  `--build-arg`, not injected at Cloud Run runtime.
+- **Ops action required, not yet done:** the `flyspot-web` origin
+  (`https://flyspot-web-1039076887535.southamerica-east1.run.app`) must be added to that OAuth
+  client's "Authorized JavaScript origins" in Google Cloud Console — GIS's `renderButton` fails
+  client-side (usually a console error naming the unauthorized origin, not the generic app-level
+  fallback) if the calling origin isn't registered there. This is a different setting from
+  Firebase's own "Authorized domains" list (already confirmed configured) and must be checked
+  separately.
+
+Real end-to-end confirmation still depends on the product owner testing live after this deploys,
+same limitation as the superseded `signInWithRedirect` attempt — this sandbox has no browser.
+
 ## References
 
-- Firebase Authentication documentation explicitly recommends `signInWithRedirect` over
-  `signInWithPopup` for production web apps prone to popup-blocking or cross-origin restrictions
+- SocialShelf `_local-adr-policy-042-google-sign-in-identity-services` — the sibling project's
+  identical incident and the fix this decision directly mirrors
 - `_local-bdr-policy-003` — the decision that both e-mail/senha and Google must be supported,
   which this fix keeps intact (only the Google mechanism changed, not the requirement)
