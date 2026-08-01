@@ -87,6 +87,61 @@ policy-001`'s pluggable pricing-source contract holds here without modification.
    amendments), including real response samples — not as a new document, to keep the Plan B thread
    in one place.
 
+## Amendment (2026-08-01): real signup completed, real coverage test — mixed result
+
+Product owner registered a real Travelpayouts affiliate account and obtained a Data API token
+(`Profile → API token`, no approval gate — confirmed exactly as the vendor's own documentation
+states: "Access is allowed without restrictions, but you must have a token"). This closes the open
+item from this document's original "what this spike does NOT establish yet" section: **the
+Brazil-incorporation-style block Duffel had does not exist for Travelpayouts.**
+
+### Real test results (`GET /v2/prices/latest`, cache-based, not live search)
+
+| Route | Result |
+|---|---|
+| GRU→GIG (originally queried, API normalized to `SAO`→`RIO` city codes) | **6 cached fares returned**, R$681–R$3668, gates `Trip.com`/`Clickavia` |
+| GRU→REC | Empty (`data: []`) |
+| GRU→LIS | Empty (`data: []`) |
+| GRU→MIA | Empty (`data: []`) — notable: this is a high-volume route in absolute terms, empty result here is not explained by low traffic alone |
+| MOW→HKT (control query, a route Travelpayouts' own docs use as an example) | **30 cached fares returned**, dense coverage across many dates |
+
+### What this means
+
+- **Auth and access mechanics are fully confirmed working** — no blocker at all here, unlike Duffel.
+- **Coverage is real but skewed away from Brazilian routes.** The Data API is a cache built from
+  real search traffic across Travelpayouts' whole affiliate network, which is CIS/Russia/Europe-
+  heavy by origin (Aviasales' core market) — MOW→HKT (a market example route) returned dense data,
+  while three different Brazil-outbound routes, including a high-absolute-volume one (GRU→MIA),
+  returned nothing. GRU→GIG (Brazil's own highest-volume domestic trunk) did return data, so
+  coverage is not zero for Brazil — it's inconsistent and route-dependent in a way this project
+  doesn't yet have a model for.
+- **Also note the `gate` field**: results surface OTA resellers (`Trip.com`, `Clickavia`,
+  `Kupi.com`, `Wingie`, `Aviakassa`), not marketing carriers (no GOL/Azul/LATAM appeared in any
+  result). This is a structural difference from Duffel/Amadeus (which return carrier-level offers)
+  and from FlySpot's existing `trackedSites` concept (`latam`/`gol`/`azul`/`decolar`) — mapping a
+  `gate` onto an existing "site" in the product's UI is not a like-for-like swap.
+
+### Revised recommendation
+
+**Downgrade from "viable Plan B" to "partially viable, needs a longer observation window before
+committing."** A single snapshot in time under-samples a cache that refills continuously (2-7 day
+retention per the vendor's own docs) — a route empty right now may populate within days as more
+users search it elsewhere on the network. Concretely:
+
+1. Do not build a production adapter against this source yet based on this single test.
+2. Re-run the same 4 Brazil routes (GRU-GIG, GRU-REC, GRU-LIS, GRU-MIA) at least once a day for
+   3-5 days to see whether coverage improves, stays sparse, or is genuinely close to zero outside
+   GRU-GIG. This is cheap (the API has no approval gate and, per the vendor's docs, generous rate
+   limits) and doesn't block anything else.
+3. If coverage stays sparse after that window, Travelpayouts' Data API is a real integration (auth
+   works, format is clean, no Brazil block) but not a meaningful hedge against Duffel/Amadeus for
+   FlySpot's actual route mix — worth keeping registered as "confirmed accessible, low Brazil
+   coverage" rather than pursued further, and the Skyscanner/RapidAPI option (parked in the original
+   analysis above) would need to be revisited instead.
+4. The `gate`-vs-carrier mismatch is a separate, real product question (does FlySpot show "Trip.com"
+   as the source instead of "LATAM"?) that needs a decision even if coverage improves — not
+   something to silently paper over in an adapter.
+
 ## Considered Options
 
 - **Pursue Travelpayouts/Kiwi live search APIs as the board proposed** — rejected: both are gated
