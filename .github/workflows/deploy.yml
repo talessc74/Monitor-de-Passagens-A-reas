@@ -72,6 +72,7 @@ jobs:
             STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
             STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
             STRIPE_PRICE_ID_PRO=${{ secrets.STRIPE_PRICE_ID_PRO }}
+            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
 
       # ── flyspot-generator (Fase 4 — scheduler) ──────────────────────────
       - name: Build da imagem Docker — generator
