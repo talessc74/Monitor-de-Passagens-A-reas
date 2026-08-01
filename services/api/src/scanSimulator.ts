@@ -41,17 +41,31 @@ function offlineSimulation(params: ScanParams, note: string): ScanOutcome {
       stops: Math.random() > 0.4 ? 1 : 0,
       isPromotion: finalPrice < params.targetPrice,
       details: 'Voo simulado com saída noturna, ideal para maximizar o tempo no destino.',
+      estimated: true,
     };
   });
   return { results, generalAnalysis: note };
 }
 
+/**
+ * Todo resultado deste módulo é 100% simulado (via Gemini ou offline) —
+ * nunca preço real. `estimated: true` é forçado aqui, no ponto único de
+ * saída, em vez de em cada branch, pra nenhum caminho esquecer de
+ * marcar. Ver _local-adr-policy-004 (application): nunca misturar preço real e
+ * estimado sob a mesma etiqueta.
+ */
+function markAsEstimated(outcome: ScanOutcome): ScanOutcome {
+  return { ...outcome, results: outcome.results.map((r) => ({ ...r, estimated: true })) };
+}
+
 export async function runScanSimulation(params: ScanParams): Promise<ScanOutcome> {
   const ai = getGeminiClient();
   if (!ai) {
-    return offlineSimulation(
-      params,
-      'Simulação offline local ativada. O robô estimou as tarifas com base na distância entre aeroportos.'
+    return markAsEstimated(
+      offlineSimulation(
+        params,
+        'Simulação offline local ativada. O robô estimou as tarifas com base na distância entre aeroportos.'
+      )
     );
   }
 
@@ -109,12 +123,14 @@ Sempre garanta que os preços gerados façam sentido para uma viagem dessa dist�
     if (!parsed.results || parsed.results.length === 0) {
       throw new Error('Resultados de busca vazios');
     }
-    return { results: parsed.results, generalAnalysis: parsed.generalAnalysis ?? '' };
+    return markAsEstimated({ results: parsed.results, generalAnalysis: parsed.generalAnalysis ?? '' });
   } catch (error) {
     console.error('Erro na chamada do Gemini API, caindo para simulação em código:', error);
-    return offlineSimulation(
-      params,
-      'Preços simulados dinamicamente via gerador offline devido a limites de conexão de rede.'
+    return markAsEstimated(
+      offlineSimulation(
+        params,
+        'Preços simulados dinamicamente via gerador offline devido a limites de conexão de rede.'
+      )
     );
   }
 }

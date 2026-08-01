@@ -6,6 +6,7 @@ import { createOutboxEvent } from './repositories/outboxRepository.js';
 import { db, COLLECTIONS } from './firestore.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import { runScanSimulation } from './scanSimulator.js';
+import { getCheapestRealFare } from './travelpayoutsClient.js';
 import { generatePurchaseLink } from './purchaseLink.js';
 
 /**
@@ -30,7 +31,15 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
     sitesToScan,
   });
 
-  const validResults = results.filter((r) => r.price > 0);
+  // Primeira fonte de preço real do FlySpot (Travelpayouts) — ver
+  // _local-adr-policy-004 (application). Cobertura estreita e conhecida (forte só na
+  // ponte SP-RJ): quando não há dado real, realFare é null e o scan
+  // segue 100% com os resultados simulados (estimated: true), nunca
+  // misturados sob a mesma etiqueta de "real".
+  const realFare = await getCheapestRealFare(monitor.origin, monitor.destination);
+  const allResults = realFare ? [realFare, ...results] : results;
+
+  const validResults = allResults.filter((r) => r.price > 0);
   const sorted = [...validResults].sort((a, b) => a.price - b.price);
   const cheapestResult = sorted[0];
 
@@ -175,7 +184,7 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
   return {
     success: true,
     monitor: updatedMonitor as FlightMonitor,
-    results,
+    results: allResults,
     generalAnalysis,
     cheapestResult,
     triggeredNotification,
