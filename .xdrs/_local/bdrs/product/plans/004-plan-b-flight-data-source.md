@@ -142,6 +142,46 @@ users search it elsewhere on the network. Concretely:
    as the source instead of "LATAM"?) that needs a decision even if coverage improves — not
    something to silently paper over in an adapter.
 
+## Amendment (2026-08-01): expanded route sample — coverage is real but narrow, concentrated on the SP-RJ corridor
+
+Ran 6 more routes same day to widen the single-snapshot sample above before committing to a
+multi-day observation window:
+
+| Route | Result |
+|---|---|
+| GIG→GRU (SP-RJ, reverse direction of the original test) | 4 fares returned |
+| CGH→SDU (same SP-RJ corridor, different airport pair within the same cities — API normalized to `SAO`→`RIO` again) | 6 fares returned |
+| GRU→SSA (São Paulo–Salvador, domestic) | 3 fares returned |
+| BSB→GRU (Brasília–São Paulo) | Empty |
+| BSB→MIA (Brasília–Miami — the literal example used in this project's own `CLAUDE.md`) | Empty |
+| GRU→EZE (São Paulo–Buenos Aires, high-volume regional international) | Empty |
+
+### Sharper conclusion than the original amendment
+
+Coverage is not randomly sparse — it's **concentrated specifically on the São Paulo–Rio de Janeiro
+air bridge** (dense data in both directions, across different airport pairs within those two
+cities) and has partial reach into other São Paulo-origin domestic routes (Salvador). It has **zero
+observed coverage for Brasília-origin routes in either test**, including this project's own
+canonical example route (BSB→MIA, per `CLAUDE.md`), and zero for the São Paulo–Buenos Aires
+international route tested.
+
+This means the Data API is not "Brazil coverage: yes/no" — it's closer to "one specific,
+extremely-high-volume domestic corridor: yes; most everything else tested: no, at least in this
+snapshot." That is a materially narrower result than the original amendment's framing.
+
+### Practical implication
+
+- **Not a general-purpose replacement** for Duffel/Amadeus at FlySpot's actual route mix (which
+  needs to cover BSB, GOL/Azul regional pairs, and international routes from Brazil, not just
+  SP-RJ).
+- **Could still have narrow, specific value** if FlySpot ever wants a free/no-approval way to
+  monitor SP-RJ specifically — but that's a small slice of the product's real route coverage need,
+  not a hedge against the Duffel/Amadeus wait.
+- The multi-day observation window recommended in the previous amendment is still worth doing
+  (cache refills continuously) but expectations should be calibrated down: this session's broader
+  sample makes "stays sparse outside SP-RJ" the more likely outcome than "improves broadly with
+  time," given Brasília returned nothing on two different destination pairs, not just one.
+
 ## Considered Options
 
 - **Pursue Travelpayouts/Kiwi live search APIs as the board proposed** — rejected: both are gated
