@@ -31,6 +31,13 @@ declare global {
  * projeto irmão SocialShelf). GIS entrega o ID token direto num
  * callback JS, sem esse canal. Ver _local-edr-policy-008 (amendment).
  */
+function isDarkNow(): boolean {
+  const stored = document.documentElement.getAttribute('data-theme');
+  if (stored === 'dark') return true;
+  if (stored === 'light') return false;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
 export default function GoogleSignInButton({ onCredential }: GoogleSignInButtonProps) {
   const buttonRef = useRef<HTMLDivElement>(null);
 
@@ -41,35 +48,53 @@ export default function GoogleSignInButton({ onCredential }: GoogleSignInButtonP
       return;
     }
 
-    function init() {
+    let cancelled = false;
+
+    function renderButton() {
       if (!window.google || !buttonRef.current) return;
-      window.google.accounts.id.initialize({
-        client_id: clientId as string,
-        callback: (response) => onCredential(response.credential),
-      });
+      buttonRef.current.innerHTML = '';
       window.google.accounts.id.renderButton(buttonRef.current, {
         type: 'standard',
-        theme: 'outline',
+        theme: isDarkNow() ? 'filled_black' : 'outline',
         size: 'large',
         width: 320,
         text: 'continue_with',
       });
     }
 
-    if (window.google) {
-      init();
-      return;
+    function init() {
+      if (!window.google || !buttonRef.current) return;
+      window.google.accounts.id.initialize({
+        client_id: clientId as string,
+        callback: (response) => onCredential(response.credential),
+      });
+      renderButton();
     }
 
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = init;
-    document.body.appendChild(script);
+    if (window.google) {
+      init();
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        if (!cancelled) init();
+      };
+      document.body.appendChild(script);
+    }
+
+    // Re-renderiza no tamanho/tema oficial do Google quando o usuário troca de tema
+    // (o widget do GIS não observa mudança de tema sozinho).
+    const observer = new MutationObserver(renderButton);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    media.addEventListener('change', renderButton);
 
     return () => {
-      script.onload = null;
+      cancelled = true;
+      observer.disconnect();
+      media.removeEventListener('change', renderButton);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

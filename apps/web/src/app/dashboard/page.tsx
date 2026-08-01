@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plane, Sparkles, Server, RefreshCw } from 'lucide-react';
+import { Sparkles, RefreshCw } from 'lucide-react';
 import type { FlightMonitor, AirlineSite, NotificationLog } from '@mpa/types';
 import { useAuth } from '../../lib/auth-context';
 import { apiFetch } from '../../lib/api';
@@ -17,6 +17,33 @@ import EmailModal from '../../components/EmailModal';
 import RadarEmptyState from '../../components/RadarEmptyState';
 import ErrorCard from '../../components/ErrorCard';
 
+type PricedMonitor = FlightMonitor & { currentPrice: number };
+
+function pickHeroMonitor(monitors: FlightMonitor[]): PricedMonitor | null {
+  const priced = monitors.filter(
+    (m): m is PricedMonitor => m.status === 'active' && typeof m.currentPrice === 'number' && m.targetPrice > 0
+  );
+  if (priced.length === 0) return null;
+  const stillWaiting = priced.filter((m) => m.currentPrice > m.targetPrice);
+  const pool = stillWaiting.length > 0 ? stillWaiting : priced;
+  return pool.reduce((best, m) => {
+    const gap = Math.abs(m.currentPrice - m.targetPrice) / m.targetPrice;
+    const bestGap = Math.abs(best.currentPrice - best.targetPrice) / best.targetPrice;
+    return gap < bestGap ? m : best;
+  });
+}
+
+function timeAgo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'agora mesmo';
+  if (diffMin < 60) return `há ${diffMin} min`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `há ${diffH}h`;
+  const diffD = Math.floor(diffH / 24);
+  return `há ${diffD} ${diffD === 1 ? 'dia' : 'dias'}`;
+}
+
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -24,7 +51,6 @@ export default function DashboardPage() {
   const [monitors, setMonitors] = useState<FlightMonitor[]>([]);
   const [sites, setSites] = useState<AirlineSite[]>([]);
   const [notifications, setNotifications] = useState<NotificationLog[]>([]);
-  const [activeTab, setActiveTab] = useState<'monitors' | 'sites'>('monitors');
   const [selectedEmail, setSelectedEmail] = useState<NotificationLog | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -208,110 +234,113 @@ export default function DashboardPage() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-slate-400 text-sm">
+      <div className="flex min-h-screen items-center justify-center bg-paper text-sm text-ink-muted">
         Carregando...
       </div>
     );
   }
 
-  const activeMonitorsCount = monitors.filter((m) => m.status === 'active').length;
+  const activeMonitors = monitors.filter((m) => m.status === 'active');
+  const targetHitCount = activeMonitors.filter((m) => m.currentPrice !== null && m.currentPrice <= m.targetPrice).length;
   const currentUserEmail = user.email ?? '';
+  const heroMonitor = pickHeroMonitor(monitors);
+  const heroGapPct = heroMonitor
+    ? Math.round((Math.abs(heroMonitor.currentPrice - heroMonitor.targetPrice) / heroMonitor.targetPrice) * 100)
+    : null;
+  const lastNotification = notifications[0] ?? null;
 
   return (
-    <div className="min-h-screen bg-slate-55 pb-16 font-sans antialiased text-slate-900" id="app-container">
-      <Header activeMonitorsCount={activeMonitorsCount} notificationsCount={notifications.length} />
+    <div className="min-h-screen bg-paper pb-16 text-ink antialiased">
+      <Header />
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8">
-        {errorMessage && <ErrorCard message={errorMessage} onRetry={fetchData} retrying={isLoading} />}
+      <main className="mx-auto max-w-[1240px] px-6">
+        <div className="pt-9">
+          {errorMessage && <ErrorCard message={errorMessage} onRetry={fetchData} retrying={isLoading} />}
 
-        {upgradeMessage && (
-          <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-blue-200 bg-blue-50 p-4">
-            <div className="flex items-start gap-3">
-              <Sparkles className="h-5 w-5 shrink-0 text-blue-600" />
-              <p className="text-sm font-semibold text-blue-900">{upgradeMessage}</p>
+          {upgradeMessage && (
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-terracotta/30 bg-terracotta-wash p-4">
+              <div className="flex items-start gap-3">
+                <Sparkles className="h-5 w-5 shrink-0 text-terracotta" aria-hidden="true" />
+                <p className="text-sm font-semibold text-ink">{upgradeMessage}</p>
+              </div>
+              <a
+                href="/plans"
+                className="shrink-0 rounded-md bg-terracotta-solid px-3 py-1.5 text-xs font-bold text-white transition hover:bg-terracotta-hover"
+              >
+                Ver planos
+              </a>
             </div>
-            <a
-              href="/plans"
-              className="shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700"
-            >
-              Ver planos
-            </a>
-          </div>
-        )}
+          )}
 
-        <div className="mb-8 rounded-2xl bg-slate-900 text-white p-6 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-850">
-          <div className="absolute top-0 right-0 transform translate-x-12 -translate-y-12 opacity-5 text-white pointer-events-none">
-            <Plane className="h-48 w-48" />
-          </div>
-          <div className="relative z-10 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-600/15 border border-blue-500/30 px-3 py-1 text-xs text-blue-400 font-bold mb-3 tracking-wide">
-              <Sparkles className="h-3 w-3" />
-              Rastreador Inteligente Multi-Canais
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight leading-tight">
-              Monitore preços e compre sua passagem na hora certa!
-            </h2>
-            <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed font-light">
-              Configure sua rota e meta de preço — nós avisamos assim que o valor cair.
-            </p>
-          </div>
-          <div className="shrink-0 flex items-center gap-2 bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 self-start md:self-auto text-xs font-mono">
-            <Server className="h-4 w-4 text-blue-500 animate-pulse" />
-            <div>
-              <p className="font-bold text-slate-250">Robô Crawler Online</p>
-              <p className="text-[10px] text-slate-500">{sites.length} destinos mapeados</p>
-            </div>
-          </div>
-        </div>
-
-        {isLoading ? (
-          <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 py-12 text-slate-500">
-            <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
-            <p className="text-xs font-semibold">Carregando seus monitores...</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            <div className="lg:col-span-1 space-y-8">
-              <MonitorForm airlineSites={sites} onSubmit={handleAddMonitor} currentUserEmail={currentUserEmail} />
-              <SitesList sites={sites} onToggleSiteStatus={handleToggleSiteStatus} />
+          <div className="mb-10 grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr_1fr]">
+            <div className="rounded-xl bg-ink-strong p-6 text-paper-on-ink">
+              <div className="mb-2.5 font-mono text-[10px] uppercase tracking-wider text-paper-on-ink-muted">
+                Mais perto da meta
+              </div>
+              {heroMonitor ? (
+                <>
+                  <div className="mb-1.5 flex items-baseline gap-2.5 font-mono text-xl font-bold sm:text-2xl">
+                    {heroMonitor.origin} <span className="text-terracotta-tint">→</span> {heroMonitor.destination}
+                  </div>
+                  <p className="max-w-[34ch] text-[13px] text-paper-on-ink-muted">
+                    Menor preço lido está a{' '}
+                    <span className="font-bold text-terracotta-tint">{heroGapPct}%</span>{' '}
+                    {heroMonitor.currentPrice > heroMonitor.targetPrice ? 'da sua meta' : 'abaixo da sua meta'} de R${' '}
+                    {heroMonitor.targetPrice.toLocaleString('pt-BR')}. Última leitura: R${' '}
+                    {heroMonitor.currentPrice.toLocaleString('pt-BR')}.
+                  </p>
+                </>
+              ) : (
+                <p className="max-w-[34ch] text-[13px] text-paper-on-ink-muted">
+                  Assim que um dos seus alertas tiver uma leitura de preço, mostramos aqui o mais perto de bater a meta.
+                </p>
+              )}
             </div>
 
-            <div className="lg:col-span-2 space-y-8">
-              <div>
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <h2 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                      <Plane className="h-5 w-5 text-blue-600 transform rotate-45" />
-                      Seus Alertas de Passagens
-                    </h2>
-                    <p className="text-xs text-slate-400 font-medium">Rastreando preços entre cidades cadastradas</p>
+            <div className="rounded-xl border border-border bg-paper-card p-6">
+              <div className="mb-2.5 font-mono text-[10px] uppercase tracking-wider text-ink-muted">Alertas ativos</div>
+              <div className="font-mono text-3xl font-bold leading-none">{activeMonitors.length}</div>
+              <div className="mt-2 text-xs text-ink-muted">
+                {activeMonitors.length - targetHitCount} aguardando · {targetHitCount} meta atingida
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border bg-paper-card p-6">
+              <div className="mb-2.5 font-mono text-[10px] uppercase tracking-wider text-ink-muted">Notificações enviadas</div>
+              <div className="font-mono text-3xl font-bold leading-none">{notifications.length}</div>
+              <div className="mt-2 text-xs text-ink-muted">
+                {lastNotification ? `Última ${timeAgo(lastNotification.sentAt)}` : 'Nenhuma ainda'}
+              </div>
+            </div>
+          </div>
+
+          {isLoading ? (
+            <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 py-12 text-ink-muted">
+              <RefreshCw className="h-8 w-8 animate-spin text-terracotta" aria-hidden="true" />
+              <p className="text-xs font-semibold">Carregando seus monitores...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-7 lg:grid-cols-[5fr_7fr] lg:items-start">
+              <div className="space-y-7">
+                <MonitorForm airlineSites={sites} onSubmit={handleAddMonitor} currentUserEmail={currentUserEmail} />
+                <SitesList sites={sites} onToggleSiteStatus={handleToggleSiteStatus} />
+              </div>
+
+              <div className="space-y-7">
+                <div>
+                  <div className="mb-4">
+                    <h2 className="font-serif text-lg font-semibold">Seus alertas de passagens</h2>
+                    <p className="text-xs text-ink-muted">
+                      {monitors.length === 0
+                        ? 'Nenhuma rota sendo vigiada ainda'
+                        : `${monitors.length} ${monitors.length === 1 ? 'rota sendo vigiada' : 'rotas sendo vigiadas'} agora`}
+                    </p>
                   </div>
 
-                  <div className="flex border border-slate-200 rounded-lg p-0.5 bg-slate-100/60 text-[11px] font-bold">
-                    <button
-                      onClick={() => setActiveTab('monitors')}
-                      className={`px-3 py-1.5 rounded-md transition ${
-                        activeTab === 'monitors' ? 'bg-white text-slate-900 shadow-sm font-extrabold' : 'text-slate-500 hover:text-slate-900 font-semibold'
-                      }`}
-                    >
-                      Alertas Ativos ({monitors.length})
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('sites')}
-                      className={`px-3 py-1.5 rounded-md transition ${
-                        activeTab === 'sites' ? 'bg-white text-slate-900 shadow-sm font-extrabold' : 'text-slate-500 hover:text-slate-900 font-semibold'
-                      }`}
-                    >
-                      Histórico Geral ({notifications.length})
-                    </button>
-                  </div>
-                </div>
-
-                {activeTab === 'monitors' ? (
-                  monitors.length === 0 ? (
+                  {monitors.length === 0 ? (
                     <RadarEmptyState />
                   ) : (
-                    <div className="grid grid-cols-1 gap-6">
+                    <div className="grid grid-cols-1 gap-5">
                       {monitors.map((monitor) => (
                         <MonitorCard
                           key={monitor.id}
@@ -324,19 +353,9 @@ export default function DashboardPage() {
                         />
                       ))}
                     </div>
-                  )
-                ) : (
-                  <NotificationFeed
-                    notifications={notifications}
-                    onOpenEmailPreview={setSelectedEmail}
-                    onClearAll={handleClearNotifications}
-                    onSendTestEmail={handleSendTestEmail}
-                    userEmail={currentUserEmail}
-                  />
-                )}
-              </div>
+                  )}
+                </div>
 
-              {activeTab === 'monitors' && (
                 <NotificationFeed
                   notifications={notifications}
                   onOpenEmailPreview={setSelectedEmail}
@@ -344,10 +363,10 @@ export default function DashboardPage() {
                   onSendTestEmail={handleSendTestEmail}
                   userEmail={currentUserEmail}
                 />
-              )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </main>
 
       <EmailModal notification={selectedEmail} onClose={() => setSelectedEmail(null)} />

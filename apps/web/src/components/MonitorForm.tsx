@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { PlaneTakeoff, PlaneLanding, Users, Calendar, DollarSign, ListFilter, Mail, Plus, TrendingUp, CalendarX } from 'lucide-react';
+import { Calendar, CalendarX, DollarSign, Mail, Plus, TrendingUp } from 'lucide-react';
 import type { AirlineSite, RouteStats } from '@mpa/types';
 import { apiFetch } from '../lib/api';
 import MarginPresetControl from './MarginPresetControl';
@@ -23,6 +23,14 @@ const POPULAR_AIRPORTS = [
 ];
 
 const DAY_OPTIONS = [0, 1, 2, 3, 4, 5, 7, 10, 15];
+
+const inputClass =
+  'w-full rounded-md border border-border-strong bg-paper px-3 py-2 text-sm font-bold text-ink font-mono focus:border-terracotta focus:outline-none focus:ring-1 focus:ring-terracotta';
+const plainInputClass =
+  'w-full rounded-md border border-border-strong bg-paper px-3 py-2 text-sm font-medium text-ink font-sans focus:border-terracotta focus:outline-none focus:ring-1 focus:ring-terracotta';
+const selectClass =
+  'w-full rounded-md border border-border-strong bg-paper-card px-2 py-1.5 text-xs font-bold text-ink focus:border-terracotta focus:outline-none';
+const labelClass = 'mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-ink-muted';
 
 export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }: MonitorFormProps) {
   const [searchMode, setSearchMode] = useState<'dated' | 'anytime'>('dated');
@@ -152,24 +160,19 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-100/30" id="monitor-config-form">
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Novo Monitoramento</h2>
-          <p className="text-xs text-slate-400 font-medium">Configure suas metas e datas de viagem</p>
-        </div>
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-50 text-slate-500 border border-slate-100">
-          <ListFilter className="h-4 w-4" />
-        </div>
+    <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-paper-card shadow-card" id="monitor-config-form">
+      <div className="border-b border-border px-5 py-4">
+        <h2 className="font-serif text-lg font-semibold">Novo monitoramento</h2>
+        <p className="text-xs text-ink-muted">Preencha como se fosse tirar a passagem</p>
       </div>
 
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1">
+      <div className="space-y-3.5 p-5">
+        <div className="grid grid-cols-2 gap-1.5 rounded-md border border-border bg-paper-deep p-1">
           <button
             type="button"
             onClick={() => setSearchMode('dated')}
-            className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition ${
-              searchMode === 'dated' ? 'bg-white text-blue-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'
+            className={`flex items-center justify-center gap-1.5 rounded py-2 text-xs font-bold transition ${
+              searchMode === 'dated' ? 'bg-paper-card text-terracotta shadow-sm' : 'text-ink-muted hover:text-ink'
             }`}
           >
             <Calendar className="h-3.5 w-3.5" />
@@ -178,8 +181,8 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
           <button
             type="button"
             onClick={() => setSearchMode('anytime')}
-            className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition ${
-              searchMode === 'anytime' ? 'bg-white text-blue-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'
+            className={`flex items-center justify-center gap-1.5 rounded py-2 text-xs font-bold transition ${
+              searchMode === 'anytime' ? 'bg-paper-card text-terracotta shadow-sm' : 'text-ink-muted hover:text-ink'
             }`}
           >
             <CalendarX className="h-3.5 w-3.5" />
@@ -187,56 +190,48 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
           <div>
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <PlaneTakeoff className="h-3.5 w-3.5 text-slate-400" />
-              Origem (Partida)
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Ex: GRU ou São Paulo"
-                value={origin}
-                onChange={(e) => setOrigin(e.target.value.toUpperCase())}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold transition-all"
-                required
-              />
-              <div className="absolute top-1/2 right-3 -translate-y-1/2 text-[10px] uppercase tracking-wider font-extrabold text-slate-400">
-                {resolveCityName(origin)}
-              </div>
-            </div>
-            <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-slate-400">
-              <span className="text-slate-500 font-bold">Atalhos:</span>
-              <button type="button" onClick={() => setOrigin('GRU')} className="hover:text-blue-600 transition font-medium">GRU</button>
-              <button type="button" onClick={() => setOrigin('GIG')} className="hover:text-blue-600 transition font-medium">GIG</button>
-              <button type="button" onClick={() => setOrigin('BSB')} className="hover:text-blue-600 transition font-medium">BSB</button>
+            <label htmlFor="mf-origin" className={labelClass}>Origem</label>
+            <input
+              id="mf-origin"
+              type="text"
+              placeholder="Ex: GRU"
+              value={origin}
+              onChange={(e) => setOrigin(e.target.value.toUpperCase())}
+              className={inputClass}
+              required
+            />
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-ink-muted">
+              <span>{resolveCityName(origin)}</span>
+              <span className="text-border-strong">·</span>
+              {['GRU', 'GIG', 'BSB'].map((code) => (
+                <button key={code} type="button" onClick={() => setOrigin(code)} className="font-semibold hover:text-terracotta">
+                  {code}
+                </button>
+              ))}
             </div>
           </div>
-
+          <div className="hidden pb-2.5 text-ink-muted sm:block">→</div>
           <div>
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <PlaneLanding className="h-3.5 w-3.5 text-slate-400" />
-              Destino (Retorno)
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Ex: LIS ou Lisboa"
-                value={destination}
-                onChange={(e) => setDestination(e.target.value.toUpperCase())}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold underline decoration-blue-500 decoration-2 transition-all"
-                required
-              />
-              <div className="absolute top-1/2 right-3 -translate-y-1/2 text-[10px] uppercase tracking-wider font-extrabold text-slate-400">
-                {resolveCityName(destination)}
-              </div>
-            </div>
-            <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-slate-400">
-              <span className="text-slate-500 font-bold">Atalhos:</span>
-              <button type="button" onClick={() => setDestination('LIS')} className="hover:text-blue-600 transition font-medium">LIS</button>
-              <button type="button" onClick={() => setDestination('MIA')} className="hover:text-blue-600 transition font-medium">MIA</button>
-              <button type="button" onClick={() => setDestination('EZE')} className="hover:text-blue-600 transition font-medium">EZE</button>
+            <label htmlFor="mf-destination" className={labelClass}>Destino</label>
+            <input
+              id="mf-destination"
+              type="text"
+              placeholder="Ex: LIS"
+              value={destination}
+              onChange={(e) => setDestination(e.target.value.toUpperCase())}
+              className={inputClass}
+              required
+            />
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-ink-muted">
+              <span>{resolveCityName(destination)}</span>
+              <span className="text-border-strong">·</span>
+              {['LIS', 'MIA', 'EZE'].map((code) => (
+                <button key={code} type="button" onClick={() => setDestination(code)} className="font-semibold hover:text-terracotta">
+                  {code}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -244,37 +239,27 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
         {searchMode === 'dated' ? (
           <div className="space-y-3">
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                Quando você pode ir?
-              </label>
+              <label htmlFor="mf-departure" className={labelClass}>Quando você pode ir?</label>
               <input
+                id="mf-departure"
                 type="date"
                 value={departureDate}
                 onChange={(e) => setDepartureDate(e.target.value)}
-                className="mb-2 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold transition"
+                className={`${plainInputClass} mb-2`}
                 required
               />
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-slate-400">Dias antes</label>
-                  <select
-                    value={departDaysBefore}
-                    onChange={(e) => setDepartDaysBefore(Number(e.target.value))}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
-                  >
+                  <label htmlFor="mf-dep-before" className="mb-1 block text-[9px] font-bold uppercase tracking-wide text-ink-muted">Dias antes</label>
+                  <select id="mf-dep-before" value={departDaysBefore} onChange={(e) => setDepartDaysBefore(Number(e.target.value))} className={selectClass}>
                     {DAY_OPTIONS.map((d) => (
                       <option key={d} value={d}>{d === 0 ? 'nenhum' : `${d} dia(s)`}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-slate-400">Dias depois</label>
-                  <select
-                    value={departDaysAfter}
-                    onChange={(e) => setDepartDaysAfter(Number(e.target.value))}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
-                  >
+                  <label htmlFor="mf-dep-after" className="mb-1 block text-[9px] font-bold uppercase tracking-wide text-ink-muted">Dias depois</label>
+                  <select id="mf-dep-after" value={departDaysAfter} onChange={(e) => setDepartDaysAfter(Number(e.target.value))} className={selectClass}>
                     {DAY_OPTIONS.map((d) => (
                       <option key={d} value={d}>{d === 0 ? 'nenhum' : `${d} dia(s)`}</option>
                     ))}
@@ -284,37 +269,27 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                Quando você volta?
-              </label>
+              <label htmlFor="mf-return" className={labelClass}>Quando você volta?</label>
               <input
+                id="mf-return"
                 type="date"
                 value={returnDate}
                 onChange={(e) => setReturnDate(e.target.value)}
-                className="mb-2 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold transition"
+                className={`${plainInputClass} mb-2`}
                 required
               />
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-slate-400">Dias antes</label>
-                  <select
-                    value={returnDaysBefore}
-                    onChange={(e) => setReturnDaysBefore(Number(e.target.value))}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
-                  >
+                  <label htmlFor="mf-ret-before" className="mb-1 block text-[9px] font-bold uppercase tracking-wide text-ink-muted">Dias antes</label>
+                  <select id="mf-ret-before" value={returnDaysBefore} onChange={(e) => setReturnDaysBefore(Number(e.target.value))} className={selectClass}>
                     {DAY_OPTIONS.map((d) => (
                       <option key={d} value={d}>{d === 0 ? 'nenhum' : `${d} dia(s)`}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-slate-400">Dias depois</label>
-                  <select
-                    value={returnDaysAfter}
-                    onChange={(e) => setReturnDaysAfter(Number(e.target.value))}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
-                  >
+                  <label htmlFor="mf-ret-after" className="mb-1 block text-[9px] font-bold uppercase tracking-wide text-ink-muted">Dias depois</label>
+                  <select id="mf-ret-after" value={returnDaysAfter} onChange={(e) => setReturnDaysAfter(Number(e.target.value))} className={selectClass}>
                     {DAY_OPTIONS.map((d) => (
                       <option key={d} value={d}>{d === 0 ? 'nenhum' : `${d} dia(s)`}</option>
                     ))}
@@ -324,92 +299,69 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
             </div>
           </div>
         ) : (
-          <div className="flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-xs text-blue-900">
-            <CalendarX className="h-4 w-4 shrink-0 text-blue-500 mt-0.5" />
-            <p>Sem data marcada. Avisamos assim que <strong>qualquer</strong> data futura para essa rota bater a sua meta de preço.</p>
+          <div className="flex items-start gap-2 rounded-md border border-border bg-paper-deep p-3 text-xs text-ink-muted">
+            <CalendarX className="mt-0.5 h-4 w-4 shrink-0 text-terracotta" aria-hidden="true" />
+            <p>Sem data marcada. Avisamos assim que <strong className="text-ink">qualquer</strong> data futura para essa rota bater a sua meta de preço.</p>
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-2 rounded-xl bg-slate-50 p-3 border border-slate-200/60">
+        <div className="grid grid-cols-3 gap-2 rounded-md border border-border bg-paper-deep p-3">
           <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-              <Users className="h-3 w-3 text-slate-400" />
-              Adultos
-            </label>
-            <select
-              value={adults}
-              onChange={(e) => setAdults(Number(e.target.value))}
-              className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-800 focus:border-blue-500 focus:outline-none"
-            >
+            <label htmlFor="mf-adults" className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-ink-muted">Adultos</label>
+            <select id="mf-adults" value={adults} onChange={(e) => setAdults(Number(e.target.value))} className={`${selectClass} bg-paper-card`}>
               {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
                 <option key={num} value={num}>{num}</option>
               ))}
             </select>
-            <p className="mt-0.5 text-[9px] text-slate-400">12 anos ou mais</p>
+            <p className="mt-0.5 text-[9px] text-ink-muted">12 anos ou mais</p>
           </div>
-
           <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-              <Users className="h-3 w-3 text-slate-400" />
-              Crianças
-            </label>
-            <select
-              value={children}
-              onChange={(e) => setChildren(Number(e.target.value))}
-              className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-800 focus:border-blue-500 focus:outline-none"
-            >
+            <label htmlFor="mf-children" className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-ink-muted">Crianças</label>
+            <select id="mf-children" value={children} onChange={(e) => setChildren(Number(e.target.value))} className={`${selectClass} bg-paper-card`}>
               {[0, 1, 2, 3, 4, 5].map((num) => (
                 <option key={num} value={num}>{num}</option>
               ))}
             </select>
-            <p className="mt-0.5 text-[9px] text-slate-400">2 a 11 anos</p>
+            <p className="mt-0.5 text-[9px] text-ink-muted">2 a 11 anos</p>
           </div>
-
           <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-              <Users className="h-3 w-3 text-slate-400" />
-              Bebês
-            </label>
-            <select
-              value={infants}
-              onChange={(e) => setInfants(Number(e.target.value))}
-              className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-800 focus:border-blue-500 focus:outline-none"
-            >
+            <label htmlFor="mf-infants" className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-ink-muted">Bebês</label>
+            <select id="mf-infants" value={infants} onChange={(e) => setInfants(Number(e.target.value))} className={`${selectClass} bg-paper-card`}>
               {[0, 1, 2, 3, 4].map((num) => (
                 <option key={num} value={num}>{num}</option>
               ))}
             </select>
-            <p className="mt-0.5 text-[9px] text-slate-400">Até 2 anos, no colo</p>
+            <p className="mt-0.5 text-[9px] text-ink-muted">Até 2 anos, no colo</p>
           </div>
         </div>
 
         {(routeStats || statsLoading) && (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="rounded-md border border-border bg-paper-deep p-3">
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                <TrendingUp className="h-3 w-3 text-blue-600" />
+              <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-ink-muted">
+                <TrendingUp className="h-3 w-3 text-terracotta" />
                 Histórico de preço para esta rota
               </span>
-              {routeStats && <span className="text-[9px] text-slate-400">últimos {routeStats.sampleWindowDays} dias</span>}
+              {routeStats && <span className="text-[9px] text-ink-muted">últimos {routeStats.sampleWindowDays} dias</span>}
             </div>
             {statsLoading && !routeStats ? (
-              <p className="text-xs text-slate-400 font-medium">Consultando o histórico...</p>
+              <p className="text-xs font-medium text-ink-muted">Consultando o histórico...</p>
             ) : routeStats ? (
               <>
                 <div className="mb-1 flex items-baseline gap-2">
-                  <span className="text-lg font-extrabold text-slate-800">R$ {routeStats.average.toLocaleString('pt-BR')}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">
+                  <span className="font-mono text-lg font-extrabold">R$ {routeStats.average.toLocaleString('pt-BR')}</span>
+                  <span className="text-[10px] font-medium text-ink-muted">
                     média · faixa R$ {routeStats.min.toLocaleString('pt-BR')} – R$ {routeStats.max.toLocaleString('pt-BR')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[10px] text-slate-500">
-                    Metas abaixo de <strong className="text-slate-700">R$ {routeStats.min.toLocaleString('pt-BR')}</strong> podem demorar mais para disparar.
+                  <p className="text-[10px] text-ink-muted">
+                    Metas abaixo de <strong className="text-ink">R$ {routeStats.min.toLocaleString('pt-BR')}</strong> podem demorar mais para disparar.
                   </p>
                   <button
                     type="button"
                     onClick={() => setTargetPrice(String(routeStats.min))}
-                    className="whitespace-nowrap rounded px-2 py-1 text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-100 hover:bg-blue-100 transition"
+                    className="whitespace-nowrap rounded border border-terracotta/30 bg-terracotta-wash px-2 py-1 text-[10px] font-bold text-terracotta transition hover:brightness-95"
                   >
                     Usar R$ {routeStats.min.toLocaleString('pt-BR')}
                   </button>
@@ -420,24 +372,20 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
         )}
 
         <div>
-          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-            <DollarSign className="h-3.5 w-3.5 text-blue-600" />
-            Valor Alvo Máximo (BRL)
-          </label>
+          <label htmlFor="mf-target-price" className={labelClass}>Valor Alvo Máximo (BRL)</label>
           <div className="relative">
-            <span className="absolute top-1/2 left-3 -translate-y-1/2 text-sm font-bold text-slate-400">R$</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-sm font-bold text-ink-muted">R$</span>
             <input
+              id="mf-target-price"
               type="number"
               value={targetPrice}
               onChange={(e) => setTargetPrice(e.target.value)}
               placeholder="Ex: 3500"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50/50 pl-9 pr-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-extrabold"
+              className={`${inputClass} pl-9`}
               required
             />
           </div>
-          <p className="mt-1 text-[10px] text-slate-400 font-medium">
-            Enviaremos alerta imediatamente ao alcançar este valor ou menos.
-          </p>
+          <p className="mt-1 text-[10px] text-ink-muted">Enviaremos alerta imediatamente ao alcançar este valor ou menos.</p>
         </div>
 
         <MarginPresetControl
@@ -447,49 +395,45 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
         />
 
         <div>
-          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-            <Mail className="h-3.5 w-3.5 text-slate-400" />
-            E-mail para Notificações
-          </label>
+          <label htmlFor="mf-email" className={labelClass}>E-mail para Notificações</label>
           <input
+            id="mf-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+            className={plainInputClass}
             required
           />
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">
-            Pesquisar nos seguintes sites:
-          </label>
+        <fieldset>
+          <legend className={labelClass}>Pesquisar nos seguintes sites</legend>
           <div className="grid grid-cols-2 gap-2">
             {airlineSites.map((site) => (
               <label
                 key={site.id}
-                className={`flex items-center gap-2 rounded-lg border p-2 text-xs transition-all cursor-pointer ${
+                className={`flex cursor-pointer items-center gap-2 rounded-md border p-2 text-xs transition-all ${
                   selectedSites.includes(site.id)
-                    ? 'border-blue-500 bg-blue-50/30 text-blue-950 font-bold'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    ? 'border-terracotta bg-terracotta-wash font-bold text-ink'
+                    : 'border-border-strong bg-paper text-ink-muted hover:bg-paper-deep'
                 }`}
               >
                 <input
                   type="checkbox"
                   checked={selectedSites.includes(site.id)}
                   onChange={() => handleToggleSite(site.id)}
-                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                  className="h-4 w-4 rounded border-border-strong text-terracotta focus:ring-terracotta"
                 />
                 <span className="truncate font-medium">{site.name}</span>
               </label>
             ))}
           </div>
-        </div>
+        </fieldset>
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition active:scale-[0.99] disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-terracotta-solid px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-terracotta-hover disabled:cursor-not-allowed disabled:bg-paper-deep disabled:text-ink-muted"
         >
           <Plus className="h-4 w-4 stroke-[2.5px]" />
           {isSubmitting ? 'Cadastrando...' : 'Adicionar Alerta de Passagens'}

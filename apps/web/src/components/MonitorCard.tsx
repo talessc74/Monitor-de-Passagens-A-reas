@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Users, DollarSign, RefreshCw, Trash2, Power, History, Sparkles, Pencil } from 'lucide-react';
+import { Calendar, Users, RefreshCw, Trash2, Power, History, Pencil } from 'lucide-react';
 import type { AirlineSite, FlightMonitor } from '@mpa/types';
 import EditMonitorModal from './EditMonitorModal';
 import MonitorDetailModal from './MonitorDetailModal';
@@ -54,137 +54,17 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
       if (res && res.success) {
         setScanResultText(`Varredura concluída! Menor preço encontrado: R$ ${res.cheapestResult.price} (${res.cheapestResult.site.toUpperCase()}).`);
         if (res.triggeredNotification) {
-          setScanSteps((prev) => [...prev, '🚨 Alerta de preço disparado e enviado para ' + monitor.email + '!']);
+          setScanSteps((prev) => [...prev, 'Alerta de preço disparado e enviado para ' + monitor.email + '!']);
         }
       }
     } catch (err: any) {
-      setScanSteps((prev) => [...prev, '❌ Erro ao ler ofertas: ' + (err.message || 'Problema técnico.')]);
+      setScanSteps((prev) => [...prev, 'Erro ao ler ofertas: ' + (err.message || 'Problema técnico.')]);
     } finally {
       setTimeout(() => setIsScanning(false), 2000);
     }
   };
 
-  const renderSparkline = () => {
-    const points = [...monitor.history];
-    if (monitor.currentPrice) {
-      points.push({ date: new Date().toISOString(), price: monitor.currentPrice, site: 'atual' });
-    }
-
-    if (points.length < 2) {
-      return (
-        <div className="flex h-24 flex-col items-center justify-center rounded-xl bg-zinc-50 border border-zinc-100 p-2 text-center text-xs text-zinc-400">
-          <History className="h-4 w-4 mb-1 text-zinc-300" />
-          <span>Sem histórico suficiente.</span>
-          <span className="text-[10px] text-zinc-400">Clique em &quot;Varrer Agora&quot; para iniciar</span>
-        </div>
-      );
-    }
-
-    const marginCeiling = monitor.targetPrice * (1 + monitor.targetPriceMarginPercent / 100);
-    const hasMargin = monitor.targetPriceMarginPercent > 0;
-
-    const prices = points.map((p) => p.price);
-    const minPrice = Math.min(...prices, monitor.targetPrice);
-    const maxPrice = Math.max(...prices, monitor.targetPrice, hasMargin ? marginCeiling : monitor.targetPrice);
-    const range = maxPrice - minPrice === 0 ? 1 : maxPrice - minPrice;
-
-    const width = 280;
-    const height = 60;
-    const padding = 10;
-    const chartWidth = width - padding * 2;
-    const chartHeight = height - padding * 2;
-
-    const svgPoints = points
-      .map((p, index) => {
-        const x = padding + (index / (points.length - 1)) * chartWidth;
-        const ratio = (p.price - minPrice) / range;
-        const y = padding + chartHeight - ratio * chartHeight;
-        return `${x},${y}`;
-      })
-      .join(' ');
-
-    const targetRatio = (monitor.targetPrice - minPrice) / range;
-    const targetY = padding + chartHeight - targetRatio * chartHeight;
-    const marginRatio = (marginCeiling - minPrice) / range;
-    const marginY = padding + chartHeight - marginRatio * chartHeight;
-
-    return (
-      <div className="rounded-xl border border-slate-100 bg-slate-50/30 p-3">
-        <div className="mb-2 flex items-center justify-between text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-          <span className="flex items-center gap-1">
-            <History className="h-3 w-3" />
-            Preço (eixo Y) por data (eixo X)
-          </span>
-          <span className="text-slate-600 font-semibold">
-            Min: R$ {minPrice} / Max: R$ {maxPrice}
-          </span>
-        </div>
-        <div className="mb-1.5 flex items-center gap-3 text-[9px] font-mono text-slate-400">
-          <span className="flex items-center gap-1">
-            <span className="inline-block h-0.5 w-2.5 bg-blue-600" /> preço
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block h-0 w-2.5 border-t-2 border-dashed border-slate-400" /> meta (R$ {monitor.targetPrice})
-          </span>
-          {hasMargin && (
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-0 w-2.5 border-t-2 border-dashed border-amber-400" /> aviso (R$ {marginCeiling.toFixed(0)})
-            </span>
-          )}
-        </div>
-        <div className="relative">
-          <svg className="w-full" viewBox={`0 0 ${width} ${height}`} height={height}>
-            <defs>
-              <linearGradient id={`gradient-${monitor.id}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#2563eb" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
-              </linearGradient>
-            </defs>
-            <path d={`M ${padding},${height} L ${svgPoints} L ${width - padding},${height} Z`} fill={`url(#gradient-${monitor.id})`} />
-            <line
-              x1={padding}
-              y1={targetY}
-              x2={width - padding}
-              y2={targetY}
-              stroke="#94a3b8"
-              strokeWidth="1.5"
-              strokeDasharray="4 3"
-            />
-            {hasMargin && (
-              <line
-                x1={padding}
-                y1={marginY}
-                x2={width - padding}
-                y2={marginY}
-                stroke="#f59e0b"
-                strokeWidth="1.5"
-                strokeDasharray="4 3"
-              />
-            )}
-            <polyline fill="none" stroke="#2563eb" strokeWidth="2" points={svgPoints} strokeLinecap="round" strokeLinejoin="round" />
-            {points.map((p, index) => {
-              const x = padding + (index / (points.length - 1)) * chartWidth;
-              const ratio = (p.price - minPrice) / range;
-              const y = padding + chartHeight - ratio * chartHeight;
-              return (
-                <circle
-                  key={index}
-                  cx={x}
-                  cy={y}
-                  r="3.5"
-                  className="fill-white stroke-blue-600 stroke-2 cursor-help transition-all"
-                >
-                  <title>{`R$ ${p.price} (${new Date(p.date).toLocaleDateString()})`}</title>
-                </circle>
-              );
-            })}
-          </svg>
-        </div>
-      </div>
-    );
-  };
-
-  const isConfiguredUnderTarget = monitor.currentPrice && monitor.currentPrice <= monitor.targetPrice;
+  const isConfiguredUnderTarget = !!(monitor.currentPrice && monitor.currentPrice <= monitor.targetPrice);
 
   const monitoringDays = monitor.createdAt
     ? Math.max(0, Math.floor((Date.now() - new Date(monitor.createdAt).getTime()) / (1000 * 60 * 60 * 24)))
@@ -192,117 +72,126 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
 
   return (
     <div
-      className={`rounded-2xl border bg-white p-5 shadow-sm transition hover:shadow-md ${
-        isConfiguredUnderTarget ? 'border-emerald-200 bg-emerald-50/10 shadow-emerald-50' : 'border-slate-200'
+      className={`overflow-hidden rounded-xl border bg-paper-card shadow-card ${
+        isConfiguredUnderTarget ? 'border-teal/30' : 'border-border'
       }`}
       id={`monitor-card-${monitor.id}`}
     >
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div className="flex items-center justify-between px-5 pt-4">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-ink-muted">FlySpot · Alerta</span>
+        <span
+          className={`rounded-full border px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider ${
+            monitor.status !== 'active'
+              ? 'border-border-strong text-ink-muted'
+              : isConfiguredUnderTarget
+                ? 'border-teal text-teal'
+                : 'border-terracotta text-terracotta'
+          }`}
+        >
+          {monitor.status !== 'active' ? 'Pausado' : isConfiguredUnderTarget ? 'Meta atingida' : 'Aguardando'}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between gap-4 px-5 pb-4 pt-2.5">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200/50">
-              {monitor.origin}
-            </span>
-            <span className="text-slate-400 text-xs">➔</span>
-            <span className="font-mono text-xs font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100">
-              {monitor.destination}
-            </span>
-            {isConfiguredUnderTarget && (
-              <span className="flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 uppercase">
-                <Sparkles className="h-2.5 w-2.5" />
-                Preço Alvo Atingido
-              </span>
-            )}
-          </div>
-          <h3 className="mt-1.5 text-base font-extrabold text-slate-800">
-            {monitor.originCity} para {monitor.destinationCity}
-          </h3>
-          <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5 font-medium">
-            <Calendar className="h-3.5 w-3.5" />
-            {monitor.searchMode === 'dated' && monitor.departureDate && monitor.returnDate ? (
-              <>
-                {new Date(monitor.departureDate).toLocaleDateString('pt-BR')} a {new Date(monitor.returnDate).toLocaleDateString('pt-BR')}
-                {(monitor.departDaysBefore || monitor.departDaysAfter || monitor.returnDaysBefore || monitor.returnDaysAfter) && (
-                  <span className="text-slate-400">
-                    {' '}(flexível: ida −{monitor.departDaysBefore ?? 0}/+{monitor.departDaysAfter ?? 0}, volta −{monitor.returnDaysBefore ?? 0}/+{monitor.returnDaysAfter ?? 0})
-                  </span>
-                )}
-              </>
-            ) : (
-              <span>Qualquer data · só o preço importa</span>
-            )}
-          </p>
+          <div className="font-mono text-2xl font-bold leading-none sm:text-[26px]">{monitor.origin}</div>
+          <div className="mt-1 text-[11px] text-ink-muted">{monitor.originCity}</div>
         </div>
-
-        <div className="flex items-baseline gap-2 self-start rounded-xl border border-slate-100 bg-slate-50/50 p-2.5">
-          <div className="text-right">
-            <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Menor Valor Lido</span>
-            <span className="text-lg font-black text-slate-850">{monitor.currentPrice ? `R$ ${monitor.currentPrice}` : 'N/D'}</span>
-          </div>
-          <div className="border-l border-slate-200 pl-2 text-right">
-            <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Meta Desejada</span>
-            <span className="text-xs font-bold text-blue-600">R$ {monitor.targetPrice}</span>
-            {monitor.targetPriceMarginPercent > 0 && (
-              <span className="block text-[9px] font-semibold text-amber-600">
-                aviso até R$ {Math.round(monitor.targetPrice * (1 + monitor.targetPriceMarginPercent / 100)).toLocaleString('pt-BR')} (+{monitor.targetPriceMarginPercent}%)
-              </span>
-            )}
-          </div>
+        <div className="relative top-[-8px] mx-2 hidden h-px flex-1 bg-[repeating-linear-gradient(to_right,var(--color-border-strong)_0_6px,transparent_6px_11px)] sm:block" />
+        <div className="hidden max-w-[40%] text-center text-[11px] leading-tight text-ink-muted sm:block">
+          {monitor.searchMode === 'dated' && monitor.departureDate && monitor.returnDate ? (
+            <>
+              {new Date(monitor.departureDate).toLocaleDateString('pt-BR')} — {new Date(monitor.returnDate).toLocaleDateString('pt-BR')}
+              {(monitor.departDaysBefore || monitor.departDaysAfter || monitor.returnDaysBefore || monitor.returnDaysAfter) && (
+                <span className="block text-ink-muted/80">
+                  flexível: ida −{monitor.departDaysBefore ?? 0}/+{monitor.departDaysAfter ?? 0}, volta −{monitor.returnDaysBefore ?? 0}/+{monitor.returnDaysAfter ?? 0}
+                </span>
+              )}
+            </>
+          ) : (
+            'Qualquer data'
+          )}
+        </div>
+        <div className="relative top-[-8px] mx-2 hidden h-px flex-1 bg-[repeating-linear-gradient(to_right,var(--color-border-strong)_0_6px,transparent_6px_11px)] sm:block" />
+        <div className="text-right">
+          <div className="font-mono text-2xl font-bold leading-none sm:text-[26px]">{monitor.destination}</div>
+          <div className="mt-1 text-[11px] text-ink-muted">{monitor.destinationCity}</div>
         </div>
       </div>
 
-      <div className="mt-3.5 flex flex-wrap gap-4 border-t border-slate-100 pt-3 text-xs text-slate-500 font-medium">
-        <div className="flex items-center gap-1">
-          <Users className="h-4 w-4 text-slate-400" />
-          <span>
-            {monitor.adults} {monitor.adults === 1 ? 'Adulto' : 'Adultos'}
-            {monitor.children > 0 && `, ${monitor.children} ${monitor.children === 1 ? 'Criança' : 'Crianças'}`}
-            {monitor.infants > 0 && ` e ${monitor.infants} ${monitor.infants === 1 ? 'Bebê' : 'Bebês'}`}
-          </span>
+      {monitor.searchMode !== 'dated' && (
+        <div className="mx-5 mb-4 flex items-start gap-2 rounded-md border border-border bg-paper-deep p-3 text-xs text-ink-muted">
+          <Calendar className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-muted" />
+          Qualquer data · só o preço importa
         </div>
-        <div className="flex items-center gap-1.5">
-          <DollarSign className="h-4 w-4 text-slate-400" />
-          <span>Sites:</span>
-          <div className="flex gap-1 flex-wrap font-bold">
-            {monitor.trackedSites.map((s) => (
-              <span key={s} className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] border border-slate-200/50">
-                {SITE_NAMES[s] || s.toUpperCase()}
-              </span>
-            ))}
+      )}
+
+      <div className="relative mx-5 border-t-2 border-dashed border-border">
+        <span className="absolute -left-[29px] -top-[9px] h-[18px] w-[18px] rounded-full bg-paper" aria-hidden="true" />
+        <span className="absolute -right-[29px] -top-[9px] h-[18px] w-[18px] rounded-full bg-paper" aria-hidden="true" />
+      </div>
+
+      <div className="flex flex-wrap items-end justify-between gap-4 px-5 py-4">
+        <div>
+          <div className="mb-1 text-[10px] uppercase tracking-wide text-ink-muted">Menor lido</div>
+          <div className={`font-mono text-xl font-bold sm:text-2xl ${isConfiguredUnderTarget ? 'text-teal' : 'text-terracotta'}`}>
+            {monitor.currentPrice ? `R$ ${monitor.currentPrice.toLocaleString('pt-BR')}` : 'N/D'}
           </div>
+        </div>
+        <div className="text-right">
+          <div className="mb-1 text-[10px] uppercase tracking-wide text-ink-muted">Meta</div>
+          <div className="font-mono text-sm font-bold text-ink-muted">R$ {monitor.targetPrice.toLocaleString('pt-BR')}</div>
+          {monitor.targetPriceMarginPercent > 0 && (
+            <div className="mt-0.5 text-[10px] text-amber">
+              aviso até R$ {Math.round(monitor.targetPrice * (1 + monitor.targetPriceMarginPercent / 100)).toLocaleString('pt-BR')} (+{monitor.targetPriceMarginPercent}%)
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="mt-4">{renderSparkline()}</div>
+      <div className="flex flex-wrap gap-4 border-t border-border px-5 py-3 text-xs text-ink-muted">
+        <span className="flex items-center gap-1.5">
+          <Users className="h-3.5 w-3.5 text-ink-muted" />
+          {monitor.adults} {monitor.adults === 1 ? 'adulto' : 'adultos'}
+          {monitor.children > 0 && `, ${monitor.children} ${monitor.children === 1 ? 'criança' : 'crianças'}`}
+          {monitor.infants > 0 && ` e ${monitor.infants} ${monitor.infants === 1 ? 'bebê' : 'bebês'}`}
+        </span>
+        <span className="flex flex-wrap gap-1.5">
+          {monitor.trackedSites.map((s) => (
+            <span key={s} className="rounded bg-paper-deep px-1.5 py-0.5 font-mono text-[10px] text-ink-muted">
+              {(SITE_NAMES[s] || s.toUpperCase()).toUpperCase()}
+            </span>
+          ))}
+        </span>
+      </div>
+
+      <MonitorSparkline monitor={monitor} />
 
       {isScanning && (
-        <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900 p-3 font-mono text-[10px] text-blue-400 max-h-36 overflow-y-auto shadow-inner">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1.5 text-slate-500 text-[9px] uppercase tracking-wider">
-            <span>Console do Robô Crawler</span>
-            <RefreshCw className="h-3 w-3 animate-spin text-blue-500" />
+        <div className="mx-5 mb-4 max-h-36 overflow-y-auto rounded-md border border-ink-strong bg-ink-strong p-3 font-mono text-[10px] text-paper-on-ink shadow-inner">
+          <div className="mb-1.5 flex items-center justify-between border-b border-white/10 pb-1.5 text-[9px] uppercase tracking-wider text-paper-on-ink-muted">
+            <span>Console do robô crawler</span>
+            <RefreshCw className="h-3 w-3 animate-spin text-terracotta-tint" />
           </div>
           <div className="space-y-1">
             {scanSteps.map((step, idx) => (
               <div key={idx} className="flex gap-2">
-                <span className="text-slate-600">[{new Date().toLocaleTimeString()}]</span>
-                <span className={step.includes('❌') ? 'text-red-400' : step.includes('🚨') ? 'text-emerald-400 font-semibold' : ''}>{step}</span>
+                <span className="text-paper-on-ink-muted">[{new Date().toLocaleTimeString()}]</span>
+                <span className={step.includes('Erro') ? 'text-red-300' : step.includes('disparado') ? 'font-semibold text-teal' : ''}>{step}</span>
               </div>
             ))}
             {scanResultText && (
-              <p className="text-white font-bold mt-1 bg-blue-950 px-1 py-0.5 rounded border border-blue-900">✔ {scanResultText}</p>
+              <p className="mt-1 rounded border border-teal/40 bg-teal/10 px-1.5 py-0.5 font-bold text-paper-on-ink">✔ {scanResultText}</p>
             )}
           </div>
         </div>
       )}
 
-      <div className="mt-4 flex flex-col gap-3 border-t border-slate-150 pt-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-[10px] text-slate-400 font-medium">
-          Última Verificação:{' '}
-          <span className="font-bold text-slate-500">
-            {monitor.lastScannedAt ? new Date(monitor.lastScannedAt).toLocaleTimeString('pt-BR') : 'Ainda não verificado'}
-          </span>
+      <div className="flex flex-col gap-3 border-t border-border px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-[10px] text-ink-muted">
+          Última verificação: <span className="font-bold text-ink">{monitor.lastScannedAt ? new Date(monitor.lastScannedAt).toLocaleTimeString('pt-BR') : 'Ainda não verificado'}</span>
           {monitor.status === 'active' && monitoringDays !== null && (
-            <span className="ml-2 text-slate-400">
+            <span className="ml-2">
               · monitorando há {monitoringDays === 0 ? 'menos de 1 dia' : monitoringDays === 1 ? '1 dia' : `${monitoringDays} dias`}
             </span>
           )}
@@ -311,7 +200,7 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => setIsViewingDetail(true)}
-            className="p-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 transition"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border-strong bg-paper text-ink-muted transition hover:bg-paper-deep"
             title="Ver histórico"
             aria-label="Ver histórico do monitor"
           >
@@ -320,7 +209,7 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
 
           <button
             onClick={() => setIsEditing(true)}
-            className="p-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 transition"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border-strong bg-paper text-ink-muted transition hover:bg-paper-deep"
             title="Editar alerta"
             aria-label="Editar alerta"
           >
@@ -329,10 +218,10 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
 
           <button
             onClick={() => onToggleStatus(monitor.id, monitor.status)}
-            className={`p-2 rounded-lg border text-xs transition ${
+            className={`flex h-8 w-8 items-center justify-center rounded-md border transition ${
               monitor.status === 'active'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100'
+                ? 'border-teal/40 bg-teal/10 text-teal hover:bg-teal/20'
+                : 'border-border-strong bg-paper text-ink-muted hover:bg-paper-deep'
             }`}
             title={monitor.status === 'active' ? 'Pausar Monitoramento' : 'Ativar de volta'}
             aria-label={monitor.status === 'active' ? 'Pausar monitoramento' : 'Ativar monitoramento de volta'}
@@ -343,10 +232,10 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
           <button
             onClick={handleScanClick}
             disabled={isScanning || monitor.status !== 'active'}
-            className="flex items-center gap-1 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-100 disabled:text-slate-300 disabled:border-slate-200 text-white border-0 text-xs font-bold px-3.5 py-1.5 shadow-sm shadow-blue-100 transition"
+            className="flex items-center gap-1.5 rounded-md bg-terracotta-solid px-3.5 py-2 text-xs font-bold text-white transition hover:bg-terracotta-hover disabled:bg-paper-deep disabled:text-ink-muted"
           >
-            <RefreshCw className={`h-3 w-3 ${isScanning ? 'animate-spin' : ''}`} />
-            Varre Agora
+            <RefreshCw className={`h-3.5 w-3.5 ${isScanning ? 'animate-spin' : ''}`} />
+            Varrer agora
           </button>
 
           <button
@@ -355,7 +244,7 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
                 onDelete(monitor.id);
               }
             }}
-            className="p-2 rounded-lg border border-red-150 bg-red-50 text-red-600 hover:bg-red-100 transition"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100"
             title="Excluir Alerta"
             aria-label="Excluir alerta"
           >
@@ -374,6 +263,79 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
       )}
 
       {isViewingDetail && <MonitorDetailModal monitor={monitor} onClose={() => setIsViewingDetail(false)} />}
+    </div>
+  );
+}
+
+function MonitorSparkline({ monitor }: { monitor: FlightMonitor }) {
+  const points = [...monitor.history];
+  if (monitor.currentPrice) {
+    points.push({ date: new Date().toISOString(), price: monitor.currentPrice, site: 'atual' });
+  }
+
+  if (points.length < 2) {
+    return (
+      <div className="mx-5 mb-4 flex h-20 flex-col items-center justify-center rounded-md border border-border bg-paper-deep p-2 text-center text-xs text-ink-muted">
+        <History className="mb-1 h-4 w-4 text-ink-muted" />
+        <span>Sem histórico suficiente.</span>
+        <span className="text-[10px] text-ink-muted/80">Clique em &quot;Varrer Agora&quot; para iniciar</span>
+      </div>
+    );
+  }
+
+  const marginCeiling = monitor.targetPrice * (1 + monitor.targetPriceMarginPercent / 100);
+  const hasMargin = monitor.targetPriceMarginPercent > 0;
+
+  const prices = points.map((p) => p.price);
+  const minPrice = Math.min(...prices, monitor.targetPrice);
+  const maxPrice = Math.max(...prices, monitor.targetPrice, hasMargin ? marginCeiling : monitor.targetPrice);
+  const range = maxPrice - minPrice === 0 ? 1 : maxPrice - minPrice;
+
+  const width = 400;
+  const height = 60;
+  const padding = 10;
+  const chartWidth = width - padding * 2;
+  const chartHeight = height - padding * 2;
+
+  const svgPoints = points
+    .map((p, index) => {
+      const x = padding + (index / (points.length - 1)) * chartWidth;
+      const ratio = (p.price - minPrice) / range;
+      const y = padding + chartHeight - ratio * chartHeight;
+      return `${x},${y}`;
+    })
+    .join(' ');
+
+  const targetRatio = (monitor.targetPrice - minPrice) / range;
+  const targetY = padding + chartHeight - targetRatio * chartHeight;
+  const marginRatio = (marginCeiling - minPrice) / range;
+  const marginY = padding + chartHeight - marginRatio * chartHeight;
+
+  const lineColorVar = monitor.currentPrice && monitor.currentPrice <= monitor.targetPrice ? 'var(--color-teal)' : 'var(--color-terracotta)';
+
+  return (
+    <div className="mx-5 mb-4 rounded-md border border-border bg-paper p-3">
+      <div className="mb-1.5 flex items-center justify-between font-mono text-[10px] text-ink-muted">
+        <span>preço nos últimos dias</span>
+        <span>min R$ {minPrice.toLocaleString('pt-BR')} · max R$ {maxPrice.toLocaleString('pt-BR')}</span>
+      </div>
+      <svg className="w-full" viewBox={`0 0 ${width} ${height}`} height={height} preserveAspectRatio="none">
+        <line x1={padding} y1={targetY} x2={width - padding} y2={targetY} style={{ stroke: 'var(--color-border-strong)' }} strokeWidth="1" strokeDasharray="4 3" />
+        {hasMargin && (
+          <line x1={padding} y1={marginY} x2={width - padding} y2={marginY} style={{ stroke: 'var(--color-amber)' }} strokeWidth="1" strokeDasharray="4 3" />
+        )}
+        <polyline fill="none" style={{ stroke: lineColorVar }} strokeWidth="2" points={svgPoints} strokeLinecap="round" strokeLinejoin="round" />
+        {points.map((p, index) => {
+          const x = padding + (index / (points.length - 1)) * chartWidth;
+          const ratio = (p.price - minPrice) / range;
+          const y = padding + chartHeight - ratio * chartHeight;
+          return (
+            <circle key={index} cx={x} cy={y} r="3" style={{ fill: 'var(--color-paper-card)', stroke: lineColorVar }} strokeWidth="2">
+              <title>{`R$ ${p.price.toLocaleString('pt-BR')} (${new Date(p.date).toLocaleDateString('pt-BR')})`}</title>
+            </circle>
+          );
+        })}
+      </svg>
     </div>
   );
 }

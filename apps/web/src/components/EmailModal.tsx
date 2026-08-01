@@ -26,125 +26,132 @@ export default function EmailModal({ notification, onClose }: EmailModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
       id="email-preview-modal"
       onClick={onClose}
       role="presentation"
     >
       <div
-        className="w-full max-w-2xl bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden border border-zinc-800 text-white flex flex-col max-h-[90vh]"
+        className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-white/10 bg-ink-strong text-paper-on-ink shadow-2xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Pré-visualização do e-mail"
       >
-        <div className="bg-zinc-950 px-5 py-3.5 border-b border-zinc-800 flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-white/10 bg-black/20 px-5 py-3.5">
           <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full bg-red-500"></div>
-            <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
-            <div className="h-3 w-3 rounded-full bg-green-500"></div>
-            <span className="text-xs font-mono text-zinc-500 ml-2">FlySpot_Email_Preview</span>
+            <div className="h-3 w-3 rounded-full bg-red-500" />
+            <div className="h-3 w-3 rounded-full bg-yellow-500" />
+            <div className="h-3 w-3 rounded-full bg-green-500" />
+            <span className="ml-2 font-mono text-xs text-paper-on-ink-muted">FlySpot_Email_Preview</span>
           </div>
-          <button onClick={onClose} aria-label="Fechar" className="text-zinc-400 hover:text-white p-1 rounded-lg">
+          <button onClick={onClose} aria-label="Fechar" className="rounded-md p-1 text-paper-on-ink-muted transition hover:text-paper-on-ink">
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="bg-zinc-900 p-4 border-b border-zinc-800 space-y-2 text-xs">
+        <div className="space-y-2 border-b border-white/10 p-4 text-xs">
           <div className="flex">
-            <span className="w-16 font-bold text-zinc-500">De:</span>
-            <span className="text-blue-400 font-bold flex items-center gap-1">
-              alertas@flyspot.com.br <span className="bg-blue-500/10 text-blue-400 px-1.5 py-0.2 rounded text-[9px] border border-blue-500/20">Robô Verificado</span>
+            <span className="w-16 font-bold text-paper-on-ink-muted">De:</span>
+            <span className="flex items-center gap-1 font-bold text-terracotta-tint">
+              alertas@flyspot.com.br <span className="rounded border border-teal/30 bg-teal/10 px-1.5 py-0.5 text-[9px] text-teal">Robô Verificado</span>
             </span>
           </div>
           <div className="flex">
-            <span className="w-16 font-bold text-zinc-500">Para:</span>
-            <span className="text-zinc-200">{notification.sentTo}</span>
+            <span className="w-16 font-bold text-paper-on-ink-muted">Para:</span>
+            <span className="text-paper-on-ink">{notification.sentTo}</span>
           </div>
           <div className="flex">
-            <span className="w-16 font-bold text-zinc-500">Assunto:</span>
-            <span className="text-white font-extrabold">{notification.title}</span>
+            <span className="w-16 font-bold text-paper-on-ink-muted">Assunto:</span>
+            <span className="font-extrabold text-paper-on-ink">{notification.title}</span>
           </div>
           <div className="flex">
-            <span className="w-16 font-bold text-zinc-500">Data:</span>
-            <span className="text-zinc-400">{new Date(notification.sentAt).toLocaleString('pt-BR')}</span>
+            <span className="w-16 font-bold text-paper-on-ink-muted">Data:</span>
+            <span className="text-paper-on-ink-muted">{new Date(notification.sentAt).toLocaleString('pt-BR')}</span>
           </div>
         </div>
 
-        <div className="bg-white text-zinc-800 p-8 overflow-y-auto flex-1 font-sans">
-          <div className="mx-auto max-w-xl border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-            <div className="bg-blue-600 p-5 text-white flex items-center justify-between">
+        <div className="flex-1 overflow-y-auto bg-[#FAF6EF] p-8 font-sans text-[#2A241D]">
+          <div className="mx-auto max-w-xl overflow-hidden rounded-xl border border-[#E4DDD0] shadow-sm">
+            <div className="flex items-center justify-between bg-[#B5502F] p-5 text-white">
               <div className="flex items-center gap-2">
-                <Plane className="h-5 w-5 transform rotate-45" />
-                <span className="font-extrabold tracking-tight text-sm">FLYSPOT</span>
+                <Plane className="h-5 w-5 rotate-45" />
+                <span className="text-sm font-extrabold tracking-tight">FLYSPOT</span>
               </div>
-              <span className="text-[10px] font-bold tracking-widest uppercase border border-white/20 px-2 py-0.5 rounded bg-white/10">
+              <span className="rounded border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest">
                 Alerta Imediato
               </span>
             </div>
 
-            <div className="p-6 space-y-6">
-              <div className="text-center space-y-2">
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Metas Atingidas</p>
-                <h3 className="text-xl font-black text-slate-950 leading-tight">Sua passagem está com preço ideal!</h3>
-                <div className="mt-3 inline-flex items-center gap-3 bg-emerald-50 text-emerald-800 font-black text-2xl px-5 py-2.5 rounded-2xl border border-emerald-100 shadow-sm">
+            <div className="space-y-6 p-6">
+              <div className="space-y-2 text-center">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#6B6255]">Meta Atingida</p>
+                <h3 className="text-xl font-black leading-tight">Sua passagem está com preço ideal!</h3>
+                <div className="mt-3 inline-flex items-center gap-3 rounded-xl border border-[#0F6B5C]/20 bg-[#0F6B5C]/10 px-5 py-2.5 text-2xl font-black text-[#0F6B5C]">
                   R$ {notification.price > 0 ? notification.price : 'Simulado'}
                 </div>
-                <p className="text-[11px] text-slate-500">
-                  Preço teto configurado: <strong className="text-slate-700">R$ {notification.targetPrice > 0 ? notification.targetPrice : '---'}</strong>
+                <p className="text-[11px] text-[#6B6255]">
+                  Preço teto configurado: <strong className="text-[#2A241D]">R$ {notification.targetPrice > 0 ? notification.targetPrice : '---'}</strong>
                 </p>
               </div>
 
-              <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4 space-y-3 text-xs text-slate-700">
-                <div className="flex justify-between border-b border-slate-100 pb-2">
-                  <span className="font-semibold text-slate-400">Rota Monitorada</span>
-                  <span className="font-extrabold text-slate-950 font-mono">
+              <div className="space-y-3 rounded-xl border border-[#E4DDD0] bg-[#F0E9DC]/40 p-4 text-xs">
+                <div className="flex justify-between border-b border-[#E4DDD0] pb-2">
+                  <span className="font-semibold text-[#6B6255]">Rota Monitorada</span>
+                  <span className="font-mono font-extrabold">
                     {notification.origin} ➔ {notification.destination}
                   </span>
                 </div>
                 <div>
-                  <p className="text-slate-600 mb-1 leading-relaxed font-medium">{notification.message}</p>
+                  <p className="mb-1 font-medium leading-relaxed text-[#4A4235]">{notification.message}</p>
                 </div>
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                <div className="flex items-center justify-between border-t border-[#E4DDD0] pt-2 text-[11px] text-[#6B6255]">
                   <span>Varredura automática</span>
-                  <span className="text-emerald-600 font-bold">● Preço Confirmado</span>
+                  <span className="font-bold text-[#0F6B5C]">● Preço confirmado</span>
                 </div>
               </div>
 
-              <div className="text-center space-y-3 pt-2">
+              <div className="space-y-3 pt-2 text-center">
                 <a
                   href={purchaseUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full text-center rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-3 text-xs font-bold text-white transition shadow-md shadow-blue-100/50 uppercase tracking-wider"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#B5502F] px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-[#9A3F23]"
                   id="btn-buy-flight-direct"
                 >
                   <ExternalLink className="h-4 w-4" />
-                  Ir para o Site de Compra & Reservar (R$ {notification.price > 0 ? notification.price : 'Simulado'})
+                  Ir para o site de compra e reservar (R$ {notification.price > 0 ? notification.price : 'Simulado'})
                 </a>
 
-                <div className="rounded-xl bg-slate-50 border border-slate-150 p-3 text-left space-y-1.5">
-                  <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Link Direto Dedicado (Pré-preenchido)</span>
+                <div className="space-y-1.5 rounded-xl border border-[#E4DDD0] bg-[#F0E9DC]/40 p-3 text-left">
+                  <span className="block text-[9px] font-bold uppercase tracking-wider text-[#6B6255]">Link direto dedicado (pré-preenchido)</span>
                   <div className="flex items-center gap-2">
-                    <input type="text" readOnly value={purchaseUrl} className="flex-1 rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-mono text-slate-600 focus:outline-none" />
+                    <label htmlFor="email-purchase-link" className="sr-only">Link direto de compra</label>
+                    <input
+                      id="email-purchase-link"
+                      type="text"
+                      readOnly
+                      value={purchaseUrl}
+                      className="flex-1 rounded border border-[#E4DDD0] bg-white px-2.5 py-1.5 font-mono text-[10px] text-[#4A4235] focus:outline-none focus:ring-1 focus:ring-[#B5502F]"
+                    />
                     <button
                       type="button"
                       onClick={handleCopy}
-                      className="flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-1.5 rounded transition whitespace-nowrap"
+                      className="flex items-center gap-1 whitespace-nowrap rounded border border-[#E4DDD0] bg-[#F0E9DC] px-3 py-1.5 text-[10px] font-bold text-[#B5502F] transition hover:bg-[#E4DDD0]"
                     >
-                      {copied ? <Check className="h-3.5 w-3.5 text-emerald-600 font-bold" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copied ? <Check className="h-3.5 w-3.5 text-[#0F6B5C]" /> : <Copy className="h-3.5 w-3.5" />}
                       {copied ? 'Copiado!' : 'Copiar'}
                     </button>
                   </div>
                 </div>
 
-                <p className="text-[9px] text-slate-400 leading-normal text-left">
+                <p className="text-left text-[9px] leading-normal text-[#6B6255]">
                   Este link direciona você de forma automática para o canal oficial com os parâmetros de aeroportos, datas e passageiros já preenchidos.
                 </p>
               </div>
             </div>
 
-            <div className="bg-slate-50 border-t border-slate-100 p-4 text-center text-[9px] text-slate-400 space-y-1">
+            <div className="space-y-1 border-t border-[#E4DDD0] bg-[#F0E9DC]/40 p-4 text-center text-[9px] text-[#6B6255]">
               <p className="font-bold">© 2026 FlySpot. Todos os direitos reservados.</p>
               <p>Você recebeu este aviso porque cadastrou um alerta ativo correspondente ao e-mail: {notification.sentTo}</p>
             </div>

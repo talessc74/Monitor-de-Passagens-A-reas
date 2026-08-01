@@ -1,7 +1,109 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;650;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: var(--font-sans-raw), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-serif-raw), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-mono-raw), ui-monospace, SFMono-Regular, monospace;
+
+  /* FlySpot design tokens — warm editorial / boarding-pass system.
+     Values are light-mode defaults; overridden at runtime below for
+     dark mode. Every pair here has been checked against WCAG 2.2 AA
+     with the design kit's contrast checker before being chosen. */
+  --color-paper: #faf6ef;
+  --color-paper-deep: #f0e9dc;
+  --color-paper-card: #fffdf9;
+  --color-ink: #2a241d;
+  --color-ink-muted: #6b6255;
+  --color-ink-strong: #241f1a;
+  --color-paper-on-ink: #f3eee4;
+  --color-paper-on-ink-muted: #b7ae9e;
+  --color-terracotta: #b5502f;
+  --color-terracotta-solid: #b5502f;
+  --color-terracotta-hover: #9a3f23;
+  --color-terracotta-tint: #e58a5e;
+  --color-terracotta-wash: #f3e1d6;
+  --color-teal: #0f6b5c;
+  --color-amber: #96601f;
+  --color-border: #e4ddd0;
+  --color-border-strong: #c9bfa9;
+}
+
+/* Dark mode — re-balanced, not inverted: darker page, lighter card
+   surfaces for elevation, lightened accents kept AA-legible on dark.
+   Responds to OS preference by default; [data-theme] (set by
+   ThemeToggle) always wins over the OS preference. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-paper: #1c1712;
+    --color-paper-deep: #140f0a;
+    --color-paper-card: #2a231a;
+    --color-ink: #f3eee4;
+    --color-ink-muted: #b7ae9e;
+    --color-ink-strong: #362b1d;
+    --color-terracotta: #e58a5e;
+    --color-terracotta-wash: rgba(229, 138, 94, 0.18);
+    --color-teal: #52b8a0;
+    --color-amber: #d9a441;
+    --color-border: #362d22;
+    --color-border-strong: #7a6650;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --color-paper: #1c1712;
+  --color-paper-deep: #140f0a;
+  --color-paper-card: #2a231a;
+  --color-ink: #f3eee4;
+  --color-ink-muted: #b7ae9e;
+  --color-ink-strong: #362b1d;
+  --color-terracotta: #e58a5e;
+  --color-terracotta-wash: rgba(229, 138, 94, 0.18);
+  --color-teal: #52b8a0;
+  --color-amber: #d9a441;
+  --color-border: #362d22;
+  --color-border-strong: #7a6650;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* Focus ring color needs to flip with theme (dark ink on light page,
+   light paper on dark page) so it stays visible either way. */
+:root {
+  --color-focus-ring: var(--color-ink);
+}
+
+.shadow-card {
+  box-shadow:
+    0 1px 2px rgba(42, 36, 29, 0.07),
+    0 20px 40px -24px rgba(42, 36, 29, 0.28);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .shadow-card {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.4),
+      0 20px 40px -28px rgba(0, 0, 0, 0.6);
+  }
+}
+[data-theme="dark"] .shadow-card {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 20px 40px -28px rgba(0, 0, 0, 0.6);
+}
+
+body {
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: rotate(3deg) translateY(0);
+  }
+  50% {
+    transform: rotate(3deg) translateY(-8px);
+  }
 }

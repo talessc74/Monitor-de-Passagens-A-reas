@@ -73,12 +73,12 @@ export default function MonitorDetailModal({ monitor, onClose }: MonitorDetailMo
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-strong/60 p-4"
       onClick={onClose}
       role="presentation"
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-paper-card p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -86,24 +86,24 @@ export default function MonitorDetailModal({ monitor, onClose }: MonitorDetailMo
       >
         <div className="mb-1 flex items-start justify-between">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-muted">
               {monitor.origin} → {monitor.destination} · {monitor.trackedSites.map((s) => SITE_NAMES[s] || s).join(', ')}
             </p>
-            <h2 id="monitor-detail-title" className="text-base font-extrabold text-slate-800">
+            <h2 id="monitor-detail-title" className="font-serif text-base font-semibold">
               {priceVsTarget !== null && priceVsTarget <= 0 ? 'Meta batida — hora de comprar' : 'Histórico de preço'}
             </h2>
           </div>
-          <button onClick={onClose} aria-label="Fechar" className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+          <button onClick={onClose} aria-label="Fechar" className="rounded-full p-1 text-ink-muted transition hover:bg-paper-deep hover:text-ink">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="mt-4 text-center">
-          <span className="text-3xl font-black text-slate-800">
+          <span className="font-mono text-3xl font-black">
             {monitor.currentPrice ? `R$ ${monitor.currentPrice.toLocaleString('pt-BR')}` : 'Sem leitura ainda'}
           </span>
           {priceVsTarget !== null && (
-            <p className={`mt-1 flex items-center justify-center gap-1 text-xs font-bold ${priceVsTarget <= 0 ? 'text-emerald-600' : 'text-slate-500'}`}>
+            <p className={`mt-1 flex items-center justify-center gap-1 text-xs font-bold ${priceVsTarget <= 0 ? 'text-teal' : 'text-ink-muted'}`}>
               {priceVsTarget <= 0 ? <TrendingDown className="h-3.5 w-3.5" /> : <TrendingUp className="h-3.5 w-3.5" />}
               {priceVsTarget <= 0
                 ? `R$ ${Math.abs(priceVsTarget).toLocaleString('pt-BR')} abaixo da sua meta de R$ ${monitor.targetPrice.toLocaleString('pt-BR')}`
@@ -114,59 +114,59 @@ export default function MonitorDetailModal({ monitor, onClose }: MonitorDetailMo
 
         {hasHistory ? (
           <div className="mt-4">
-            <div className="mb-1 flex items-center gap-3 text-[9px] font-mono text-slate-400">
-              <span className="flex items-center gap-1"><span className="inline-block h-0.5 w-2.5 bg-blue-600" /> preço (eixo Y) por data (eixo X)</span>
-              <span className="flex items-center gap-1"><span className="inline-block h-0 w-2.5 border-t-2 border-dashed border-slate-400" /> meta</span>
+            <div className="mb-1 flex items-center gap-3 font-mono text-[9px] text-ink-muted">
+              <span className="flex items-center gap-1"><span className="inline-block h-0.5 w-2.5 bg-terracotta" /> preço (eixo Y) por data (eixo X)</span>
+              <span className="flex items-center gap-1"><span className="inline-block h-0 w-2.5 border-t-2 border-dashed border-border-strong" /> meta</span>
               {hasMargin && (
-                <span className="flex items-center gap-1"><span className="inline-block h-0 w-2.5 border-t-2 border-dashed border-amber-400" /> aviso (+{monitor.targetPriceMarginPercent}%)</span>
+                <span className="flex items-center gap-1"><span className="inline-block h-0 w-2.5 border-t-2 border-dashed border-amber" /> aviso (+{monitor.targetPriceMarginPercent}%)</span>
               )}
             </div>
             <svg className="w-full" viewBox={`0 0 ${width} ${height}`} height={height}>
               <defs>
                 <linearGradient id={`detail-gradient-${monitor.id}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2563eb" stopOpacity="0.2" />
-                  <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
+                  <stop offset="0%" style={{ stopColor: 'var(--color-terracotta)' }} stopOpacity="0.2" />
+                  <stop offset="100%" style={{ stopColor: 'var(--color-terracotta)' }} stopOpacity="0" />
                 </linearGradient>
               </defs>
               <path d={`M ${padding},${height} L ${svgPoints} L ${width - padding},${height} Z`} fill={`url(#detail-gradient-${monitor.id})`} />
-              <line x1={padding} y1={targetY} x2={width - padding} y2={targetY} stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="5 3" />
+              <line x1={padding} y1={targetY} x2={width - padding} y2={targetY} style={{ stroke: 'var(--color-border-strong)' }} strokeWidth="1.5" strokeDasharray="5 3" />
               {hasMargin && (
-                <line x1={padding} y1={marginY} x2={width - padding} y2={marginY} stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="5 3" />
+                <line x1={padding} y1={marginY} x2={width - padding} y2={marginY} style={{ stroke: 'var(--color-amber)' }} strokeWidth="1.5" strokeDasharray="5 3" />
               )}
-              <polyline fill="none" stroke="#2563eb" strokeWidth="2.5" points={svgPoints} strokeLinecap="round" strokeLinejoin="round" />
+              <polyline fill="none" style={{ stroke: 'var(--color-terracotta)' }} strokeWidth="2.5" points={svgPoints} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
 
             <div className="mt-2 grid grid-cols-3 gap-2">
-              <div className="rounded-lg border border-slate-100 bg-slate-50 p-2 text-center">
-                <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Mínima</span>
-                <span className="text-sm font-extrabold text-slate-800">R$ {observedMin?.toLocaleString('pt-BR')}</span>
+              <div className="rounded-md border border-border bg-paper-deep p-2 text-center">
+                <span className="block text-[9px] font-bold uppercase tracking-wider text-ink-muted">Mínima</span>
+                <span className="font-mono text-sm font-extrabold">R$ {observedMin?.toLocaleString('pt-BR')}</span>
               </div>
-              <div className="rounded-lg border border-slate-100 bg-slate-50 p-2 text-center">
-                <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Média</span>
-                <span className="text-sm font-extrabold text-slate-800">R$ {observedAvg?.toLocaleString('pt-BR')}</span>
+              <div className="rounded-md border border-border bg-paper-deep p-2 text-center">
+                <span className="block text-[9px] font-bold uppercase tracking-wider text-ink-muted">Média</span>
+                <span className="font-mono text-sm font-extrabold">R$ {observedAvg?.toLocaleString('pt-BR')}</span>
               </div>
-              <div className="rounded-lg border border-slate-100 bg-slate-50 p-2 text-center">
-                <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Variação</span>
-                <span className={`text-sm font-extrabold ${variation !== null && variation < 0 ? 'text-emerald-600' : 'text-slate-800'}`}>
+              <div className="rounded-md border border-border bg-paper-deep p-2 text-center">
+                <span className="block text-[9px] font-bold uppercase tracking-wider text-ink-muted">Variação</span>
+                <span className={`font-mono text-sm font-extrabold ${variation !== null && variation < 0 ? 'text-teal' : ''}`}>
                   {variation !== null ? `${variation > 0 ? '+' : ''}${variation}%` : '—'}
                 </span>
               </div>
             </div>
           </div>
         ) : (
-          <p className="mt-4 rounded-lg bg-slate-50 p-4 text-center text-xs text-slate-400">
+          <p className="mt-4 rounded-md border border-border bg-paper-deep p-4 text-center text-xs text-ink-muted">
             Ainda não há histórico suficiente. Rode uma varredura para começar a registrar preços.
           </p>
         )}
 
         {sortedResults.length > 0 && (
           <div className="mt-4">
-            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Preço por site (último scan)</p>
-            <div className="divide-y divide-slate-100 rounded-lg border border-slate-100">
+            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-ink-muted">Preço por site (último scan)</p>
+            <div className="divide-y divide-border rounded-md border border-border">
               {sortedResults.map((r, i) => (
                 <div key={r.site} className="flex items-center justify-between px-3 py-2 text-xs">
-                  <span className="font-semibold text-slate-600">{SITE_NAMES[r.site] || r.site.toUpperCase()}</span>
-                  <span className={`font-mono font-bold ${i === 0 ? 'text-emerald-600' : 'text-slate-700'}`}>
+                  <span className="font-semibold text-ink-muted">{SITE_NAMES[r.site] || r.site.toUpperCase()}</span>
+                  <span className={`font-mono font-bold ${i === 0 ? 'text-teal' : ''}`}>
                     R$ {r.price.toLocaleString('pt-BR')}
                   </span>
                 </div>

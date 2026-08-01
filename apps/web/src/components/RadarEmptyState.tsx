@@ -202,31 +202,31 @@ export default function RadarEmptyState() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center">
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-paper-card p-10 text-center">
       <style>{`
         :root {
-          --radar-amber: #b9760f;
-          --radar-teal: #0d9488;
-          --radar-ink: #475569;
-          --radar-card: #f8fafc;
-          --radar-line: #e2e8f0;
+          --radar-amber: var(--color-terracotta);
+          --radar-teal: var(--color-teal);
+          --radar-ink: var(--color-ink-muted);
+          --radar-card: var(--color-paper-card);
+          --radar-line: var(--color-border);
         }
       `}</style>
       <div className="relative mb-5" style={{ width: 220, height: 220 }}>
         <div
-          className="absolute inset-0 rounded-full border border-slate-200"
+          className="absolute inset-0 rounded-full border border-border"
           style={{
             background:
-              'radial-gradient(circle, transparent 0 30%, #e2e8f0 30% 30.6%, transparent 30.6%),' +
-              'radial-gradient(circle, transparent 0 60%, #e2e8f0 60% 60.6%, transparent 60.6%),' +
-              'radial-gradient(circle, transparent 0 84%, #e2e8f0 84% 84.6%, transparent 84.6%)',
+              'radial-gradient(circle, transparent 0 30%, var(--color-border) 30% 30.6%, transparent 30.6%),' +
+              'radial-gradient(circle, transparent 0 60%, var(--color-border) 60% 60.6%, transparent 60.6%),' +
+              'radial-gradient(circle, transparent 0 84%, var(--color-border) 84% 84.6%, transparent 84.6%)',
           }}
         />
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-hidden="true" />
       </div>
-      <h3 className="text-sm font-bold text-slate-800">Nenhum voo no radar ainda</h3>
-      <p className="mt-1 max-w-xs text-xs text-slate-400 font-medium">
-        Já estamos vigiando o mercado — LATAM, GOL, Azul, Decolar e Skyscanner. Cadastre sua
+      <h3 className="font-serif text-base font-semibold">Nenhum voo no radar ainda</h3>
+      <p className="mt-1 max-w-xs text-xs font-medium text-ink-muted">
+        Já estamos vigiando o mercado. LATAM, GOL, Azul, Decolar e Skyscanner. Cadastre sua
         primeira rota no painel ao lado para começar a receber alertas.
       </p>
     </div>
