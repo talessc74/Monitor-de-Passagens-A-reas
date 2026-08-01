@@ -31,6 +31,11 @@ const envSchema = z.object({
   // porque é uma caixa que alguém lê de verdade, não um alerta em massa.
   RESEND_API_KEY: z.string().optional(),
   WAITLIST_NOTIFICATION_EMAIL: z.string().email().default('contato@flyspot.com.br'),
+  // Primeira fonte de preço real do FlySpot — ver _local-adr-policy-004 (application)
+  // e _local-bdr-plan-004. Cobertura conhecida como estreita (forte só
+  // na ponte aérea SP-RJ); sem a key, cai 100% no simulador Gemini,
+  // mesmo padrão no-op de toda integração opcional deste projeto.
+  TRAVELPAYOUTS_API_TOKEN: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

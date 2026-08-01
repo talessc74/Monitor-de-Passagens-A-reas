@@ -74,13 +74,15 @@ export interface AirlineSite {
 }
 
 export interface ScanResult {
-  /** Fase 1-6: id de site simulado (latam/gol/azul/decolar). Fase 7: código IATA da companhia aérea (LA/G3/AD) — Duffel/Amadeus retornam por companhia, não por site de venda. Ver ROADMAP.md Fase 7. */
+  /** Fase 1-6: id de site simulado (latam/gol/azul/decolar). Fase 7: código IATA da companhia aérea (LA/G3/AD) — Duffel/Amadeus retornam por companhia, não por site de venda. Quando `estimated: false`, carrega o nome da agência ("gate") retornada pelo Travelpayouts (ex: "Trip.com") — ver _local-adr-policy-004 (application). Ver ROADMAP.md Fase 7. */
   site: string;
   price: number;
   durationHours: number;
   stops: number;
   isPromotion: boolean;
   details: string;
+  /** false = preço real (Travelpayouts Data API); true = simulado via Gemini. Ver _local-adr-policy-004 (application) — nunca misturar as duas etiquetas. */
+  estimated: boolean;
 }
 
 /**
