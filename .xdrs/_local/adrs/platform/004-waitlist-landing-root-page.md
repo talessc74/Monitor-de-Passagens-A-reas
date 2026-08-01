@@ -81,6 +81,30 @@ unchanged. `/login` remains reachable by direct URL, untouched.**
   from Firestore console for now — no UI built for it, deliberately, matching "página estática ou
   quase estática").
 
+## Amendment (2026-08-01): admin notification e-mail on real signup
+
+Product owner asked to receive a real e-mail (to `contato@flyspot.com.br`, the address confirmed to
+have an actual working inbox — see `_local-edr-policy-008`/`EMAIL_REPLY_TO` amendment) each time
+someone signs up on the waitlist, since the only way to see signups otherwise is opening the
+Firestore console directly.
+
+`services/api/src/waitlistNotifier.ts` (new): a thin direct `fetch` call to Resend's REST API,
+same shape as `services/publisher/src/resendClient.ts` but living in `api` instead — deliberately
+**not** routed through the outbox pattern (`_local-adr-policy-002` application), because this is an
+internal admin ping, not a user-facing transactional notification requiring retry/dedup semantics.
+Reusing the outbox here would also require `services/publisher`'s outbox consumer to stop assuming
+every `monitorId` resolves in `mpa_monitors` (it doesn't for a waitlist signup) — a bigger, unrelated
+change for a one-line internal notification.
+
+- New `RESEND_API_KEY` in `services/api`'s env (same secret value as `services/publisher`'s, wired
+  into `deploy.yml`'s `flyspot-api` step) — no-op without it, same fallback pattern as every other
+  optional integration in this codebase.
+- `WAITLIST_NOTIFICATION_EMAIL` (default `contato@flyspot.com.br`).
+- Only fires on a genuinely new signup (`addWaitlistSignup`'s `created: true`) — a repeat submission
+  of the same e-mail (already idempotent at the Firestore layer) does not re-notify.
+- Fire-and-forget from the route handler: a Resend failure is logged, never fails the user's
+  waitlist submission itself.
+
 ## Considered Options
 
 - **Separate `/waitlist` or `/em-breve` path, root keeps redirecting to `/login`** — rejected: would
