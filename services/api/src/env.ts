@@ -24,6 +24,13 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   STRIPE_PRICE_ID_PRO: z.string().optional(),
+  // Aviso interno (não é o outbox de notificação do produto) de novo
+  // cadastro na landing de espera — ver _local-adr-policy-004. Sem a
+  // key, é no-op (mesmo padrão do publisher). Distinto do EMAIL_FROM do
+  // publisher: este remetente é fixo (alertas@), aqui é configurável
+  // porque é uma caixa que alguém lê de verdade, não um alerta em massa.
+  RESEND_API_KEY: z.string().optional(),
+  WAITLIST_NOTIFICATION_EMAIL: z.string().email().default('contato@flyspot.com.br'),
 });
 
 export type Env = z.infer<typeof envSchema>;

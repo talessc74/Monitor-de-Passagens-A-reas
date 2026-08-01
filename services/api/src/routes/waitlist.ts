@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { addWaitlistSignup } from '../repositories/waitlistRepository.js';
+import { notifyWaitlistSignup } from '../waitlistNotifier.js';
 
 /**
  * Landing de espera (pré-lançamento) — ver _local-adr-policy-004
@@ -33,7 +34,14 @@ export async function waitlistRoutes(app: FastifyInstance) {
       return { success: true };
     }
 
-    await addWaitlistSignup(parsed.data.email);
+    const { created } = await addWaitlistSignup(parsed.data.email);
+    // Só avisa em cadastro real e novo — reenvio do mesmo e-mail (created:
+    // false) não deve gerar um e-mail de aviso repetido pro dono do produto.
+    if (created) {
+      notifyWaitlistSignup(parsed.data.email).catch(() => {
+        /* já logado dentro de notifyWaitlistSignup — não falha o cadastro do usuário por isso */
+      });
+    }
     return { success: true };
   });
 }
