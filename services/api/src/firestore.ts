@@ -15,6 +15,7 @@ export const COLLECTIONS = {
   outbox: 'mpa_outbox',
   webhookEvents: 'mpa_webhook_events',
   itineraryMonitors: 'mpa_itinerary_monitors',
+  waitlist: 'mpa_waitlist',
 } as const;
 
 function initFirebase() {
