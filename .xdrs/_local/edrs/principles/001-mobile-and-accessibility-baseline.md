@@ -54,11 +54,14 @@ sign-out); login page (`htmlFor`/`id` on both fields, `role="alert"` on the erro
 
 ### Known gaps not fixed in this pass
 
-- **Color contrast**: `text-slate-400` (and similar low-contrast grays) is used pervasively
+- ~~**Color contrast**: `text-slate-400` (and similar low-contrast grays) is used pervasively
   across the app for captions/labels/timestamps — some instances likely fail WCAG AA for
   normal text (~2.8:1 against white). Fixing this correctly means auditing and adjusting the
   color scale app-wide, not a handful of files; scoped out of this pass as too large a diff to
-  bundle with the modal/header/action-row fixes. Needs its own pass.
+  bundle with the modal/header/action-row fixes. Needs its own pass.~~ **Resolved** by the
+  `_local-bdr-policy-006` redesign: `text-slate-400` no longer exists in `apps/web`, replaced
+  by the `--color-ink-muted` token (`_local-adr-policy-004`), verified at ≥4.5:1 against its
+  paired background in both light and dark themes.
 - **Focus trap inside modals**: Escape-to-close and click-outside-to-close are covered, but
   Tab does not loop focus inside an open modal — focus can escape to the page behind it.
   Acceptable for now given the modals are short-lived and dismissible, but a real gap for
