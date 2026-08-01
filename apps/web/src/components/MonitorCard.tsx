@@ -244,7 +244,7 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
                 onDelete(monitor.id);
               }
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-danger-border bg-danger-bg text-danger-icon transition hover:bg-danger-border/40"
             title="Excluir Alerta"
             aria-label="Excluir alerta"
           >

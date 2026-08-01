@@ -60,28 +60,28 @@ export default function ProfilePage() {
   }
 
   if (loading || !user) {
-    return <div className="flex min-h-screen items-center justify-center text-slate-400 text-sm">Carregando...</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-paper text-sm text-ink-muted">Carregando...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-10">
+    <div className="min-h-screen bg-paper px-4 py-10 text-ink antialiased">
       <div className="mx-auto max-w-lg">
-        <a href="/dashboard" className="mb-6 inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-blue-600">
+        <a href="/dashboard" className="mb-6 inline-flex items-center gap-1 text-sm font-semibold text-ink-muted hover:text-terracotta">
           <ArrowLeft className="h-4 w-4" />
           Voltar
         </a>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-lg font-bold text-slate-800">Seu perfil</h1>
-          <p className="mt-1 text-sm text-slate-500">{user.email}</p>
+        <div className="rounded-xl border border-border bg-paper-card p-6 shadow-card">
+          <h1 className="font-serif text-lg font-semibold">Seu perfil</h1>
+          <p className="mt-1 text-sm text-ink-muted">{user.email}</p>
         </div>
 
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mt-6 rounded-xl border border-border bg-paper-card p-6 shadow-card">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700">Plano</h2>
-              <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-slate-800">
-                {profile?.plan === 'pro' && <Sparkles className="h-3.5 w-3.5 text-blue-600" />}
+              <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-ink-muted">Plano</h2>
+              <p className="mt-1 flex items-center gap-1.5 text-sm font-bold">
+                {profile?.plan === 'pro' && <Sparkles className="h-3.5 w-3.5 text-terracotta" />}
                 {profile?.plan === 'pro' ? 'Pro' : 'Gratuito'}
               </p>
             </div>
@@ -89,14 +89,14 @@ export default function ProfilePage() {
               <button
                 onClick={handleManageSubscription}
                 disabled={isRedirecting}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition disabled:opacity-60"
+                className="rounded-md border border-border-strong px-3 py-1.5 text-xs font-bold text-ink-muted transition hover:bg-paper-deep disabled:opacity-60"
               >
                 {isRedirecting ? 'Redirecionando...' : 'Gerenciar assinatura'}
               </button>
             ) : (
               <a
                 href="/plans"
-                className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition"
+                className="rounded-md bg-terracotta-solid px-3 py-1.5 text-xs font-bold text-white transition hover:bg-terracotta-hover"
               >
                 Fazer upgrade
               </a>
@@ -104,21 +104,21 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-6">
-          <h2 className="flex items-center gap-2 text-sm font-bold text-red-800">
+        <div className="mt-6 rounded-xl border border-danger-border bg-danger-bg p-6">
+          <h2 className="flex items-center gap-2 text-sm font-bold text-danger-text">
             <AlertTriangle className="h-4 w-4" />
             Zona de risco
           </h2>
-          <p className="mt-1 text-xs text-red-700">
+          <p className="mt-1 text-xs text-danger-text">
             Deletar sua conta remove permanentemente todos os seus monitores, histórico de preços e notificações. Essa ação não pode ser desfeita.
           </p>
 
-          {error && <p className="mt-2 text-xs font-semibold text-red-800">{error}</p>}
+          {error && <p className="mt-2 text-xs font-semibold text-danger-text">{error}</p>}
 
           {!confirming ? (
             <button
               onClick={() => setConfirming(true)}
-              className="mt-4 rounded-lg border border-red-300 bg-white px-4 py-2 text-xs font-bold text-red-700 hover:bg-red-100 transition"
+              className="mt-4 rounded-md border border-danger-border-strong bg-paper-card px-4 py-2 text-xs font-bold text-danger-text transition hover:bg-danger-border/30"
             >
               Deletar minha conta
             </button>
@@ -127,14 +127,14 @@ export default function ProfilePage() {
               <button
                 onClick={handleDeleteAccount}
                 disabled={deleting}
-                className="rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 transition disabled:opacity-60"
+                className="rounded-md bg-danger-solid px-4 py-2 text-xs font-bold text-white transition hover:bg-danger-solid-hover disabled:opacity-60"
               >
                 {deleting ? 'Apagando...' : 'Sim, apagar tudo'}
               </button>
               <button
                 onClick={() => setConfirming(false)}
                 disabled={deleting}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+                className="rounded-md border border-border-strong px-4 py-2 text-xs font-bold text-ink-muted transition hover:bg-paper-deep"
               >
                 Cancelar
               </button>

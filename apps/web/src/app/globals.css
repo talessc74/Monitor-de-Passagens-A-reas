@@ -26,6 +26,17 @@
   --color-amber: #96601f;
   --color-border: #e4ddd0;
   --color-border-strong: #c9bfa9;
+
+  /* Danger/destructive semantic — kept red in both themes (universal
+     "stop" signal), but re-balanced for dark the same way as the rest:
+     darker surface, lightened text/icon for AA contrast. */
+  --color-danger-bg: #fef2f2;
+  --color-danger-border: #fecaca;
+  --color-danger-border-strong: #fca5a5;
+  --color-danger-text: #991b1b;
+  --color-danger-icon: #dc2626;
+  --color-danger-solid: #dc2626;
+  --color-danger-solid-hover: #b91c1c;
 }
 
 /* Dark mode — re-balanced, not inverted: darker page, lighter card
@@ -46,6 +57,11 @@
     --color-amber: #d9a441;
     --color-border: #362d22;
     --color-border-strong: #7a6650;
+    --color-danger-bg: #3d1210;
+    --color-danger-border: #5a211d;
+    --color-danger-border-strong: #a8524c;
+    --color-danger-text: #fca5a5;
+    --color-danger-icon: #f87171;
     color-scheme: dark;
   }
 }
@@ -62,9 +78,19 @@
   --color-amber: #d9a441;
   --color-border: #362d22;
   --color-border-strong: #7a6650;
+  --color-danger-bg: #3d1210;
+  --color-danger-border: #5a211d;
+  --color-danger-border-strong: #a8524c;
+  --color-danger-text: #fca5a5;
+  --color-danger-icon: #f87171;
   color-scheme: dark;
 }
 :root[data-theme="light"] {
+  --color-danger-bg: #fef2f2;
+  --color-danger-border: #fecaca;
+  --color-danger-border-strong: #fca5a5;
+  --color-danger-text: #991b1b;
+  --color-danger-icon: #dc2626;
   color-scheme: light;
 }
 

@@ -42,7 +42,7 @@ export default function NotificationFeed({ notifications, onOpenEmailPreview, on
           <p className="text-xs text-ink-muted">Histórico de e-mails emitidos</p>
         </div>
         {notifications.length > 0 && (
-          <button onClick={onClearAll} className="text-[10px] font-bold uppercase tracking-wide text-red-600 transition hover:text-red-700">
+          <button onClick={onClearAll} className="text-[10px] font-bold uppercase tracking-wide text-danger-text transition hover:opacity-75">
             Limpar histórico
           </button>
         )}

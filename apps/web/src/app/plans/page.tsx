@@ -14,7 +14,7 @@ const PRO_FEATURES = ['10 monitores ativos', 'Varredura a cada 1 hora', 'Histór
 
 export default function PlansPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-slate-400 text-sm">Carregando...</div>}>
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-paper text-sm text-ink-muted">Carregando...</div>}>
       <PlansPageContent />
     </Suspense>
   );
@@ -65,72 +65,72 @@ function PlansPageContent() {
   }
 
   if (authLoading || !user || isLoading) {
-    return <div className="flex min-h-screen items-center justify-center text-slate-400 text-sm">Carregando...</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-paper text-sm text-ink-muted">Carregando...</div>;
   }
 
   const isPro = profile?.plan === 'pro';
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-10">
+    <div className="min-h-screen bg-paper px-4 py-10 text-ink antialiased">
       <div className="mx-auto max-w-3xl">
-        <a href="/dashboard" className="mb-6 inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-blue-600">
+        <a href="/dashboard" className="mb-6 inline-flex items-center gap-1 text-sm font-semibold text-ink-muted hover:text-terracotta">
           <ArrowLeft className="h-4 w-4" />
           Voltar
         </a>
 
-        <div className="text-center mb-8">
-          <h1 className="text-xl font-black text-slate-800">Escolha seu plano</h1>
-          <p className="mt-1 text-sm text-slate-500">Modo de teste — nenhuma cobrança real é feita.</p>
+        <div className="mb-8 text-center">
+          <h1 className="font-serif text-xl font-semibold">Escolha seu plano</h1>
+          <p className="mt-1 text-sm text-ink-muted">Modo de teste. Nenhuma cobrança real é feita.</p>
         </div>
 
         {checkoutStatus === 'success' && (
-          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+          <div className="mb-6 rounded-xl border border-teal/30 bg-teal/10 p-4 text-sm font-semibold text-teal">
             Assinatura confirmada! Pode levar alguns segundos para o plano Pro aparecer aqui.
           </div>
         )}
         {checkoutStatus === 'canceled' && (
-          <div className="mb-6 rounded-xl border border-slate-200 bg-slate-100 p-4 text-sm font-semibold text-slate-600">
-            Checkout cancelado — nenhuma cobrança foi feita.
+          <div className="mb-6 rounded-xl border border-border bg-paper-deep p-4 text-sm font-semibold text-ink-muted">
+            Checkout cancelado. Nenhuma cobrança foi feita.
           </div>
         )}
-        {error && <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</div>}
+        {error && <div className="mb-6 rounded-xl border border-danger-border bg-danger-bg p-4 text-sm font-semibold text-danger-text">{error}</div>}
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-border bg-paper-card p-6 shadow-card">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700">Gratuito</h2>
-              {!isPro && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">Plano atual</span>}
+              <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-ink-muted">Gratuito</h2>
+              {!isPro && <span className="rounded-full bg-paper-deep px-2 py-0.5 text-[10px] font-bold text-ink-muted">Plano atual</span>}
             </div>
-            <p className="mt-2 text-2xl font-black text-slate-800">R$ 0</p>
+            <p className="mt-2 font-mono text-2xl font-black">R$ 0</p>
             <ul className="mt-4 space-y-2">
               {FREE_FEATURES.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-xs text-slate-600 font-medium">
-                  <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-slate-400" />
+                <li key={f} className="flex items-start gap-2 text-xs font-medium text-ink-muted">
+                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-muted" />
                   {f}
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="rounded-2xl border-2 border-blue-500 bg-white p-6 shadow-md shadow-blue-50 relative">
-            <div className="absolute -top-3 left-6 rounded-full bg-blue-600 px-2.5 py-0.5 text-[10px] font-bold text-white flex items-center gap-1">
+          <div className="relative rounded-xl border-2 border-terracotta bg-paper-card p-6 shadow-card">
+            <div className="absolute -top-3 left-6 flex items-center gap-1 rounded-full bg-terracotta-solid px-2.5 py-0.5 text-[10px] font-bold text-white">
               <Sparkles className="h-3 w-3" />
               Recomendado
             </div>
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-blue-700">Pro</h2>
-              {isPro && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">Plano atual</span>}
+              <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-terracotta">Pro</h2>
+              {isPro && <span className="rounded-full bg-terracotta-wash px-2 py-0.5 text-[10px] font-bold text-terracotta">Plano atual</span>}
             </div>
-            <p className="mt-2 text-2xl font-black text-slate-800">
-              R$ 29<span className="text-sm font-semibold text-slate-400">/mês</span>
+            <p className="mt-2 font-mono text-2xl font-black">
+              R$ 29<span className="text-sm font-semibold text-ink-muted">/mês</span>
             </p>
             {!isPro && !profile?.stripeSubscriptionId && (
-              <p className="mt-1 text-xs font-bold text-emerald-600">10 dias grátis para testar antes de pagar</p>
+              <p className="mt-1 text-xs font-bold text-teal">10 dias grátis para testar antes de pagar</p>
             )}
             <ul className="mt-4 space-y-2">
               {PRO_FEATURES.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-xs text-slate-600 font-medium">
-                  <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-blue-500" />
+                <li key={f} className="flex items-start gap-2 text-xs font-medium text-ink-muted">
+                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-terracotta" />
                   {f}
                 </li>
               ))}
@@ -140,7 +140,7 @@ function PlansPageContent() {
               <button
                 onClick={handleUpgrade}
                 disabled={isRedirecting}
-                className="mt-5 w-full rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:bg-slate-100 disabled:text-slate-400"
+                className="mt-5 w-full rounded-md bg-terracotta-solid px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-terracotta-hover disabled:bg-paper-deep disabled:text-ink-muted"
               >
                 {isRedirecting ? 'Redirecionando...' : !profile?.stripeSubscriptionId ? 'Começar trial de 10 dias' : 'Assinar Pro'}
               </button>
@@ -148,7 +148,7 @@ function PlansPageContent() {
             {isPro && (
               <a
                 href="/profile"
-                className="mt-5 block text-center w-full rounded-xl border border-blue-200 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
+                className="mt-5 block w-full rounded-md border border-terracotta/30 px-4 py-2.5 text-center text-sm font-semibold text-terracotta transition hover:bg-terracotta-wash"
               >
                 Gerenciar assinatura
               </a>

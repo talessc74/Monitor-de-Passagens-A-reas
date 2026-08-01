@@ -102,7 +102,7 @@ export default function WaitlistLanding() {
                 </div>
 
                 {status === 'error' && (
-                  <p role="alert" className="mt-2 text-xs text-red-600">Algo deu errado. Tenta de novo em instantes.</p>
+                  <p role="alert" className="mt-2 text-xs text-danger-text">Algo deu errado. Tenta de novo em instantes.</p>
                 )}
 
                 <p className="mt-3 text-xs text-ink-muted/80">

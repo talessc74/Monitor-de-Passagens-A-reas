@@ -316,7 +316,7 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
             </div>
           </fieldset>
 
-          {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
+          {error && <p className="text-xs font-semibold text-danger-text">{error}</p>}
 
           <div className="flex gap-2 pt-2">
             <button
