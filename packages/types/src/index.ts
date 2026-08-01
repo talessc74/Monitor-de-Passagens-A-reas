@@ -213,3 +213,14 @@ export interface ItineraryMonitor {
   status: 'active' | 'paused';
   scanningLockedUntil?: string;
 }
+
+/**
+ * Landing de espera (pré-lançamento) — ver _local-adr-policy-004 (platform).
+ * Isolado do restante do produto: sem userId, sem relação com FlightMonitor,
+ * só um pointer de e-mail interessado antes do motor de busca real existir.
+ */
+export interface WaitlistSignup {
+  id: string;
+  email: string;
+  createdAt: string;
+}

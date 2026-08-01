@@ -9,6 +9,7 @@ import { notificationsRoutes } from './routes/notifications.js';
 import { accountRoutes } from './routes/account.js';
 import { billingRoutes } from './routes/billing.js';
 import { itinerariesRoutes } from './routes/itineraries.js';
+import { waitlistRoutes } from './routes/waitlist.js';
 
 async function buildServer() {
   const app = Fastify({ logger: true });
@@ -23,6 +24,7 @@ async function buildServer() {
   await app.register(accountRoutes);
   await app.register(billingRoutes);
   await app.register(itinerariesRoutes);
+  await app.register(waitlistRoutes);
 
   app.get('/health', async () => ({ status: 'ok' }));
 
