@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { Calendar, CalendarX, DollarSign, Mail, Plus, TrendingUp } from 'lucide-react';
 import type { AirlineSite, RouteStats } from '@mpa/types';
 import { apiFetch } from '../lib/api';
+import { findAirport } from '../lib/airports';
+import AirportAutocomplete from './AirportAutocomplete';
 import MarginPresetControl from './MarginPresetControl';
 
 interface MonitorFormProps {
@@ -11,16 +13,6 @@ interface MonitorFormProps {
   onSubmit: (data: any) => Promise<boolean>;
   currentUserEmail: string;
 }
-
-const POPULAR_AIRPORTS = [
-  { code: 'GRU', city: 'São Paulo', name: 'Guarulhos' },
-  { code: 'GIG', city: 'Rio de Janeiro', name: 'Galeão' },
-  { code: 'BSB', city: 'Brasília', name: 'Juscelino Kubitschek' },
-  { code: 'LIS', city: 'Lisboa', name: 'Humberto Delgado' },
-  { code: 'MIA', city: 'Miami', name: 'Miami International' },
-  { code: 'EZE', city: 'Buenos Aires', name: 'Ezeiza' },
-  { code: 'CDG', city: 'Paris', name: 'Charles de Gaulle' },
-];
 
 const DAY_OPTIONS = [0, 1, 2, 3, 4, 5, 7, 10, 15];
 
@@ -121,9 +113,12 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
     .join(', ');
 
   const resolveCityName = (code: string) => {
-    const found = POPULAR_AIRPORTS.find((a) => a.code.toUpperCase() === code.toUpperCase());
+    const found = findAirport(code);
     return found ? found.city : code;
   };
+
+  const originValid = Boolean(findAirport(origin));
+  const destinationValid = Boolean(findAirport(destination));
 
   const handleToggleSite = (id: string) => {
     if (selectedSites.includes(id)) {
@@ -199,49 +194,21 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
-          <div>
-            <label htmlFor="mf-origin" className={labelClass}>Origem</label>
-            <input
-              id="mf-origin"
-              type="text"
-              placeholder="Ex: GRU"
-              value={origin}
-              onChange={(e) => setOrigin(e.target.value.toUpperCase())}
-              className={inputClass}
-              required
-            />
-            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-ink-muted">
-              <span>{resolveCityName(origin)}</span>
-              <span className="text-border-strong">·</span>
-              {['GRU', 'GIG', 'BSB'].map((code) => (
-                <button key={code} type="button" onClick={() => setOrigin(code)} className="font-semibold hover:text-terracotta">
-                  {code}
-                </button>
-              ))}
-            </div>
-          </div>
+          <AirportAutocomplete
+            id="mf-origin"
+            label="Origem"
+            placeholder="Busque por cidade ou código"
+            value={origin}
+            onChange={setOrigin}
+          />
           <div className="hidden pb-2.5 text-ink-muted sm:block">→</div>
-          <div>
-            <label htmlFor="mf-destination" className={labelClass}>Destino</label>
-            <input
-              id="mf-destination"
-              type="text"
-              placeholder="Ex: LIS"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value.toUpperCase())}
-              className={inputClass}
-              required
-            />
-            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-ink-muted">
-              <span>{resolveCityName(destination)}</span>
-              <span className="text-border-strong">·</span>
-              {['LIS', 'MIA', 'EZE'].map((code) => (
-                <button key={code} type="button" onClick={() => setDestination(code)} className="font-semibold hover:text-terracotta">
-                  {code}
-                </button>
-              ))}
-            </div>
-          </div>
+          <AirportAutocomplete
+            id="mf-destination"
+            label="Destino"
+            placeholder="Busque por cidade ou código"
+            value={destination}
+            onChange={setDestination}
+          />
         </div>
 
         {searchMode === 'dated' ? (
@@ -440,12 +407,15 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
 
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !originValid || !destinationValid}
           className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-terracotta-solid px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-terracotta-hover disabled:cursor-not-allowed disabled:bg-paper-deep disabled:text-ink-muted"
         >
           <Plus className="h-4 w-4 stroke-[2.5px]" />
           {isSubmitting ? 'Cadastrando...' : 'Adicionar Alerta de Passagens'}
         </button>
+        {(!originValid || !destinationValid) && (
+          <p className="mt-1 text-center text-[10px] text-ink-muted">Selecione origem e destino de uma cidade com aeroporto na lista.</p>
+        )}
       </div>
     </form>
   );
