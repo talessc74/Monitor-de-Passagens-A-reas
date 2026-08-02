@@ -47,6 +47,13 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const minReturnDate = (() => {
+    if (!departureDate) return undefined;
+    const nextDay = new Date(departureDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    return nextDay.toISOString().slice(0, 10);
+  })();
+
   const handleToggleSite = (id: string) => {
     if (selectedSites.includes(id)) {
       if (selectedSites.length > 1) setSelectedSites(selectedSites.filter((s) => s !== id));
@@ -160,7 +167,15 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
                   id="edit-departure"
                   type="date"
                   value={departureDate}
-                  onChange={(e) => setDepartureDate(e.target.value)}
+                  onChange={(e) => {
+                    const newDeparture = e.target.value;
+                    setDepartureDate(newDeparture);
+                    if (newDeparture && returnDate && returnDate <= newDeparture) {
+                      const nextDay = new Date(newDeparture);
+                      nextDay.setDate(nextDay.getDate() + 1);
+                      setReturnDate(nextDay.toISOString().slice(0, 10));
+                    }
+                  }}
                   className={`${fieldInputClass} mb-2 font-semibold`}
                 />
                 <div className="grid grid-cols-2 gap-2">
@@ -189,6 +204,7 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
                   id="edit-return"
                   type="date"
                   value={returnDate}
+                  min={minReturnDate}
                   onChange={(e) => setReturnDate(e.target.value)}
                   className={`${fieldInputClass} mb-2 font-semibold`}
                 />
