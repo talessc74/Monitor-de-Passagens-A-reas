@@ -8,7 +8,7 @@ interface NotificationFeedProps {
   notifications: NotificationLog[];
   onOpenEmailPreview: (notif: NotificationLog) => void;
   onClearAll: () => void;
-  onSendTestEmail: (to: string, subject: string, content: string) => Promise<boolean>;
+  onSendTestEmail: (to: string, subject: string, content: string) => Promise<{ success: boolean; message: string }>;
   userEmail: string;
 }
 
@@ -19,18 +19,18 @@ export default function NotificationFeed({ notifications, onOpenEmailPreview, on
     'Encontramos voos diretos de Guarulhos para Lisboa por apenas R$ 3.890 para outubro. Valor abaixo do seu teto de R$ 4.000!'
   );
   const [isSendingTest, setIsSendingTest] = useState(false);
-  const [testSuccessMessage, setTestSuccessMessage] = useState('');
+  const [testResultMessage, setTestResultMessage] = useState('');
+  const [testResultIsError, setTestResultIsError] = useState(false);
 
   const handleSendTest = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSendingTest(true);
-    setTestSuccessMessage('');
+    setTestResultMessage('');
 
-    const success = await onSendTestEmail(testEmail, testSubject, testContent);
-    if (success) {
-      setTestSuccessMessage('Mensagem de teste disparada! Verifique o log abaixo.');
-      setTimeout(() => setTestSuccessMessage(''), 4000);
-    }
+    const { success, message } = await onSendTestEmail(testEmail, testSubject, testContent);
+    setTestResultMessage(message);
+    setTestResultIsError(!success);
+    setTimeout(() => setTestResultMessage(''), 6000);
     setIsSendingTest(false);
   };
 
@@ -93,10 +93,10 @@ export default function NotificationFeed({ notifications, onOpenEmailPreview, on
             />
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-            {testSuccessMessage ? (
-              <span className="text-[10px] font-bold text-teal">{testSuccessMessage}</span>
+            {testResultMessage ? (
+              <span className={`text-[10px] font-bold ${testResultIsError ? 'text-danger-text' : 'text-teal'}`}>{testResultMessage}</span>
             ) : (
-              <span className="text-[10px] font-semibold text-ink-muted">Simula o envio imediato.</span>
+              <span className="text-[10px] font-semibold text-ink-muted">Envia de verdade via Resend, se configurado.</span>
             )}
             <button
               type="submit"

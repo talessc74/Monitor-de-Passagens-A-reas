@@ -19,6 +19,7 @@ import { authenticateInternal } from '../internalAuth.js';
 import { executeScanForMonitor } from '../executeScan.js';
 import { verifyPauseToken } from '../pauseLink.js';
 import { passengerDateSchema, passengerDateUnion } from '../schemas/passengerDate.js';
+import { sendRealTestEmail } from '../testEmailSender.js';
 
 // Presets fechados de _local-bdr-policy-005 — a UI nunca envia um valor
 // livre, então validamos contra o conjunto discreto, não um range.
@@ -259,13 +260,15 @@ export async function monitorsRoutes(app: FastifyInstance) {
     }
     const { to, subject, content } = parsed.data;
 
+    const result = await sendRealTestEmail({ to, subject, html: `<p>${content}</p>` });
+
     const testNotif: NotificationLog = {
       id: 'not-test-' + Date.now(),
       userId: request.userId,
       monitorId: 'test',
       origin: 'TEST',
       destination: 'TEST',
-      title: `Simulação de Canal Ativo: ${subject}`,
+      title: `${result.sent ? 'Alerta de Teste (enviado via Resend)' : 'Simulação de Canal Ativo'}: ${subject}`,
       message: content,
       price: 0,
       targetPrice: 0,
@@ -273,8 +276,19 @@ export async function monitorsRoutes(app: FastifyInstance) {
       sentAt: new Date().toISOString(),
       type: 'promotion',
     };
-
     await createNotification(testNotif);
-    return { success: true, message: 'E-mail de teste simulado enviado com sucesso para ' + to, notification: testNotif };
+
+    if (result.error) {
+      return reply.status(502).send({ error: 'Falha ao enviar via Resend', details: result.error, notification: testNotif });
+    }
+
+    return {
+      success: true,
+      sentReal: result.sent,
+      message: result.sent
+        ? `E-mail real enviado via Resend para ${to}`
+        : `RESEND_API_KEY não configurada neste ambiente — e-mail simulado (não enviado de verdade) para ${to}`,
+      notification: testNotif,
+    };
   });
 }

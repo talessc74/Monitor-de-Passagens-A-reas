@@ -214,21 +214,22 @@ export default function DashboardPage() {
     }
   };
 
-  const handleSendTestEmail = async (to: string, subject: string, content: string): Promise<boolean> => {
+  const handleSendTestEmail = async (to: string, subject: string, content: string): Promise<{ success: boolean; message: string }> => {
     try {
       const response = await apiFetch('/api/test-email', {
         method: 'POST',
         body: JSON.stringify({ to, subject, content }),
       });
+      const data = await response.json();
+      const notifRes = await apiFetch('/api/notifications');
+      if (notifRes.ok) setNotifications(await notifRes.json());
       if (response.ok) {
-        const notifRes = await apiFetch('/api/notifications');
-        if (notifRes.ok) setNotifications(await notifRes.json());
-        return true;
+        return { success: true, message: data.message as string };
       }
-      return false;
+      return { success: false, message: (data.details as string) || (data.error as string) || 'Falha ao enviar e-mail de teste.' };
     } catch (err) {
       console.error('Erro ao disparar e-mail de teste:', err);
-      return false;
+      return { success: false, message: 'Erro de rede ao disparar e-mail de teste.' };
     }
   };
 
