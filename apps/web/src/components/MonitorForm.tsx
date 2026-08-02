@@ -112,6 +112,14 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
     infants,
   ]);
 
+  const passengerLabel = [
+    adults > 0 ? `${adults} adulto${adults > 1 ? 's' : ''}` : null,
+    children > 0 ? `${children} criança${children > 1 ? 's' : ''}` : null,
+    infants > 0 ? `${infants} bebê${infants > 1 ? 's' : ''}` : null,
+  ]
+    .filter(Boolean)
+    .join(', ');
+
   const resolveCityName = (code: string) => {
     const found = POPULAR_AIRPORTS.find((a) => a.code.toUpperCase() === code.toUpperCase());
     return found ? found.city : code;
@@ -351,7 +359,7 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
                 <div className="mb-1 flex items-baseline gap-2">
                   <span className="font-mono text-lg font-extrabold">R$ {routeStats.average.toLocaleString('pt-BR')}</span>
                   <span className="text-[10px] font-medium text-ink-muted">
-                    média · faixa R$ {routeStats.min.toLocaleString('pt-BR')} – R$ {routeStats.max.toLocaleString('pt-BR')}
+                    média total para {passengerLabel} · faixa R$ {routeStats.min.toLocaleString('pt-BR')} – R$ {routeStats.max.toLocaleString('pt-BR')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
