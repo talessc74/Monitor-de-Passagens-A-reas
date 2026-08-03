@@ -42,3 +42,14 @@ export async function getUserByStripeCustomerId(stripeCustomerId: string): Promi
 export async function deleteUser(uid: string): Promise<void> {
   await collection().doc(uid).delete();
 }
+
+/**
+ * Usado só pela rota /api/admin (conceder/revogar isAdmin por e-mail) —
+ * ver _local-adr-policy-002 (controls). `null` tanto se o e-mail não
+ * existe quanto se ainda não fez login nenhuma vez (perfil só existe
+ * a partir do primeiro /api/me via ensureUser).
+ */
+export async function getUserByEmail(email: string): Promise<UserProfile | null> {
+  const snapshot = await collection().where('email', '==', email).limit(1).get();
+  return snapshot.empty ? null : (snapshot.docs[0].data() as UserProfile);
+}

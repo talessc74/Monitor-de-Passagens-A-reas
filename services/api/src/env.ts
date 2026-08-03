@@ -36,6 +36,12 @@ const envSchema = z.object({
   // na ponte aérea SP-RJ); sem a key, cai 100% no simulador Gemini,
   // mesmo padrão no-op de toda integração opcional deste projeto.
   TRAVELPAYOUTS_API_TOKEN: z.string().optional(),
+  // Allowlist de e-mails (separados por vírgula) autorizados a chamar
+  // /api/admin/* — quem concede/revoga isAdmin em qualquer UserProfile
+  // (acesso total, bypass de plano, sem Stripe). Ver
+  // _local-adr-policy-002 (controls). Vazio/ausente = ninguém passa,
+  // nunca um "sem allowlist configurada = libera geral" por padrão.
+  ADMIN_EMAILS: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

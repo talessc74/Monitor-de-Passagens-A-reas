@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { FlightMonitor, NotificationLog } from '@mpa/types';
-import { PLAN_LIMITS } from '@mpa/types';
+import { effectiveLimits } from '@mpa/types';
 import {
   listMonitorsForUser,
   getMonitor,
@@ -107,11 +107,12 @@ export async function monitorsRoutes(app: FastifyInstance) {
     // _local-adr-policy-003.
     const user = await getUser(request.userId);
     const plan = user?.plan ?? 'free';
+    const limits = effectiveLimits(user);
     const existingCount = (await listMonitorsForUser(request.userId)).length;
-    if (existingCount >= PLAN_LIMITS[plan].maxMonitors) {
+    if (existingCount >= limits.maxMonitors) {
       return reply.status(403).send({
-        error: `Limite de ${PLAN_LIMITS[plan].maxMonitors} monitores do plano ${plan === 'free' ? 'Gratuito' : 'Pro'} atingido.`,
-        upgradeRequired: plan === 'free',
+        error: `Limite de ${limits.maxMonitors} monitores do plano ${plan === 'free' ? 'Gratuito' : 'Pro'} atingido.`,
+        upgradeRequired: plan === 'free' && !user?.isAdmin,
       });
     }
 

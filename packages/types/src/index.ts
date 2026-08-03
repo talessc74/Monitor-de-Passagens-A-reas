@@ -160,6 +160,13 @@ export interface UserProfile {
   /** IDs opacos do Stripe — nenhum dado de pagamento é replicado aqui. Ver _local-adr-policy-003. */
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  /**
+   * Acesso total concedido manualmente (dev/beta-tester), independente do
+   * plano pago — ver _local-adr-policy-002 (controls). Ortogonal a `plan`
+   * de propósito: o webhook do Stripe só escreve `plan`/`stripeSubscriptionId`
+   * (merge), então uma mudança de assinatura nunca apaga isto sem querer.
+   */
+  isAdmin?: boolean;
 }
 
 export interface PlanLimits {
@@ -173,6 +180,20 @@ export const PLAN_LIMITS: Record<UserProfile['plan'], PlanLimits> = {
   free: { maxMonitors: 2, scanIntervalHours: 6, historyRetentionDays: 7 },
   pro: { maxMonitors: 10, scanIntervalHours: 1, historyRetentionDays: 90 },
 };
+
+/** Teto generoso, não infinito de verdade — evita loop/consulta patológica caso algo itere sobre o limite. */
+const ADMIN_LIMITS: PlanLimits = { maxMonitors: 9999, scanIntervalHours: PLAN_LIMITS.pro.scanIntervalHours, historyRetentionDays: 3650 };
+
+/**
+ * Ponto único de resolução de limites — todo lugar que hoje faz
+ * `PLAN_LIMITS[profile.plan]` deve usar isto no lugar, pra `isAdmin`
+ * nunca ser esquecido em um novo enforcement point. Ver
+ * _local-adr-policy-002 (controls).
+ */
+export function effectiveLimits(profile: Pick<UserProfile, 'plan' | 'isAdmin'> | null | undefined): PlanLimits {
+  if (profile?.isAdmin) return ADMIN_LIMITS;
+  return PLAN_LIMITS[profile?.plan ?? 'free'];
+}
 
 /**
  * Fase 9 ("Itinerários") — ver _local-bdr-plan-003. Um trecho comprado
