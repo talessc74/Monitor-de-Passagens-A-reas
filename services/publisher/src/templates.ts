@@ -59,6 +59,14 @@ function ticket(notification: NotificationLog, accent: string): string {
 function layout(notification: NotificationLog, title: string, accent: string, extraBody: string): string {
   const pauseUrl = buildPauseUrl(notification.monitorId);
   return `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>${title}</title>
+      </head>
+      <body style="margin:0;padding:0;">
     <div style="background:${COLORS.paperDeep};padding:32px 16px;font-family:${SANS};">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" align="center">
         <tr>
@@ -97,6 +105,8 @@ function layout(notification: NotificationLog, title: string, accent: string, ex
         </tr>
       </table>
     </div>
+      </body>
+    </html>
   `;
 }
 
