@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { authenticate, requireAdmin } from '../auth.js';
-import { getUserByEmail, updateUser } from '../repositories/usersRepository.js';
+import { getUserByEmail, listAllUsers, updateUser } from '../repositories/usersRepository.js';
 
 /**
  * Gestão manual de acesso total (dev/beta-tester), fora do fluxo de
@@ -15,6 +15,12 @@ const grantAdminSchema = z.object({
 });
 
 export async function adminRoutes(app: FastifyInstance) {
+  // Lista todo mundo que já logou pelo menos uma vez, pra escolher quem
+  // promover sem precisar saber/digitar o e-mail de cor.
+  app.get('/api/admin/users', { preHandler: [authenticate, requireAdmin] }, async () => {
+    return listAllUsers();
+  });
+
   app.post('/api/admin/grant-access', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
     const parsed = grantAdminSchema.safeParse(request.body);
     if (!parsed.success) {
