@@ -53,3 +53,13 @@ export async function getUserByEmail(email: string): Promise<UserProfile | null>
   const snapshot = await collection().where('email', '==', email).limit(1).get();
   return snapshot.empty ? null : (snapshot.docs[0].data() as UserProfile);
 }
+
+/**
+ * Lista todo mundo que já fez login pelo menos uma vez — só para o
+ * painel /api/admin/users (escala de beta, sem paginação por ora). Ver
+ * _local-adr-policy-002 (controls).
+ */
+export async function listAllUsers(): Promise<UserProfile[]> {
+  const snapshot = await collection().orderBy('createdAt', 'desc').get();
+  return snapshot.docs.map((doc) => doc.data() as UserProfile);
+}
