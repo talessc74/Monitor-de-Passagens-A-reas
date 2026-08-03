@@ -91,6 +91,22 @@ production scan loop would hit this on every request.
   regional pairs (GOL/Azul-specific corridors), and whether `currency`/`market`/`countryCode`
   parameters need tuning for BRL-denominated results (test ran in default USD).
 
+## Amendment (2026-08-03): product owner authorizes development-stage integration, legal caveat deferred to a user-facing disclaimer
+
+Product owner reviewed the legal/compliance implication in plain terms (unofficial scraper, third
+party's own ToS risk, not FlySpot's own scraping) and decided **not to block development on legal
+validation** at this stage: FlySpot is pre-launch, pre-revenue, with no real users depending on this
+data yet. Explicit decision: proceed with building the adapter now; the legal caveat is deferred to
+becoming a **user-facing disclaimer** (e.g. "preços estimados via fontes de terceiros não-oficiais")
+rather than a hard gate before writing any code.
+
+This changes this document's own "Considered Options" framing below — "build now, flag-gated" was
+the abandoned middle path; the actual decision is closer to building it as a real adapter and
+deciding the disclaimer/production-exposure question at the point features actually ship, not before
+implementation starts. The legal validation requirement from `_local-bdr-plan-004` is **not
+withdrawn** — it is deferred, and must be revisited before this source is relied upon for a paying
+user's purchase decision at scale, not treated as permanently resolved by this amendment.
+
 ## Considered Options
 
 - **Treat the two "incomplete/empty" first-call results as confirmed no-coverage** — rejected: a
