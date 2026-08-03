@@ -92,6 +92,23 @@ Console) — no code change unblocks this.**
   Fase 8 to be done first, and transactional e-mail (Fase 5, already built) is actively degraded
   (landing in spam) until the DNS half of this checklist happens — earlier is strictly better here.
 
+## Amendment (2026-08-03)
+
+Item 2's Resend half (SPF/DKIM) is confirmed done — product owner verified `flyspot.com.br` in the
+Resend dashboard (Domains → Verified, DKIM `TXT` record present, SPF `MX`+`TXT` records present,
+"Enable Sending" on). This resolves the "actively degraded" framing above for outbound e-mail from
+this domain specifically. Not yet independently confirmed here: whether `RESEND_API_KEY` (the
+GitHub Actions secret consumed by `deploy.yml`) actually holds a valid key from this same Resend
+account, and whether a deploy has run since that secret was set — a verified domain doesn't help if
+the deployed services aren't authenticating with a real key. Next step to close this out: re-run
+`deploy.yml`, then use the real test-send button in the dashboard's "Central de notificações"
+(`_local-adr-policy-004` application amendment, `/api/test-email`) to confirm end-to-end.
+
+Items 1, 3, 4 (Firebase Hosting custom domain, Authentication authorized domains, OAuth JS origins)
+remain unverified as of this amendment — `flyspot.com.br` is confirmed loading the live site
+(product owner screenshot), which implies item 1 succeeded, but items 3-4 (Google sign-in on the
+custom domain) have not been explicitly tested in this conversation.
+
 ## References
 
 - `ROADMAP.md` v7 note, Fase 5 task 2 and its "Ações fora do código" — where the domain and the
