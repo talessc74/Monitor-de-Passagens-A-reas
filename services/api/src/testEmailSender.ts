@@ -49,7 +49,16 @@ function styledTestEmail(subject: string, content: string): string {
                   <tr>
                     <td style="padding:24px 28px 28px;">
                       <h1 style="font-family:${serif};font-size:18px;font-weight:600;color:${ink};margin:0 0 10px;">${subject}</h1>
-                      <p style="font-size:14px;line-height:1.6;color:${ink};margin:0;">${content}</p>
+                      <p style="font-size:14px;line-height:1.6;color:${ink};margin:0 0 20px;">${content}</p>
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center">
+                            <a href="${env.APP_URL ?? 'https://flyspot.com.br'}" style="display:block;background:${terracotta};color:#ffffff;font-family:${sans};font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;text-decoration:none;border-radius:10px;padding:14px 20px;">
+                              Ir para o FlySpot
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
                     </td>
                   </tr>
                   <tr>
