@@ -1,17 +1,20 @@
 import { env } from './env.js';
 
 /**
- * Identidade visual herdada do redesign do site (mesma paleta e
- * tipografia de `services/publisher/src/templates.ts`) — este botão de
- * teste não está preso a um monitor real, então não tem o cartão de
- * embarque nem o link de pausar, só o cabeçalho/corpo com a mesma cara.
- * Cores fixas no modo claro e tabelas em vez de flex/grid pela mesma
- * razão de compatibilidade de clientes de e-mail.
+ * Identidade visual herdada do preview `EmailModal.tsx` do dashboard
+ * (mesma barra terracota com selo, mesma paleta) — ver
+ * `services/publisher/src/templates.ts` pro template das notificações
+ * reais, que segue a mesma linguagem visual. Este botão de teste não
+ * está preso a um monitor real, então não tem o cartão de rota nem o
+ * link de pausar, só o mesmo cabeçalho/corpo. Cores fixas no modo claro
+ * e tabelas em vez de flex/grid pela mesma razão de compatibilidade de
+ * clientes de e-mail.
  */
 function styledTestEmail(subject: string, content: string): string {
   const paperDeep = '#f0e9dc';
   const paperCard = '#fffdf9';
   const ink = '#2a241d';
+  const inkMuted = '#6b6255';
   const border = '#e4ddd0';
   const terracotta = '#b5502f';
   const serif = "Georgia, 'Times New Roman', serif";
@@ -30,18 +33,28 @@ function styledTestEmail(subject: string, content: string): string {
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" align="center">
             <tr>
               <td align="center">
-                <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;background:${paperCard};border:1px solid ${border};border-radius:12px;">
+                <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;background:${paperCard};border:1px solid ${border};border-radius:12px;overflow:hidden;">
                   <tr>
-                    <td style="padding:24px 28px 0;">
-                      <div style="font-family:${serif};font-size:19px;font-weight:600;color:${ink};">
-                        Fly<span style="font-style:italic;color:${terracotta};">Spot</span>
-                      </div>
+                    <td style="background:${terracotta};padding:18px 24px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="font-family:${sans};font-size:14px;font-weight:800;letter-spacing:.04em;color:#ffffff;">✈ FLYSPOT</td>
+                          <td align="right">
+                            <span style="display:inline-block;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);border-radius:6px;padding:4px 10px;font-family:${sans};font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#ffffff;">Teste</span>
+                          </td>
+                        </tr>
+                      </table>
                     </td>
                   </tr>
                   <tr>
-                    <td style="padding:18px 28px 28px;">
+                    <td style="padding:24px 28px 28px;">
                       <h1 style="font-family:${serif};font-size:18px;font-weight:600;color:${ink};margin:0 0 10px;">${subject}</h1>
                       <p style="font-size:14px;line-height:1.6;color:${ink};margin:0;">${content}</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="background:${paperDeep};border-top:1px solid ${border};padding:14px 24px;">
+                      <p style="font-family:${sans};font-size:10px;color:${inkMuted};margin:0;text-align:center;">Enviado pelo canal de teste do FlySpot.</p>
                     </td>
                   </tr>
                 </table>
