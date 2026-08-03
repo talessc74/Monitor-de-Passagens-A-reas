@@ -28,18 +28,28 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
 }
 
 /**
- * Encadeado depois de `authenticate` (precisa de `request.userEmail` já
- * resolvido). Allowlist por e-mail via env, nunca por um campo que o
- * cliente controla — ver ADMIN_EMAILS em env.ts e
- * _local-adr-policy-002 (controls).
+ * Fonte única da allowlist ADMIN_EMAILS — usada tanto por `requireAdmin`
+ * (gate das rotas /api/admin/*) quanto pelo bootstrap em account.ts (que
+ * marca isAdmin:true no próprio perfil de quem está na allowlist, sem
+ * depender de outro admin já existir pra conceder o primeiro acesso).
+ * Ver _local-adr-policy-002 (controls).
  */
-export async function requireAdmin(request: FastifyRequest, reply: FastifyReply) {
+export function isAdminEmail(email: string | null): boolean {
+  if (!email) return false;
   const allowlist = (env.ADMIN_EMAILS ?? '')
     .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
+  return allowlist.includes(email.toLowerCase());
+}
 
-  if (!request.userEmail || !allowlist.includes(request.userEmail.toLowerCase())) {
+/**
+ * Encadeado depois de `authenticate` (precisa de `request.userEmail` já
+ * resolvido). Allowlist por e-mail via env, nunca por um campo que o
+ * cliente controla.
+ */
+export async function requireAdmin(request: FastifyRequest, reply: FastifyReply) {
+  if (!isAdminEmail(request.userEmail)) {
     return reply.status(403).send({ error: 'Acesso restrito a administradores' });
   }
 }

@@ -58,6 +58,18 @@ non-admin path instead of quietly removing it.
 - `requireAdmin` (auth.ts) re-checks the allowlist on every call, chained after `authenticate` — no
   session-level caching of "is this caller an admin" that could go stale after a revocation.
 
+### Amendment (2026-08-03): bootstrap for the first admin
+
+First real-world use exposed a chicken-and-egg gap: `POST /api/admin/grant-access` requires the
+*caller* to already be `isAdmin` (or on the allowlist) to grant `isAdmin` to a *target* — but no
+account starts with `isAdmin: true`, so the product owner's own account had no path to it, and
+`/admin` correctly (if unhelpfully) bounced them to `/profile` forever. Fix: `GET /api/me`
+(`routes/account.ts`) now sets `isAdmin: true` on the caller's own profile whenever their e-mail is
+in `ADMIN_EMAILS`, idempotently, on every login. This doesn't weaken the security model — the
+allowlist was always the actual authority; this just applies it to the caller's own profile in
+addition to gating `/api/admin/*`, closing the gap where the allowlist could gate everything except
+the very first person who needed it.
+
 ### Why the grant is visible to the recipient (Sovereign's identity/consent framing)
 
 `/profile` shows a small "Acesso total" badge next to the plan name whenever `isAdmin` is true —
