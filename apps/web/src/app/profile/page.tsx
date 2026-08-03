@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, AlertTriangle, Sparkles } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Sparkles, ShieldCheck } from 'lucide-react';
 import type { UserProfile } from '@mpa/types';
 import { useAuth } from '../../lib/auth-context';
 import { apiFetch } from '../../lib/api';
@@ -17,6 +17,9 @@ export default function ProfilePage() {
   const [error, setError] = useState('');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [grantEmail, setGrantEmail] = useState('');
+  const [grantMessage, setGrantMessage] = useState('');
+  const [granting, setGranting] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -40,6 +43,23 @@ export default function ProfilePage() {
       if (data.url) window.location.href = data.url;
     } catch {
       setIsRedirecting(false);
+    }
+  }
+
+  async function handleGrantAccess(grant: boolean) {
+    setGranting(true);
+    setGrantMessage('');
+    try {
+      const response = await apiFetch('/api/admin/grant-access', {
+        method: 'POST',
+        body: JSON.stringify({ email: grantEmail, isAdmin: grant }),
+      });
+      const data = await response.json();
+      setGrantMessage(response.ok ? `${grant ? 'Acesso total concedido' : 'Acesso total revogado'} para ${grantEmail}.` : data.error || 'Falha ao atualizar acesso.');
+    } catch {
+      setGrantMessage('Erro de rede ao atualizar acesso.');
+    } finally {
+      setGranting(false);
     }
   }
 
@@ -83,6 +103,12 @@ export default function ProfilePage() {
               <p className="mt-1 flex items-center gap-1.5 text-sm font-bold">
                 {profile?.plan === 'pro' && <Sparkles className="h-3.5 w-3.5 text-terracotta" />}
                 {profile?.plan === 'pro' ? 'Pro' : 'Gratuito'}
+                {profile?.isAdmin && (
+                  <span className="ml-1 flex items-center gap-1 rounded bg-terracotta-wash px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-terracotta">
+                    <ShieldCheck className="h-3 w-3" />
+                    Acesso total
+                  </span>
+                )}
               </p>
             </div>
             {profile?.plan === 'pro' ? (
@@ -103,6 +129,42 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
+
+        {profile?.isAdmin && (
+          <div className="mt-6 rounded-xl border border-border bg-paper-card p-6 shadow-card">
+            <h2 className="flex items-center gap-1.5 font-mono text-xs font-bold uppercase tracking-wider text-ink-muted">
+              <ShieldCheck className="h-3.5 w-3.5 text-terracotta" />
+              Gerenciar acesso de beta-testers
+            </h2>
+            <p className="mt-1 text-xs text-ink-muted">
+              Concede ou revoga acesso total (bypass de plano, sem passar pelo Stripe) para o e-mail de um usuário que já fez login pelo menos uma vez.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <input
+                type="email"
+                placeholder="email@do-beta-tester.com"
+                value={grantEmail}
+                onChange={(e) => setGrantEmail(e.target.value)}
+                className="min-w-[220px] flex-1 rounded-md border border-border-strong bg-paper px-3 py-2 text-sm text-ink focus:border-terracotta focus:outline-none focus:ring-1 focus:ring-terracotta"
+              />
+              <button
+                onClick={() => handleGrantAccess(true)}
+                disabled={granting || !grantEmail}
+                className="rounded-md bg-terracotta-solid px-3 py-2 text-xs font-bold text-white transition hover:bg-terracotta-hover disabled:opacity-60"
+              >
+                Conceder
+              </button>
+              <button
+                onClick={() => handleGrantAccess(false)}
+                disabled={granting || !grantEmail}
+                className="rounded-md border border-border-strong px-3 py-2 text-xs font-bold text-ink-muted transition hover:bg-paper-deep disabled:opacity-60"
+              >
+                Revogar
+              </button>
+            </div>
+            {grantMessage && <p className="mt-2 text-xs font-semibold text-ink">{grantMessage}</p>}
+          </div>
+        )}
 
         <div className="mt-6 rounded-xl border border-danger-border bg-danger-bg p-6">
           <h2 className="flex items-center gap-2 text-sm font-bold text-danger-text">

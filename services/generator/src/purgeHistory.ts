@@ -1,4 +1,4 @@
-import { PLAN_LIMITS } from '@mpa/types';
+import { PLAN_LIMITS, effectiveLimits } from '@mpa/types';
 import type { FlightMonitor, UserProfile } from '@mpa/types';
 import { db, COLLECTIONS } from './firestore.js';
 
@@ -31,5 +31,5 @@ async function retentionDaysFor(userId: string | null): Promise<number> {
   if (!userId) return PLAN_LIMITS.free.historyRetentionDays;
   const doc = await db.collection(COLLECTIONS.users).doc(userId).get();
   const profile = doc.data() as UserProfile | undefined;
-  return PLAN_LIMITS[profile?.plan ?? 'free'].historyRetentionDays;
+  return effectiveLimits(profile).historyRetentionDays;
 }

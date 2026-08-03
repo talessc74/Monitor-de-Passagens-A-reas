@@ -1,4 +1,5 @@
 import type { FlightMonitor, UserProfile } from '@mpa/types';
+import { effectiveLimits } from '@mpa/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, COLLECTIONS } from './firestore.js';
 import { env } from './env.js';
@@ -30,6 +31,10 @@ async function planIntervalHours(userId: string | null): Promise<number> {
   if (!userId) return env.FREE_SCAN_INTERVAL_HOURS;
   const doc = await db.collection(COLLECTIONS.users).doc(userId).get();
   const profile = doc.data() as UserProfile | undefined;
+  // isAdmin usa o teto do @mpa/types (não configurável por env, mesmo
+  // valor do plano pro); free/pro continuam lendo os env vars deste
+  // serviço, que permanecem a fonte configurável de verdade pra eles.
+  if (profile?.isAdmin) return effectiveLimits(profile).scanIntervalHours;
   return profile?.plan === 'pro' ? env.PRO_SCAN_INTERVAL_HOURS : env.FREE_SCAN_INTERVAL_HOURS;
 }
 
