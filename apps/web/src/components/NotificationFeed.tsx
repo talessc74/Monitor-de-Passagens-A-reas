@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Mail, Eye, Send } from 'lucide-react';
 import type { NotificationLog } from '@mpa/types';
 
@@ -12,8 +12,21 @@ interface NotificationFeedProps {
   userEmail: string;
 }
 
+const TEST_EMAIL_STORAGE_KEY = 'flyspot:testEmail';
+
 export default function NotificationFeed({ notifications, onOpenEmailPreview, onClearAll, onSendTestEmail, userEmail }: NotificationFeedProps) {
-  const [testEmail, setTestEmail] = useState(userEmail);
+  // Lembra o último e-mail de teste digitado (localStorage, por navegador)
+  // em vez de sempre recomeçar com o e-mail de login a cada refresh —
+  // quem quer testar num e-mail diferente do login não deveria ter que
+  // digitar de novo toda vez.
+  const [testEmail, setTestEmail] = useState(() => {
+    if (typeof window === 'undefined') return userEmail;
+    return window.localStorage.getItem(TEST_EMAIL_STORAGE_KEY) || userEmail;
+  });
+
+  useEffect(() => {
+    if (testEmail) window.localStorage.setItem(TEST_EMAIL_STORAGE_KEY, testEmail);
+  }, [testEmail]);
   const [testSubject, setTestSubject] = useState('Voo Barato para Lisboa!');
   const [testContent, setTestContent] = useState(
     'Encontramos voos diretos de Guarulhos para Lisboa por apenas R$ 3.890 para outubro. Valor abaixo do seu teto de R$ 4.000!'
