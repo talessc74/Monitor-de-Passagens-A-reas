@@ -74,6 +74,8 @@ jobs:
             STRIPE_PRICE_ID_PRO=${{ secrets.STRIPE_PRICE_ID_PRO }}
             RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
             ADMIN_EMAILS=${{ secrets.ADMIN_EMAILS }}
+            TRAVELPAYOUTS_API_TOKEN=${{ secrets.TRAVELPAYOUTS_API_TOKEN }}
+            RAPIDAPI_KEY=${{ secrets.RAPIDAPI_KEY }}
 
       # ── flyspot-generator (Fase 4 — scheduler) ──────────────────────────
       - name: Build da imagem Docker — generator
