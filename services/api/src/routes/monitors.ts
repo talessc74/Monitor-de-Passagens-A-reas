@@ -261,7 +261,7 @@ export async function monitorsRoutes(app: FastifyInstance) {
     }
     const { to, subject, content } = parsed.data;
 
-    const result = await sendRealTestEmail({ to, subject, html: `<p>${content}</p>` });
+    const result = await sendRealTestEmail({ to, subject, content });
 
     const testNotif: NotificationLog = {
       id: 'not-test-' + Date.now(),
