@@ -36,6 +36,12 @@ const envSchema = z.object({
   // na ponte aérea SP-RJ); sem a key, cai 100% no simulador Gemini,
   // mesmo padrão no-op de toda integração opcional deste projeto.
   TRAVELPAYOUTS_API_TOKEN: z.string().optional(),
+  // Segunda fonte de preço real, complementar ao Travelpayouts — ver
+  // _local-bdr-plan-006. Scraper não-oficial do Skyscanner via RapidAPI
+  // (`apiheya/sky-scrapper`); sem a key, no-op, mesmo padrão de toda
+  // integração opcional deste projeto. Ressalva jurídica registrada no
+  // XDRS, deferida a um disclaimer futuro — não bloqueia o boot.
+  RAPIDAPI_KEY: z.string().optional(),
   // Allowlist de e-mails (separados por vírgula) autorizados a chamar
   // /api/admin/* — quem concede/revoga isAdmin em qualquer UserProfile
   // (acesso total, bypass de plano, sem Stripe). Ver
