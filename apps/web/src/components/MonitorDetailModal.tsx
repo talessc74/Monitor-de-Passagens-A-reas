@@ -167,9 +167,13 @@ export default function MonitorDetailModal({ monitor, onClose }: MonitorDetailMo
                 <div key={r.site} className="flex items-center justify-between px-3 py-2 text-xs">
                   <span className="flex items-center gap-1.5 font-semibold text-ink-muted">
                     {SITE_NAMES[r.site] || r.site.toUpperCase()}
-                    {r.estimated === false && (
+                    {r.estimated === false ? (
                       <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
                         Real
+                      </span>
+                    ) : (
+                      <span className="rounded bg-paper-deep px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-ink-muted">
+                        Simulado
                       </span>
                     )}
                   </span>
