@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Calendar, CalendarX, Clock, DollarSign, Mail, Plus, Sparkles, TrendingUp } from 'lucide-react';
 import type { AirlineSite, RouteStats } from '@mpa/types';
-import { DEFAULT_SCAN_INTERVAL_HOURS } from '@mpa/types';
+import { DEFAULT_SCAN_INTERVAL_HOURS, findAirport } from '@mpa/types';
 import { apiFetch } from '../lib/api';
-import { findAirport } from '../lib/airports';
 import AirportAutocomplete from './AirportAutocomplete';
 import MarginPresetControl from './MarginPresetControl';
 

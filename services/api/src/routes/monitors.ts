@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { FlightMonitor, NotificationLog } from '@mpa/types';
-import { effectiveLimits, allowedScanIntervals } from '@mpa/types';
+import { effectiveLimits, allowedScanIntervals, findAirport } from '@mpa/types';
 import {
   listMonitorsForUser,
   getMonitor,
@@ -88,6 +88,12 @@ const updateMonitorSchema = z
         path: ['latestReturn'],
         message: 'A data limite de retorno não pode ser antes da data mais cedo de saída',
       });
+    }
+    if (data.origin !== undefined && !findAirport(data.origin)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['origin'], message: `Código de aeroporto inválido: ${data.origin}` });
+    }
+    if (data.destination !== undefined && !findAirport(data.destination)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['destination'], message: `Código de aeroporto inválido: ${data.destination}` });
     }
   });
 
