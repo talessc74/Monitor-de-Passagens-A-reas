@@ -1,5 +1,5 @@
 import type { FlightMonitor, UserProfile } from '@mpa/types';
-import { effectiveLimits } from '@mpa/types';
+import { allowedScanIntervals } from '@mpa/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, COLLECTIONS } from './firestore.js';
 import { env } from './env.js';
@@ -27,15 +27,31 @@ export function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-async function planIntervalHours(userId: string | null): Promise<number> {
-  if (!userId) return env.FREE_SCAN_INTERVAL_HOURS;
-  const doc = await db.collection(COLLECTIONS.users).doc(userId).get();
+/**
+ * Free sempre roda no teto de 6h do env var, sem exceção — o campo
+ * `scanIntervalHours` do monitor é ignorado pra contas não-Pro/não-admin
+ * (defesa em profundidade, caso a validação da API seja contornada). Pro
+ * e admin usam a escolha do usuário quando ela é uma opção válida pro
+ * plano (ver `allowedScanIntervals`); sem escolha, o padrão é 6h — o
+ * mesmo valor do free, não mais o teto de 1h fixo de antes. Ver
+ * _local-bdr-policy-007.
+ */
+async function planIntervalHours(monitor: FlightMonitor): Promise<number> {
+  if (!monitor.userId) return env.FREE_SCAN_INTERVAL_HOURS;
+  const doc = await db.collection(COLLECTIONS.users).doc(monitor.userId).get();
   const profile = doc.data() as UserProfile | undefined;
-  // isAdmin usa o teto do @mpa/types (não configurável por env, mesmo
-  // valor do plano pro); free/pro continuam lendo os env vars deste
-  // serviço, que permanecem a fonte configurável de verdade pra eles.
-  if (profile?.isAdmin) return effectiveLimits(profile).scanIntervalHours;
-  return profile?.plan === 'pro' ? env.PRO_SCAN_INTERVAL_HOURS : env.FREE_SCAN_INTERVAL_HOURS;
+  const isPrivileged = profile?.isAdmin || profile?.plan === 'pro';
+  if (!isPrivileged) return env.FREE_SCAN_INTERVAL_HOURS;
+
+  const allowed = allowedScanIntervals(profile);
+  const fastOption = Math.min(...allowed);
+  if (monitor.scanIntervalHours !== undefined && allowed.includes(monitor.scanIntervalHours)) {
+    // Os dois env vars permanecem a fonte configurável de verdade pro
+    // valor em horas de cada opção — a escolha do usuário só decide
+    // *qual* das duas usar, não o valor exato.
+    return monitor.scanIntervalHours === fastOption ? env.PRO_SCAN_INTERVAL_HOURS : env.FREE_SCAN_INTERVAL_HOURS;
+  }
+  return env.FREE_SCAN_INTERVAL_HOURS;
 }
 
 /**
@@ -62,7 +78,7 @@ async function acquireLease(monitorId: string, now: number): Promise<boolean> {
 async function releaseLeaseAndReschedule(monitor: FlightMonitor, succeeded: boolean) {
   const ref = db.collection(COLLECTIONS.monitors).doc(monitor.id);
   if (succeeded) {
-    const hours = await planIntervalHours(monitor.userId);
+    const hours = await planIntervalHours(monitor);
     const nextScanAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
     await ref.update({ scanningLockedUntil: FieldValue.delete(), nextScanAt });
   } else {

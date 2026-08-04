@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calendar, CalendarX, DollarSign, Mail, Plus, TrendingUp } from 'lucide-react';
+import { Calendar, CalendarX, Clock, DollarSign, Mail, Plus, Sparkles, TrendingUp } from 'lucide-react';
 import type { AirlineSite, RouteStats } from '@mpa/types';
+import { DEFAULT_SCAN_INTERVAL_HOURS } from '@mpa/types';
 import { apiFetch } from '../lib/api';
 import { findAirport } from '../lib/airports';
 import AirportAutocomplete from './AirportAutocomplete';
@@ -12,6 +13,7 @@ interface MonitorFormProps {
   airlineSites: AirlineSite[];
   onSubmit: (data: any) => Promise<boolean>;
   currentUserEmail: string;
+  isPro: boolean;
 }
 
 const DAY_OPTIONS = [0, 1, 2, 3, 4, 5, 7, 10, 15];
@@ -24,8 +26,9 @@ const selectClass =
   'w-full rounded-md border border-border-strong bg-paper-card px-2 py-1.5 text-xs font-bold text-ink focus:border-terracotta focus:outline-none';
 const labelClass = 'mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-ink-muted';
 
-export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }: MonitorFormProps) {
+export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail, isPro }: MonitorFormProps) {
   const [searchMode, setSearchMode] = useState<'dated' | 'anytime'>('dated');
+  const [scanIntervalHours, setScanIntervalHours] = useState<number>(DEFAULT_SCAN_INTERVAL_HOURS);
   const [origin, setOrigin] = useState('GRU');
   const [destination, setDestination] = useState('LIS');
   const [departureDate, setDepartureDate] = useState('2026-10-12');
@@ -154,6 +157,7 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
       targetPriceMarginPercent,
       trackedSites: selectedSites,
       email: email || currentUserEmail,
+      ...(isPro ? { scanIntervalHours } : {}),
     };
 
     if (searchMode === 'dated') {
@@ -319,6 +323,44 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail }
             </div>
           </div>
         )}
+
+        <div>
+          <label className={labelClass}>Frequência de varredura</label>
+          {isPro ? (
+            <div className="grid grid-cols-2 gap-1.5 rounded-md border border-border bg-paper-deep p-1">
+              <button
+                type="button"
+                onClick={() => setScanIntervalHours(6)}
+                className={`flex items-center justify-center gap-1.5 rounded py-2 text-xs font-bold transition ${
+                  scanIntervalHours === 6 ? 'bg-paper-card text-terracotta shadow-sm' : 'text-ink-muted hover:text-ink'
+                }`}
+              >
+                <Clock className="h-3.5 w-3.5" />
+                A cada 6h (padrão)
+              </button>
+              <button
+                type="button"
+                onClick={() => setScanIntervalHours(1)}
+                className={`flex items-center justify-center gap-1.5 rounded py-2 text-xs font-bold transition ${
+                  scanIntervalHours === 1 ? 'bg-paper-card text-terracotta shadow-sm' : 'text-ink-muted hover:text-ink'
+                }`}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                A cada 1h
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-paper-deep p-3 text-xs text-ink-muted">
+              <span className="flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5" />
+                A cada 6 horas
+              </span>
+              <a href="/plans" className="whitespace-nowrap font-bold text-terracotta hover:underline">
+                Pro busca de hora em hora →
+              </a>
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-3 gap-2 rounded-md border border-border bg-paper-deep p-3">
           <div>

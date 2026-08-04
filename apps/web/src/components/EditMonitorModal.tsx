@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Calendar, CalendarX, Users, DollarSign, Mail } from 'lucide-react';
+import { X, Calendar, CalendarX, Clock, Sparkles, Users, DollarSign, Mail } from 'lucide-react';
 import type { AirlineSite, FlightMonitor } from '@mpa/types';
+import { DEFAULT_SCAN_INTERVAL_HOURS } from '@mpa/types';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
 import MarginPresetControl from './MarginPresetControl';
 
@@ -11,6 +12,7 @@ interface EditMonitorModalProps {
   airlineSites: AirlineSite[];
   onClose: () => void;
   onSave: (id: string, patch: Record<string, unknown>) => Promise<boolean>;
+  isPro: boolean;
 }
 
 const DAY_OPTIONS = [0, 1, 2, 3, 4, 5, 7, 10, 15];
@@ -25,10 +27,11 @@ const labelClass = 'mb-1 block text-[10px] font-bold uppercase tracking-wide tex
  * Editar um monitor existente — disponível independente do status
  * (ativo ou pausado). Ver _local-bdr-policy-004.
  */
-export default function EditMonitorModal({ monitor, airlineSites, onClose, onSave }: EditMonitorModalProps) {
+export default function EditMonitorModal({ monitor, airlineSites, onClose, onSave, isPro }: EditMonitorModalProps) {
   useEscapeToClose(onClose);
 
   const [searchMode, setSearchMode] = useState<'dated' | 'anytime'>(monitor.searchMode ?? 'dated');
+  const [scanIntervalHours, setScanIntervalHours] = useState<number>(monitor.scanIntervalHours ?? DEFAULT_SCAN_INTERVAL_HOURS);
   const [origin, setOrigin] = useState(monitor.origin);
   const [destination, setDestination] = useState(monitor.destination);
   const [departureDate, setDepartureDate] = useState(monitor.departureDate ?? '');
@@ -77,6 +80,7 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
       targetPriceMarginPercent,
       trackedSites: selectedSites,
       email,
+      ...(isPro ? { scanIntervalHours } : {}),
     };
 
     if (searchMode === 'dated') {
@@ -252,6 +256,44 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
               </div>
             </div>
           )}
+
+          <div>
+            <label className={`${labelClass} text-xs`}>Frequência de varredura</label>
+            {isPro ? (
+              <div className="grid grid-cols-2 gap-1.5 rounded-md border border-border bg-paper-deep p-1">
+                <button
+                  type="button"
+                  onClick={() => setScanIntervalHours(6)}
+                  className={`flex items-center justify-center gap-1.5 rounded py-2 text-xs font-bold transition ${
+                    scanIntervalHours === 6 ? 'bg-paper-card text-terracotta shadow-sm' : 'text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                  A cada 6h (padrão)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setScanIntervalHours(1)}
+                  className={`flex items-center justify-center gap-1.5 rounded py-2 text-xs font-bold transition ${
+                    scanIntervalHours === 1 ? 'bg-paper-card text-terracotta shadow-sm' : 'text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  A cada 1h
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-paper-deep p-3 text-xs text-ink-muted">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" />
+                  A cada 6 horas
+                </span>
+                <a href="/plans" className="whitespace-nowrap font-bold text-terracotta hover:underline">
+                  Pro busca de hora em hora →
+                </a>
+              </div>
+            )}
+          </div>
 
           <div className="grid grid-cols-3 gap-2 rounded-md border border-border bg-paper-deep p-3">
             <div>

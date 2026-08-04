@@ -10,7 +10,7 @@ import { useAuth } from '../../lib/auth-context';
 import { apiFetch } from '../../lib/api';
 
 const FREE_FEATURES = ['2 monitores ativos', 'Varredura a cada 6 horas', 'Histórico de preço por 7 dias', 'Alertas por e-mail'];
-const PRO_FEATURES = ['10 monitores ativos', 'Varredura a cada 1 hora', 'Histórico de preço por 90 dias', 'Alertas por e-mail', 'Alertas por Telegram (em breve)'];
+const PRO_FEATURES = ['10 monitores ativos', 'Escolha varredura de 6 em 6h (padrão) ou de hora em hora', 'Histórico de preço por 90 dias', 'Alertas por e-mail', 'Alertas por Telegram (em breve)'];
 
 export default function PlansPage() {
   return (

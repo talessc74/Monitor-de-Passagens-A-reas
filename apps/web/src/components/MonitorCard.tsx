@@ -13,6 +13,7 @@ interface MonitorCardProps {
   onDelete: (id: string) => void;
   onToggleStatus: (id: string, currentStatus: string) => void;
   onEdit: (id: string, patch: Record<string, unknown>) => Promise<boolean>;
+  isPro: boolean;
 }
 
 const SITE_NAMES: { [key: string]: string } = {
@@ -23,7 +24,7 @@ const SITE_NAMES: { [key: string]: string } = {
   skyscanner: 'Skyscanner',
 };
 
-export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, onToggleStatus, onEdit }: MonitorCardProps) {
+export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, onToggleStatus, onEdit, isPro }: MonitorCardProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanSteps, setScanSteps] = useState<string[]>([]);
   const [scanResultText, setScanResultText] = useState('');
@@ -259,6 +260,7 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
           airlineSites={airlineSites}
           onClose={() => setIsEditing(false)}
           onSave={onEdit}
+          isPro={isPro}
         />
       )}
 

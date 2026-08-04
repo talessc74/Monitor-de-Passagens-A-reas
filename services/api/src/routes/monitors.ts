@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { FlightMonitor, NotificationLog } from '@mpa/types';
-import { effectiveLimits } from '@mpa/types';
+import { effectiveLimits, allowedScanIntervals } from '@mpa/types';
 import {
   listMonitorsForUser,
   getMonitor,
@@ -35,6 +35,7 @@ const createMonitorSchema = passengerDateUnion({
   targetPriceMarginPercent: targetPriceMarginPercentSchema.optional(),
   trackedSites: z.array(z.string()).optional(),
   email: z.string().email(),
+  scanIntervalHours: z.coerce.number().int().optional(),
 });
 
 // Update é um PATCH parcial e permissivo — não reaplica o discriminated
@@ -70,6 +71,7 @@ const updateMonitorSchema = z
     bestPriceTracked: z.number().nullable().optional(),
     notificationsEnabled: z.boolean().optional(),
     status: z.enum(['active', 'paused']).optional(),
+    scanIntervalHours: z.coerce.number().int().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.searchMode === 'dated') {
@@ -125,6 +127,14 @@ export async function monitorsRoutes(app: FastifyInstance) {
       });
     }
 
+    const allowedIntervals = allowedScanIntervals(user);
+    if (body.scanIntervalHours !== undefined && !allowedIntervals.includes(body.scanIntervalHours)) {
+      return reply.status(403).send({
+        error: 'Varredura de hora em hora é exclusiva do plano Pro. No plano Gratuito, a frequência é sempre de 6 em 6 horas.',
+        upgradeRequired: plan === 'free' && !user?.isAdmin,
+      });
+    }
+
     const monitor: FlightMonitor = {
       id: 'mon-' + randomUUID().slice(0, 9),
       userId: request.userId,
@@ -156,6 +166,7 @@ export async function monitorsRoutes(app: FastifyInstance) {
       trackedSites: body.trackedSites && body.trackedSites.length ? body.trackedSites : ['latam', 'gol', 'azul', 'decolar'],
       notificationsEnabled: true,
       email: body.email,
+      ...(body.scanIntervalHours !== undefined ? { scanIntervalHours: body.scanIntervalHours } : {}),
       createdAt: new Date().toISOString(),
       lastScannedAt: null,
       nextScanAt: new Date().toISOString(),
@@ -175,6 +186,17 @@ export async function monitorsRoutes(app: FastifyInstance) {
     const parsed = updateMonitorSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({ error: 'Payload inválido', details: parsed.error.flatten() });
+    }
+
+    if (parsed.data.scanIntervalHours !== undefined) {
+      const user = await getUser(request.userId);
+      const allowedIntervals = allowedScanIntervals(user);
+      if (!allowedIntervals.includes(parsed.data.scanIntervalHours)) {
+        return reply.status(403).send({
+          error: 'Varredura de hora em hora é exclusiva do plano Pro. No plano Gratuito, a frequência é sempre de 6 em 6 horas.',
+          upgradeRequired: (user?.plan ?? 'free') === 'free' && !user?.isAdmin,
+        });
+      }
     }
 
     // Editar para 'anytime' precisa remover de fato os campos de data —
