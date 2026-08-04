@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sparkles, RefreshCw } from 'lucide-react';
-import type { FlightMonitor, AirlineSite, NotificationLog } from '@mpa/types';
+import type { FlightMonitor, AirlineSite, NotificationLog, UserProfile } from '@mpa/types';
 import { useAuth } from '../../lib/auth-context';
 import { apiFetch } from '../../lib/api';
 import Header from '../../components/Header';
@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const [monitors, setMonitors] = useState<FlightMonitor[]>([]);
   const [sites, setSites] = useState<AirlineSite[]>([]);
   const [notifications, setNotifications] = useState<NotificationLog[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [selectedEmail, setSelectedEmail] = useState<NotificationLog | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -73,10 +74,11 @@ export default function DashboardPage() {
     setIsLoading(true);
     setErrorMessage('');
     try {
-      const [monitorsRes, sitesRes, notificationsRes] = await Promise.all([
+      const [monitorsRes, sitesRes, notificationsRes, meRes] = await Promise.all([
         apiFetch('/api/monitors'),
         apiFetch('/api/sites'),
         apiFetch('/api/notifications'),
+        apiFetch('/api/me'),
       ]);
 
       if (!monitorsRes.ok || !sitesRes.ok || !notificationsRes.ok) {
@@ -86,6 +88,7 @@ export default function DashboardPage() {
       setMonitors(await monitorsRes.json());
       setSites(await sitesRes.json());
       setNotifications(await notificationsRes.json());
+      if (meRes.ok) setProfile(await meRes.json());
     } catch (err) {
       console.error('Falha ao recuperar dados:', err);
       setErrorMessage('Não foi possível conectar ao servidor de passagens aéreas.');
@@ -249,6 +252,7 @@ export default function DashboardPage() {
     ? Math.round((Math.abs(heroMonitor.currentPrice - heroMonitor.targetPrice) / heroMonitor.targetPrice) * 100)
     : null;
   const lastNotification = notifications[0] ?? null;
+  const isPro = profile?.plan === 'pro' || !!profile?.isAdmin;
 
   return (
     <div className="min-h-screen bg-paper pb-16 text-ink antialiased">
@@ -323,7 +327,7 @@ export default function DashboardPage() {
           ) : (
             <div className="grid grid-cols-1 gap-7 lg:grid-cols-[5fr_7fr] lg:items-start">
               <div className="space-y-7">
-                <MonitorForm airlineSites={sites} onSubmit={handleAddMonitor} currentUserEmail={currentUserEmail} />
+                <MonitorForm airlineSites={sites} onSubmit={handleAddMonitor} currentUserEmail={currentUserEmail} isPro={isPro} />
                 <SitesList sites={sites} onToggleSiteStatus={handleToggleSiteStatus} />
               </div>
 
@@ -351,6 +355,7 @@ export default function DashboardPage() {
                           onDelete={handleDeleteMonitor}
                           onToggleStatus={handleToggleMonitorStatus}
                           onEdit={handleEditMonitor}
+                          isPro={isPro}
                         />
                       ))}
                     </div>

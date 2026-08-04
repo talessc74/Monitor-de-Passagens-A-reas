@@ -49,6 +49,13 @@ export interface FlightMonitor {
   nextScanAt: string | null;
   history: FlightHistoryEntry[];
   status: 'active' | 'paused';
+  /**
+   * Escolha do usuário entre as frequências permitidas pelo plano (ver
+   * `SCAN_INTERVAL_OPTIONS`) — ausente = usa `DEFAULT_SCAN_INTERVAL_HOURS`
+   * (6h, inclusive para Pro). Free nunca escolhe de fato: o scheduler
+   * ignora este campo pra contas não-Pro/não-admin. Ver _local-bdr-policy-007.
+   */
+  scanIntervalHours?: number;
   /** Lease do scheduler (services/generator) — evita scan duplicado entre instâncias. */
   scanningLockedUntil?: string;
   /** Resultado por site do último scan — usado na tela de histórico do monitor. */
@@ -183,6 +190,7 @@ export interface UserProfile {
 
 export interface PlanLimits {
   maxMonitors: number;
+  /** Intervalo mais rápido disponível no plano — teto de velocidade, não o padrão de fato usado (ver `SCAN_INTERVAL_OPTIONS`/`scanIntervalHours` em `FlightMonitor`). */
   scanIntervalHours: number;
   historyRetentionDays: number;
 }
@@ -195,6 +203,24 @@ export const PLAN_LIMITS: Record<UserProfile['plan'], PlanLimits> = {
 
 /** Teto generoso, não infinito de verdade — evita loop/consulta patológica caso algo itere sobre o limite. */
 const ADMIN_LIMITS: PlanLimits = { maxMonitors: 9999, scanIntervalHours: PLAN_LIMITS.pro.scanIntervalHours, historyRetentionDays: 3650 };
+
+/**
+ * Frequências de varredura que cada plano pode escolher por monitor —
+ * ver _local-bdr-policy-007. Free não escolhe (sempre 6h). Pro escolhe
+ * entre 6h (padrão) e 1h; admin herda o mesmo leque do Pro.
+ */
+export const SCAN_INTERVAL_OPTIONS: Record<UserProfile['plan'], number[]> = {
+  free: [6],
+  pro: [6, 1],
+};
+
+/** Padrão de fato aplicado quando o usuário não escolhe nada — 6h para todos, inclusive Pro. */
+export const DEFAULT_SCAN_INTERVAL_HOURS = 6;
+
+export function allowedScanIntervals(profile: Pick<UserProfile, 'plan' | 'isAdmin'> | null | undefined): number[] {
+  if (profile?.isAdmin) return SCAN_INTERVAL_OPTIONS.pro;
+  return SCAN_INTERVAL_OPTIONS[profile?.plan ?? 'free'];
+}
 
 /**
  * Ponto único de resolução de limites — todo lugar que hoje faz
