@@ -20,7 +20,7 @@ const DAY_OPTIONS = [0, 1, 2, 3, 4, 5, 7, 10, 15];
 const fieldInputClass =
   'w-full rounded-md border border-border-strong bg-paper px-3 py-2 text-sm font-bold text-ink focus:border-terracotta focus:outline-none focus:ring-1 focus:ring-terracotta';
 const selectClass =
-  'w-full rounded-md border border-border-strong bg-paper px-2 py-1.5 text-xs font-bold text-ink focus:border-terracotta focus:outline-none';
+  'select-native w-full rounded-md border border-border-strong bg-paper px-2 py-1.5 text-xs font-bold text-ink focus:border-terracotta focus:outline-none';
 const labelClass = 'mb-1 block text-[10px] font-bold uppercase tracking-wide text-ink-muted';
 
 /**

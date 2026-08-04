@@ -23,7 +23,7 @@ const inputClass =
 const plainInputClass =
   'w-full rounded-md border border-border-strong bg-paper px-3 py-2 text-sm font-medium text-ink font-sans focus:border-terracotta focus:outline-none focus:ring-1 focus:ring-terracotta';
 const selectClass =
-  'w-full rounded-md border border-border-strong bg-paper-card px-2 py-1.5 text-xs font-bold text-ink focus:border-terracotta focus:outline-none';
+  'select-native w-full rounded-md border border-border-strong bg-paper-card px-2 py-1.5 text-xs font-bold text-ink focus:border-terracotta focus:outline-none';
 const labelClass = 'mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-ink-muted';
 
 export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail, isPro }: MonitorFormProps) {
