@@ -57,6 +57,8 @@ const updateMonitorSchema = z
     returnDate: z.string().optional(),
     returnDaysBefore: z.coerce.number().int().min(0).max(15).optional(),
     returnDaysAfter: z.coerce.number().int().min(0).max(15).optional(),
+    earliestDeparture: z.string().optional(),
+    latestReturn: z.string().optional(),
     adults: z.coerce.number().int().min(1).optional(),
     children: z.coerce.number().int().min(0).optional(),
     infants: z.coerce.number().int().min(0).optional(),
@@ -77,6 +79,13 @@ const updateMonitorSchema = z
       if (!data.returnDate) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['returnDate'], message: 'Data de volta é obrigatória no modo com datas' });
       }
+    }
+    if (data.earliestDeparture && data.latestReturn && data.earliestDeparture > data.latestReturn) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['latestReturn'],
+        message: 'A data limite de retorno não pode ser antes da data mais cedo de saída',
+      });
     }
   });
 
@@ -133,7 +142,10 @@ export async function monitorsRoutes(app: FastifyInstance) {
             returnDaysBefore: body.returnDaysBefore,
             returnDaysAfter: body.returnDaysAfter,
           }
-        : {}),
+        : {
+            ...(body.earliestDeparture ? { earliestDeparture: body.earliestDeparture } : {}),
+            ...(body.latestReturn ? { latestReturn: body.latestReturn } : {}),
+          }),
       adults: body.adults,
       children: body.children,
       infants: body.infants,
@@ -180,6 +192,11 @@ export async function monitorsRoutes(app: FastifyInstance) {
       ]) {
         patch[field] = FieldValue.delete();
       }
+      if (!parsed.data.earliestDeparture) patch.earliestDeparture = FieldValue.delete();
+      if (!parsed.data.latestReturn) patch.latestReturn = FieldValue.delete();
+    } else if (parsed.data.searchMode === 'dated') {
+      patch.earliestDeparture = FieldValue.delete();
+      patch.latestReturn = FieldValue.delete();
     }
 
     const updated = await updateMonitor(request.params.id, patch);

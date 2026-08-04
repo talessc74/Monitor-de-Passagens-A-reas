@@ -43,6 +43,10 @@ export async function getRouteStats(params: PassengerDateInput): Promise<RouteSt
             ? ` (aceita ${params.returnDaysBefore ?? 0} dia(s) antes e ${params.returnDaysAfter ?? 0} dia(s) depois)`
             : ''
         }`
+      : params.earliestDeparture || params.latestReturn
+      ? `sem data fixa, mas dentro de uma janela de viagem${
+          params.earliestDeparture ? ` — a partir de ${params.earliestDeparture}` : ''
+        }${params.latestReturn ? ` e de volta até ${params.latestReturn}` : ''}, priorizando o preço mais barato`
       : 'sem data fixa — o usuário aceita qualquer data futura, quer apenas o preço mais barato da rota';
 
   const prompt = `Você é um analista de preços de passagens aéreas. Para a rota ${params.origin} → ${params.destination}, ${dateClause}, para ${params.adults} adulto(s), ${params.children} criança(s) e ${params.infants} bebê(s), estime o preço total em Reais Brasileiros (BRL) observado nos últimos ${SAMPLE_WINDOW_DAYS} dias nesta rota: valor médio, mínimo e máximo. Considere a data atual das buscas correspondente ao ano de 2026. Garanta que os valores façam sentido para a distância da rota.`;

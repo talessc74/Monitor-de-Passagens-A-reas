@@ -18,6 +18,9 @@ interface ScanParams {
   /** Ausentes quando o monitor é 'anytime' — sem data específica. */
   departureDate?: string;
   returnDate?: string;
+  /** Só usados quando o monitor é 'anytime' — janela opcional de viagem. */
+  earliestDeparture?: string;
+  latestReturn?: string;
   adults: number;
   children: number;
   targetPrice: number;
@@ -71,6 +74,10 @@ export async function runScanSimulation(params: ScanParams): Promise<ScanOutcome
 
   const dateClause = params.departureDate && params.returnDate
     ? `saindo em ${params.departureDate} e retornando em ${params.returnDate}`
+    : params.earliestDeparture || params.latestReturn
+    ? `sem data fixa, mas dentro de uma janela de viagem${
+        params.earliestDeparture ? ` — a partir de ${params.earliestDeparture}` : ''
+      }${params.latestReturn ? ` e de volta até ${params.latestReturn}` : ''}, priorizando o menor preço`
     : 'sem data fixa — o usuário aceita qualquer data futura, quer apenas o menor preço da rota';
 
   const prompt = `Você é um robô de busca inteligente de passagens aéreas. O usuário quer viajar de ${params.originCity} (${params.origin}) para ${params.destinationCity} (${params.destination}) ${dateClause}, com ${params.adults} adultos e ${params.children} crianças.
