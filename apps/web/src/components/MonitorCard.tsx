@@ -67,6 +67,11 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
 
   const isConfiguredUnderTarget = !!(monitor.currentPrice && monitor.currentPrice <= monitor.targetPrice);
 
+  const cheapestLastResult =
+    monitor.lastScanResults && monitor.lastScanResults.length > 0
+      ? [...monitor.lastScanResults].sort((a, b) => a.price - b.price)[0]
+      : null;
+
   const monitoringDays = monitor.createdAt
     ? Math.max(0, Math.floor((Date.now() - new Date(monitor.createdAt).getTime()) / (1000 * 60 * 60 * 24)))
     : null;
@@ -134,7 +139,19 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
 
       <div className="flex flex-wrap items-end justify-between gap-4 px-5 py-4">
         <div>
-          <div className="mb-1 text-[10px] uppercase tracking-wide text-ink-muted">Menor lido</div>
+          <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-ink-muted">
+            Menor lido
+            {cheapestLastResult &&
+              (cheapestLastResult.estimated === false ? (
+                <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
+                  Real
+                </span>
+              ) : (
+                <span className="rounded bg-paper-deep px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-ink-muted">
+                  Simulado
+                </span>
+              ))}
+          </div>
           <div className={`font-mono text-xl font-bold sm:text-2xl ${isConfiguredUnderTarget ? 'text-teal' : 'text-terracotta'}`}>
             {monitor.currentPrice ? `R$ ${monitor.currentPrice.toLocaleString('pt-BR')}` : 'N/D'}
           </div>
