@@ -1,4 +1,11 @@
 import { z } from 'zod';
+import { findAirport } from '@mpa/types';
+
+const airportCodeSchema = z
+  .string()
+  .min(3)
+  .max(4)
+  .refine((code) => Boolean(findAirport(code)), (code) => ({ message: `Código de aeroporto inválido: ${code}` }));
 
 /**
  * Forma compartilhada de rota/datas/passageiros, usada tanto por
@@ -14,8 +21,8 @@ import { z } from 'zod';
  *   comportamento original de preço solto. Ver _local-bdr-policy-006.
  */
 const passengerFields = {
-  origin: z.string().min(3).max(4),
-  destination: z.string().min(3).max(4),
+  origin: airportCodeSchema,
+  destination: airportCodeSchema,
   adults: z.coerce.number().int().min(1).default(1),
   children: z.coerce.number().int().min(0).default(0),
   infants: z.coerce.number().int().min(0).default(0),

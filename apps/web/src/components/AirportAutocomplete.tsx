@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { findAirport, searchAirports, type Airport } from '../lib/airports';
+import { findAirport, searchAirports, type Airport } from '@mpa/types';
 
 interface AirportAutocompleteProps {
   id: string;

@@ -285,3 +285,5 @@ export interface WaitlistSignup {
   email: string;
   createdAt: string;
 }
+
+export * from './airports.js';

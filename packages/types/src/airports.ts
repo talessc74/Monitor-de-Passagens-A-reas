@@ -6,10 +6,10 @@ export interface Airport {
 }
 
 /**
- * Lista fechada de aeroportos — a UI só aceita um código presente aqui,
- * eliminando o caso de rota inexistente (cidade sem aeroporto ou código
- * digitado errado) na origem, em vez de deixar o simulador/fonte real
- * tentar adivinhar uma rota que não existe.
+ * Lista fechada de aeroportos — compartilhada entre `apps/web` (autocomplete
+ * na criação/edição de monitor) e `services/api` (validação de origin/
+ * destination no POST/PUT /api/monitors), pra nenhum dos dois lados aceitar
+ * um código que o outro rejeitaria. Ver _local-bdr-policy-009.
  */
 export const AIRPORTS: Airport[] = [
   { code: 'GRU', city: 'São Paulo', name: 'Guarulhos', country: 'Brasil' },

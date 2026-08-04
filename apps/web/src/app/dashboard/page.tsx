@@ -161,21 +161,17 @@ export default function DashboardPage() {
   };
 
   const handleEditMonitor = async (id: string, patch: Record<string, unknown>): Promise<boolean> => {
-    try {
-      const response = await apiFetch(`/api/monitors/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(patch),
-      });
-      if (response.ok) {
-        const updated = await response.json();
-        setMonitors((prev) => prev.map((m) => (m.id === id ? updated : m)));
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.error('Erro ao editar monitor:', err);
-      return false;
+    const response = await apiFetch(`/api/monitors/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(patch),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error || 'Não foi possível salvar as alterações. Tente novamente.');
     }
+    const updated = await response.json();
+    setMonitors((prev) => prev.map((m) => (m.id === id ? updated : m)));
+    return true;
   };
 
   const handleToggleMonitorStatus = async (id: string, currentStatus: string) => {

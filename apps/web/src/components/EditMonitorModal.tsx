@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { X, Calendar, CalendarX, Clock, Sparkles, Users, DollarSign, Mail } from 'lucide-react';
 import type { AirlineSite, FlightMonitor } from '@mpa/types';
-import { DEFAULT_SCAN_INTERVAL_HOURS } from '@mpa/types';
+import { DEFAULT_SCAN_INTERVAL_HOURS, findAirport } from '@mpa/types';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
+import AirportAutocomplete from './AirportAutocomplete';
 import MarginPresetControl from './MarginPresetControl';
 
 interface EditMonitorModalProps {
@@ -95,14 +96,18 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
       patch.latestReturn = latestReturn || undefined;
     }
 
-    const ok = await onSave(monitor.id, patch);
-    setIsSaving(false);
-    if (ok) {
+    try {
+      await onSave(monitor.id, patch);
       onClose();
-    } else {
-      setError('Não foi possível salvar as alterações. Tente novamente.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível salvar as alterações. Tente novamente.');
+    } finally {
+      setIsSaving(false);
     }
   };
+
+  const originValid = Boolean(findAirport(origin));
+  const destinationValid = Boolean(findAirport(destination));
 
   return (
     <div
@@ -152,15 +157,12 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="edit-origin" className={labelClass}>Origem</label>
-              <input id="edit-origin" value={origin} onChange={(e) => setOrigin(e.target.value.toUpperCase())} className={fieldInputClass} />
-            </div>
-            <div>
-              <label htmlFor="edit-destination" className={labelClass}>Destino</label>
-              <input id="edit-destination" value={destination} onChange={(e) => setDestination(e.target.value.toUpperCase())} className={fieldInputClass} />
-            </div>
+            <AirportAutocomplete id="edit-origin" label="Origem" placeholder="Busque por cidade ou código" value={origin} onChange={setOrigin} />
+            <AirportAutocomplete id="edit-destination" label="Destino" placeholder="Busque por cidade ou código" value={destination} onChange={setDestination} />
           </div>
+          {(!originValid || !destinationValid) && (
+            <p className="text-[10px] text-ink-muted">Selecione origem e destino de uma cidade com aeroporto na lista.</p>
+          )}
 
           {searchMode === 'dated' ? (
             <div className="space-y-3">
@@ -403,8 +405,8 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
             </button>
             <button
               onClick={handleSave}
-              disabled={isSaving}
-              className="flex-1 rounded-md bg-terracotta-solid px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-terracotta-hover disabled:bg-paper-deep disabled:text-ink-muted"
+              disabled={isSaving || !originValid || !destinationValid}
+              className="flex-1 rounded-md bg-terracotta-solid px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-terracotta-hover disabled:cursor-not-allowed disabled:bg-paper-deep disabled:text-ink-muted"
             >
               {isSaving ? 'Salvando...' : 'Salvar alterações'}
             </button>
