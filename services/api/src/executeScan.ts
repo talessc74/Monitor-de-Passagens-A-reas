@@ -153,15 +153,24 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
 
     if (triggeredNotification) {
       await createNotification(triggeredNotification);
-      // Ponteiro fino para o publisher enviar o e-mail de verdade — não
-      // substitui a notificação já registrada acima. Ver
-      // _local-adr-policy-002 (application).
-      await createOutboxEvent({
-        type: triggeredNotification.type as 'target_reached' | 'price_update' | 'price_in_range',
-        monitorId: monitor.id,
-        userId: monitor.userId,
-        notificationId: triggeredNotification.id,
-      });
+      // 'price_update' (preço só variou, sem bater meta nem faixa de
+      // aviso) continua aparecendo no feed do dashboard acima, mas não
+      // vira e-mail — e-mail é só pra target_reached/price_in_range, os
+      // dois sinais que o usuário pediu pra ser avisado de verdade. Ver
+      // _local-bdr-policy-008 (revisão de _local-bdr-policy-005: o
+      // "price changed" antes gerava e-mail a cada scan com preço
+      // diferente, inclusive Pro escaneando de hora em hora).
+      if (triggeredNotification.type !== 'price_update') {
+        // Ponteiro fino para o publisher enviar o e-mail de verdade — não
+        // substitui a notificação já registrada acima. Ver
+        // _local-adr-policy-002 (application).
+        await createOutboxEvent({
+          type: triggeredNotification.type as 'target_reached' | 'price_in_range',
+          monitorId: monitor.id,
+          userId: monitor.userId,
+          notificationId: triggeredNotification.id,
+        });
+      }
     }
   }
 
