@@ -37,6 +37,8 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
   const [returnDate, setReturnDate] = useState(monitor.returnDate ?? '');
   const [returnDaysBefore, setReturnDaysBefore] = useState(monitor.returnDaysBefore ?? 0);
   const [returnDaysAfter, setReturnDaysAfter] = useState(monitor.returnDaysAfter ?? 3);
+  const [earliestDeparture, setEarliestDeparture] = useState(monitor.earliestDeparture ?? '');
+  const [latestReturn, setLatestReturn] = useState(monitor.latestReturn ?? '');
   const [adults, setAdults] = useState(monitor.adults);
   const [children, setChildren] = useState(monitor.children);
   const [infants, setInfants] = useState(monitor.infants ?? 0);
@@ -84,6 +86,9 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
       patch.returnDate = returnDate;
       patch.returnDaysBefore = returnDaysBefore;
       patch.returnDaysAfter = returnDaysAfter;
+    } else {
+      patch.earliestDeparture = earliestDeparture || undefined;
+      patch.latestReturn = latestReturn || undefined;
     }
 
     const ok = await onSave(monitor.id, patch);
@@ -132,6 +137,7 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
             <button
               type="button"
               onClick={() => setSearchMode('anytime')}
+              title="Modo Tieni"
               className={`flex items-center justify-center gap-1.5 rounded py-2 text-xs font-bold transition ${
                 searchMode === 'anytime' ? 'bg-paper-card text-terracotta shadow-sm' : 'text-ink-muted hover:text-ink'
               }`}
@@ -213,9 +219,37 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
               </div>
             </div>
           ) : (
-            <div className="flex items-start gap-2 rounded-md border border-border bg-paper-deep p-3 text-xs text-ink-muted">
-              <CalendarX className="mt-0.5 h-4 w-4 shrink-0 text-terracotta" />
-              <p>Sem data marcada. Avisamos assim que <strong className="text-ink">qualquer</strong> data futura para essa rota bater a sua meta de preço.</p>
+            <div className="space-y-3">
+              <div className="flex items-start gap-2 rounded-md border border-border bg-paper-deep p-3 text-xs text-ink-muted">
+                <CalendarX className="mt-0.5 h-4 w-4 shrink-0 text-terracotta" />
+                <p>
+                  Sem data marcada — aceita qualquer roteiro pelo menor preço. Se quiser, defina uma janela de viagem abaixo.
+                  Deixe em branco para não ter limite nenhum.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="edit-earliest-departure" className={labelClass}>A partir de (opcional)</label>
+                  <input
+                    id="edit-earliest-departure"
+                    type="date"
+                    value={earliestDeparture}
+                    onChange={(e) => setEarliestDeparture(e.target.value)}
+                    className={`${fieldInputClass} font-semibold`}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="edit-latest-return" className={labelClass}>Até quando de volta (opcional)</label>
+                  <input
+                    id="edit-latest-return"
+                    type="date"
+                    value={latestReturn}
+                    onChange={(e) => setLatestReturn(e.target.value)}
+                    min={earliestDeparture || undefined}
+                    className={`${fieldInputClass} font-semibold`}
+                  />
+                </div>
+              </div>
             </div>
           )}
 

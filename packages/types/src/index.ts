@@ -16,7 +16,12 @@ export interface FlightMonitor {
   originCity: string;
   destination: string;
   destinationCity: string;
-  /** 'dated' (padrão): datas obrigatórias abaixo. 'anytime': nenhuma data é usada. */
+  /**
+   * 'dated' (padrão): datas obrigatórias abaixo. 'anytime': sem data
+   * fixa — aceita opcionalmente uma janela de viagem via
+   * `earliestDeparture`/`latestReturn` (ambos ausentes = sem restrição
+   * nenhuma, preço solto). Ver _local-bdr-policy-006.
+   */
   searchMode: 'dated' | 'anytime';
   departureDate?: string;
   departDaysBefore?: number;
@@ -24,6 +29,10 @@ export interface FlightMonitor {
   returnDate?: string;
   returnDaysBefore?: number;
   returnDaysAfter?: number;
+  /** Só usados quando searchMode === 'anytime'. Data mais cedo aceitável para embarcar. */
+  earliestDeparture?: string;
+  /** Só usados quando searchMode === 'anytime'. Data mais tarde aceitável para já estar de volta. */
+  latestReturn?: string;
   adults: number;
   children: number;
   infants: number;
@@ -96,6 +105,9 @@ export interface SearchParams {
   /** Ausentes quando a busca é 'anytime' — sem data específica. */
   departureDate?: string;
   returnDate?: string;
+  /** Só usados quando a busca é 'anytime' — janela opcional de viagem. */
+  earliestDeparture?: string;
+  latestReturn?: string;
   adults: number;
   children: number;
   infants: number;

@@ -26,6 +26,8 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
     destination: monitor.destination,
     departureDate: monitor.departureDate,
     returnDate: monitor.returnDate,
+    earliestDeparture: monitor.earliestDeparture,
+    latestReturn: monitor.latestReturn,
     adults: monitor.adults,
     children: monitor.children,
     targetPrice: monitor.targetPrice,
@@ -62,6 +64,8 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
   const travelDatesText =
     monitor.searchMode === 'dated' && monitor.departureDate && monitor.returnDate
       ? `${monitor.departureDate} a ${monitor.returnDate}`
+      : monitor.earliestDeparture || monitor.latestReturn
+      ? `qualquer data entre ${monitor.earliestDeparture ?? 'hoje'} e ${monitor.latestReturn ?? 'sem limite'}`
       : 'qualquer data (monitor sem data fixa)';
 
   let triggeredNotification: NotificationLog | null = null;
