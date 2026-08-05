@@ -36,6 +36,16 @@ interface RoutesResponse {
   error?: string;
 }
 
+interface RouteTestResponse {
+  origin: string;
+  destination: string;
+  configured: boolean;
+  httpStatus?: number;
+  itemCount?: number;
+  cheapest?: { price: number; gate: string };
+  error?: string;
+}
+
 /**
  * Painel de admin — lista quem já logou pelo menos uma vez e permite
  * conceder/revogar acesso total (bypass de plano, sem Stripe). Ver
@@ -58,6 +68,10 @@ export default function AdminPage() {
   const [routesOrigin, setRoutesOrigin] = useState('BSB');
   const [routesResult, setRoutesResult] = useState<RoutesResponse | null>(null);
   const [routesLoading, setRoutesLoading] = useState(false);
+  const [routeTestOrigin, setRouteTestOrigin] = useState('BSB');
+  const [routeTestDestination, setRouteTestDestination] = useState('MCO');
+  const [routeTestResult, setRouteTestResult] = useState<RouteTestResponse | null>(null);
+  const [routeTestLoading, setRouteTestLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -111,6 +125,21 @@ export default function AdminPage() {
       if (res.ok) setRoutesResult(await res.json());
     } finally {
       setRoutesLoading(false);
+    }
+  }
+
+  async function loadRouteTest() {
+    const origin = routeTestOrigin.toUpperCase().trim();
+    const destination = routeTestDestination.toUpperCase().trim();
+    if (origin.length < 3 || destination.length < 3) return;
+    setRouteTestLoading(true);
+    try {
+      const res = await apiFetch(
+        `/api/admin/travelpayouts-route-test?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`
+      );
+      if (res.ok) setRouteTestResult(await res.json());
+    } finally {
+      setRouteTestLoading(false);
     }
   }
 
@@ -242,6 +271,64 @@ export default function AdminPage() {
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 rounded-xl border border-border bg-paper-card p-6 shadow-card">
+          <h2 className="font-serif text-base font-semibold">Testar rota específica</h2>
+          <p className="mt-1 text-xs text-ink-muted">
+            Roda a mesma chamada que um scan de verdade faz pra essa origem+destino — útil quando a rota aparece no
+            explorador acima mas o monitor continua vindo "Simulado".
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <input
+              value={routeTestOrigin}
+              onChange={(e) => setRouteTestOrigin(e.target.value.toUpperCase())}
+              placeholder="Origem"
+              maxLength={4}
+              className="w-24 rounded-md border border-border-strong bg-paper px-3 py-2 text-sm font-bold uppercase text-ink focus:border-terracotta focus:outline-none"
+            />
+            <span className="text-ink-muted">→</span>
+            <input
+              value={routeTestDestination}
+              onChange={(e) => setRouteTestDestination(e.target.value.toUpperCase())}
+              placeholder="Destino"
+              maxLength={4}
+              className="w-24 rounded-md border border-border-strong bg-paper px-3 py-2 text-sm font-bold uppercase text-ink focus:border-terracotta focus:outline-none"
+            />
+            <button
+              onClick={loadRouteTest}
+              disabled={routeTestLoading || routeTestOrigin.trim().length < 3 || routeTestDestination.trim().length < 3}
+              className="flex items-center gap-1.5 rounded-md bg-terracotta-solid px-3 py-2 text-xs font-bold text-white transition hover:bg-terracotta-hover disabled:cursor-not-allowed disabled:bg-paper-deep disabled:text-ink-muted"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${routeTestLoading ? 'animate-spin' : ''}`} />
+              {routeTestLoading ? 'Testando...' : 'Testar rota'}
+            </button>
+          </div>
+
+          {routeTestResult && (
+            <div className="mt-4 rounded-md border border-border bg-paper-deep p-3 text-xs">
+              {!routeTestResult.configured ? (
+                <p className="text-ink-muted">Travelpayouts não está configurado (sem token).</p>
+              ) : routeTestResult.error ? (
+                <p className="text-danger-text">
+                  {routeTestResult.httpStatus ? `HTTP ${routeTestResult.httpStatus} — ` : ''}
+                  {routeTestResult.error}
+                </p>
+              ) : routeTestResult.itemCount === 0 ? (
+                <p className="text-ink-muted">
+                  A API respondeu OK (HTTP {routeTestResult.httpStatus}) mas devolveu <strong>zero tarifas</strong> pra{' '}
+                  {routeTestResult.origin} → {routeTestResult.destination} — sem cobertura pra esse par específico agora,
+                  mesmo que o destino apareça na lista geral da origem.
+                </p>
+              ) : (
+                <p>
+                  <span className="font-bold text-teal">{routeTestResult.itemCount} tarifa(s)</span> encontrada(s) — mais
+                  barata: <span className="font-mono font-bold">R$ {routeTestResult.cheapest?.price.toLocaleString('pt-BR')}</span> via{' '}
+                  {routeTestResult.cheapest?.gate}.
+                </p>
               )}
             </div>
           )}
