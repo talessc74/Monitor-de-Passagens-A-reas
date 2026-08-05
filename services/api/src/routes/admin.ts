@@ -6,6 +6,7 @@ import { env } from '../env.js';
 import {
   testConnection as testTravelpayoutsConnection,
   listCachedDestinations,
+  testRoute as testTravelpayoutsRoute,
 } from '../travelpayoutsClient.js';
 import { testConnection as testSkyScrapperConnection } from '../skyScrapperClient.js';
 
@@ -69,6 +70,24 @@ export async function adminRoutes(app: FastifyInstance) {
       }
       const result = await listCachedDestinations(origin);
       return { origin, ...result };
+    }
+  );
+
+  // Testa uma rota origin->destination específica com a mesma chamada
+  // que o scan real faz — pra depurar o caso "apareceu no explorador de
+  // destinos, mas o scan real continua vindo simulado". Ver
+  // _local-bdr-policy-012.
+  app.get<{ Querystring: { origin?: string; destination?: string } }>(
+    '/api/admin/travelpayouts-route-test',
+    { preHandler: [authenticate, requireAdmin] },
+    async (request, reply) => {
+      const origin = request.query.origin?.toUpperCase().trim();
+      const destination = request.query.destination?.toUpperCase().trim();
+      if (!origin || !destination || origin.length < 3 || destination.length < 3) {
+        return reply.status(400).send({ error: "Parâmetros 'origin' e 'destination' precisam ser códigos IATA (3-4 letras)" });
+      }
+      const result = await testTravelpayoutsRoute(origin, destination);
+      return { origin, destination, ...result };
     }
   );
 }

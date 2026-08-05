@@ -117,6 +117,41 @@ export async function listCachedDestinations(
 }
 
 /**
+ * Testa uma rota origin->destination específica com a MESMA chamada que
+ * `getCheapestRealFare` faz de verdade durante um scan, mas devolvendo o
+ * porquê de um resultado vazio em vez de só `null` — pra depurar o caso
+ * "apareceu no listCachedDestinations, mas o scan real ainda vem
+ * simulado" (_local-bdr-policy-012). Nunca lança.
+ */
+export async function testRoute(
+  origin: string,
+  destination: string
+): Promise<{ configured: boolean; httpStatus?: number; itemCount?: number; cheapest?: { price: number; gate: string }; error?: string }> {
+  if (!env.TRAVELPAYOUTS_API_TOKEN) {
+    return { configured: false };
+  }
+  try {
+    const url = `https://api.travelpayouts.com/v2/prices/latest?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&currency=brl&token=${env.TRAVELPAYOUTS_API_TOKEN}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      return { configured: true, httpStatus: response.status, error: `HTTP ${response.status}` };
+    }
+    const parsed = (await response.json()) as TravelpayoutsResponse;
+    if (!parsed.success) {
+      return { configured: true, httpStatus: response.status, itemCount: 0, error: "Resposta com success: false" };
+    }
+    const items = parsed.data ?? [];
+    if (items.length === 0) {
+      return { configured: true, httpStatus: response.status, itemCount: 0 };
+    }
+    const cheapest = items.reduce((min, fare) => (fare.value < min.value ? fare : min), items[0]);
+    return { configured: true, httpStatus: response.status, itemCount: items.length, cheapest: { price: cheapest.value, gate: cheapest.gate } };
+  } catch (error) {
+    return { configured: true, error: error instanceof Error ? error.message : 'Erro de rede desconhecido' };
+  }
+}
+
+/**
  * Chamada de teste pra diagnóstico (GET /api/admin/diagnostics) — usa a
  * mesma rota confirmada com cobertura real no spike (GRU→GIG), então um
  * `ok: false` aqui aponta pra token ausente/inválido/sem cota, não pra
