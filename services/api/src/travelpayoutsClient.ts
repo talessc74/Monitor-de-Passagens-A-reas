@@ -64,3 +64,30 @@ export async function getCheapestRealFare(origin: string, destination: string): 
     return null;
   }
 }
+
+/**
+ * Chamada de teste pra diagnóstico (GET /api/admin/diagnostics) — usa a
+ * mesma rota confirmada com cobertura real no spike (GRU→GIG), então um
+ * `ok: false` aqui aponta pra token ausente/inválido/sem cota, não pra
+ * "essa rota específica não tem dado". Nunca lança, mesmo padrão do
+ * resto do cliente. Ver _local-bdr-policy-010.
+ */
+export async function testConnection(): Promise<{ configured: boolean; ok: boolean; httpStatus?: number; error?: string }> {
+  if (!env.TRAVELPAYOUTS_API_TOKEN) {
+    return { configured: false, ok: false };
+  }
+  try {
+    const url = `https://api.travelpayouts.com/v2/prices/latest?origin=GRU&destination=GIG&currency=brl&token=${env.TRAVELPAYOUTS_API_TOKEN}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      return { configured: true, ok: false, httpStatus: response.status, error: `HTTP ${response.status}` };
+    }
+    const parsed = (await response.json()) as TravelpayoutsResponse;
+    if (typeof parsed.success !== 'boolean') {
+      return { configured: true, ok: false, httpStatus: response.status, error: 'Resposta em formato inesperado' };
+    }
+    return { configured: true, ok: true, httpStatus: response.status };
+  } catch (error) {
+    return { configured: true, ok: false, error: error instanceof Error ? error.message : 'Erro de rede desconhecido' };
+  }
+}
