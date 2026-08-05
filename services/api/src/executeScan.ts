@@ -8,7 +8,19 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { runScanSimulation } from './scanSimulator.js';
 import { getCheapestRealFare } from './travelpayoutsClient.js';
 import { getCheapestRealFare as getCheapestSkyScrapperFare } from './skyScrapperClient.js';
+import { findCheapestItinerary, beatsBaselineByMargin, LIABILITY_DISCLAIMER } from './itinerarySearch.js';
 import { generatePurchaseLink } from './purchaseLink.js';
+
+/**
+ * Teto de saltos e janela de conexão usados quando o "Modo Tieni"
+ * ("Só me importa o preço") busca um itinerário multi-trecho alternativo
+ * — ver _local-bdr-policy-013. maxLegs=2 (uma conexão só) mantém o custo
+ * de chamadas ao Travelpayouts controlável mesmo com o cache de
+ * itinerarySearch.ts; pernoite sempre permitido, por pedido explícito do
+ * dono do produto.
+ */
+const TIENI_ITINERARY_MAX_LEGS = 2;
+const TIENI_ITINERARY_MAX_LAYOVER_HOURS = 6;
 
 /**
  * Lógica de execução de um scan — extraída para ser reaproveitada tanto
@@ -46,11 +58,48 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
 
   const validResults = allResults.filter((r) => r.price > 0);
   const sorted = [...validResults].sort((a, b) => a.price - b.price);
-  const cheapestResult = sorted[0];
+  const directCheapest = sorted[0];
 
-  if (!cheapestResult) {
+  if (!directCheapest) {
     throw new Error('Resultados de busca vazios');
   }
+
+  // "Modo Tieni" — no modo 'anytime', busca também um itinerário
+  // multi-trecho (origem -> hub -> destino, pernoite permitido) e só o
+  // usa se ficar mais barato que a passagem direta por margem
+  // suficiente (mesmo critério de _local-bdr-plan-003). Ver
+  // _local-bdr-policy-013.
+  let itineraryLegs: FlightMonitor['lastItineraryLegs'];
+  if (monitor.searchMode === 'anytime') {
+    const itinerary = await findCheapestItinerary({
+      origin: monitor.origin,
+      finalDestination: monitor.destination,
+      maxLegs: TIENI_ITINERARY_MAX_LEGS,
+      maxLayoverHours: TIENI_ITINERARY_MAX_LAYOVER_HOURS,
+      allowOvernightLayovers: true,
+      adults: monitor.adults,
+      children: monitor.children,
+      targetPrice: monitor.targetPrice,
+    });
+
+    if (itinerary && itinerary.legs.length > 1 && beatsBaselineByMargin(itinerary.total, directCheapest.price)) {
+      itineraryLegs = itinerary.legs;
+      const routeText = [monitor.origin, ...itinerary.legs.map((l) => l.destination)].join(' → ');
+      const legsText = itinerary.legs.map((l) => `${l.origin}→${l.destination} R$ ${l.price}`).join(' + ');
+      validResults.push({
+        site: 'Itinerário multi-trecho',
+        price: itinerary.total,
+        durationHours: 0,
+        stops: itinerary.legs.length - 1,
+        isPromotion: false,
+        details: `Roteiro ${routeText} (${legsText}). ${LIABILITY_DISCLAIMER}`,
+        estimated: itinerary.legs.some((l) => l.estimated !== false),
+      });
+      validResults.sort((a, b) => a.price - b.price);
+    }
+  }
+
+  const cheapestResult = validResults[0];
 
   const prevPrice = monitor.currentPrice;
   const bestPriceTracked =
@@ -180,6 +229,7 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
     bestPriceTracked,
     history,
     lastScanResults: validResults,
+    lastItineraryLegs: itineraryLegs ?? FieldValue.delete(),
   });
 
   const batch = db.batch();
@@ -200,7 +250,7 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
   return {
     success: true,
     monitor: updatedMonitor as FlightMonitor,
-    results: allResults,
+    results: validResults,
     generalAnalysis,
     cheapestResult,
     triggeredNotification,
