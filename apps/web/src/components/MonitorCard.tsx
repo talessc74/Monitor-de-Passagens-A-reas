@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Users, RefreshCw, Trash2, Power, History, Pencil } from 'lucide-react';
+import { Calendar, Users, RefreshCw, Trash2, Power, History, Pencil, Route } from 'lucide-react';
 import type { AirlineSite, FlightMonitor } from '@mpa/types';
 import EditMonitorModal from './EditMonitorModal';
 import MonitorDetailModal from './MonitorDetailModal';
@@ -130,6 +130,19 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
           <Calendar className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-muted" />
           Qualquer data · só o preço importa
         </div>
+      )}
+
+      {monitor.lastItineraryLegs && monitor.lastItineraryLegs.length > 0 && (
+        <button
+          onClick={() => setIsViewingDetail(true)}
+          className="mx-5 mb-4 flex w-[calc(100%-2.5rem)] items-center gap-2 rounded-md border border-terracotta/30 bg-terracotta-wash p-3 text-left text-xs text-ink transition hover:brightness-95"
+        >
+          <Route className="h-3.5 w-3.5 shrink-0 text-terracotta" />
+          <span>
+            <strong className="font-bold text-terracotta">Itinerário multi-trecho mais barato</strong> encontrado — veja o
+            roteiro no histórico
+          </span>
+        </button>
       )}
 
       <div className="relative mx-5 border-t-2 border-dashed border-border">

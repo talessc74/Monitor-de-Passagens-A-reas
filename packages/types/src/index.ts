@@ -60,6 +60,14 @@ export interface FlightMonitor {
   scanningLockedUntil?: string;
   /** Resultado por site do último scan — usado na tela de histórico do monitor. */
   lastScanResults?: ScanResult[];
+  /**
+   * Só preenchido quando searchMode === 'anytime' e um itinerário
+   * multi-trecho (via `itinerarySearch.ts`) ficou mais barato que a
+   * passagem direta por margem suficiente — o "Modo Tieni" original,
+   * pernoites incluídos. Ausente/null = o vencedor do scan foi a
+   * passagem direta. Ver _local-bdr-policy-013.
+   */
+  lastItineraryLegs?: ItineraryLeg[];
 }
 
 export interface NotificationLog {
@@ -246,6 +254,8 @@ export interface ItineraryLeg {
   price: number;
   /** Ausente no último trecho. Presença de pernoite indicada por layoverAfterHours >= overnight threshold do caller, não um campo separado. */
   layoverAfterHours?: number;
+  /** false = preço real (Travelpayouts) pra este trecho específico; true = caiu no simulador. Ver _local-bdr-policy-013. */
+  estimated?: boolean;
 }
 
 export interface ItineraryMonitor {

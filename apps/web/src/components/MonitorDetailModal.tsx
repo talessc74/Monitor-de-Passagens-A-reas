@@ -166,7 +166,7 @@ export default function MonitorDetailModal({ monitor, onClose }: MonitorDetailMo
               {sortedResults.map((r, i) => (
                 <div key={r.site} className="flex items-center justify-between px-3 py-2 text-xs">
                   <span className="flex items-center gap-1.5 font-semibold text-ink-muted">
-                    {SITE_NAMES[r.site] || r.site.toUpperCase()}
+                    {SITE_NAMES[r.site] || (/[a-z]/.test(r.site) ? r.site : r.site.toUpperCase())}
                     {r.estimated === false ? (
                       <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
                         Real
@@ -182,6 +182,52 @@ export default function MonitorDetailModal({ monitor, onClose }: MonitorDetailMo
                   </span>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {monitor.lastItineraryLegs && monitor.lastItineraryLegs.length > 0 && (
+          <div className="mt-4">
+            <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-terracotta">
+              Itinerário alternativo mais barato
+            </p>
+            <div className="rounded-md border border-terracotta/30 bg-terracotta-wash p-3">
+              <p className="font-mono text-xs font-bold text-ink">
+                {[monitor.origin, ...monitor.lastItineraryLegs.map((l) => l.destination)].join(' → ')}
+              </p>
+              <div className="mt-2 space-y-1.5">
+                {monitor.lastItineraryLegs.map((leg, i) => (
+                  <div key={i} className="flex items-center justify-between text-[11px]">
+                    <span className="flex items-center gap-1.5 text-ink-muted">
+                      <span className="font-mono font-bold text-ink">{leg.origin} → {leg.destination}</span>
+                      {leg.carrier}
+                      {leg.estimated === false ? (
+                        <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
+                          Real
+                        </span>
+                      ) : (
+                        <span className="rounded bg-paper-deep px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-ink-muted">
+                          Simulado
+                        </span>
+                      )}
+                      {leg.layoverAfterHours !== undefined && (
+                        <span>· {leg.layoverAfterHours >= 12 ? 'pernoite' : `conexão ${leg.layoverAfterHours}h`} em {leg.destination}</span>
+                      )}
+                    </span>
+                    <span className="font-mono font-bold">R$ {leg.price.toLocaleString('pt-BR')}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 flex items-center justify-between border-t border-terracotta/30 pt-2 text-xs font-bold">
+                <span>Total do itinerário</span>
+                <span className="font-mono text-terracotta">
+                  R$ {monitor.lastItineraryLegs.reduce((sum, l) => sum + l.price, 0).toLocaleString('pt-BR')}
+                </span>
+              </div>
+              <p className="mt-2 text-[10px] leading-relaxed text-ink-muted">
+                Bilhetes separados, sem proteção de conexão entre si — confira os horários e o requisito de visto de
+                trânsito antes de comprar.
+              </p>
             </div>
           </div>
         )}

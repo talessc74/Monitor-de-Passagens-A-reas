@@ -1,5 +1,6 @@
 import type { ItineraryLeg } from '@mpa/types';
 import { runScanSimulation } from './scanSimulator.js';
+import { getCheapestRealFare as getCheapestTravelpayoutsFare } from './travelpayoutsClient.js';
 import { suggestAdditionalHubs } from './hubSuggestion.js';
 
 /**
@@ -58,19 +59,60 @@ export interface ItinerarySearchResult {
   total: number;
 }
 
-async function priceLeg(origin: string, destination: string, adults: number, children: number): Promise<{ price: number; carrier: string }> {
-  const outcome = await runScanSimulation({
-    originCity: origin,
-    origin,
-    destinationCity: destination,
-    destination,
-    adults,
-    children,
-    targetPrice: 0,
-    sitesToScan: ['latam', 'gol', 'azul'],
-  });
-  const cheapest = outcome.results.reduce((min, r) => (r.price < min.price ? r : min), outcome.results[0]);
-  return { price: cheapest.price, carrier: cheapest.site };
+/**
+ * Cache em memória por processo, chave origin-destination — o Dijkstra
+ * abaixo testa até ~50 combinações de trecho num grafo de 7 hubs
+ * curados; sem isso, cada scan 'anytime' bateria no Travelpayouts umas
+ * 50 vezes, esgotando a cota rapidinho (mais ainda com Pro escaneando
+ * de hora em hora, _local-bdr-policy-007). Preço entre dois aeroportos
+ * fixos não precisa de frescor por segundo pra uma checagem de
+ * viabilidade de conexão — 30min é suficiente e ainda barato. Ver
+ * _local-bdr-policy-013.
+ */
+const LEG_PRICE_CACHE_TTL_MS = 30 * 60 * 1000;
+const legPriceCache = new Map<string, { result: { price: number; carrier: string; estimated: boolean }; expiresAt: number }>();
+
+/**
+ * Preço de um trecho — tenta o Travelpayouts primeiro (sem data
+ * exigida, mesma fonte real do scan direto de FlightMonitor via
+ * _local-adr-policy-004), cai pro simulador só se não houver cobertura
+ * real pra esse par específico. Sky Scrapper fica de fora aqui: exige
+ * uma data de embarco por trecho que este v1 não modela (o itinerário é
+ * "qualquer data", ver _local-bdr-policy-013), e já está sob risco de
+ * cota (429) — não faz sentido multiplicar chamadas a ele por trecho.
+ */
+async function priceLeg(
+  origin: string,
+  destination: string,
+  adults: number,
+  children: number
+): Promise<{ price: number; carrier: string; estimated: boolean }> {
+  const cacheKey = `${origin}-${destination}-${adults}-${children}`;
+  const cached = legPriceCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.result;
+  }
+
+  const real = await getCheapestTravelpayoutsFare(origin, destination);
+  const result = real
+    ? { price: real.price, carrier: real.site, estimated: false }
+    : await (async () => {
+        const outcome = await runScanSimulation({
+          originCity: origin,
+          origin,
+          destinationCity: destination,
+          destination,
+          adults,
+          children,
+          targetPrice: 0,
+          sitesToScan: ['latam', 'gol', 'azul'],
+        });
+        const cheapest = outcome.results.reduce((min, r) => (r.price < min.price ? r : min), outcome.results[0]);
+        return { price: cheapest.price, carrier: cheapest.site, estimated: true };
+      })();
+
+  legPriceCache.set(cacheKey, { result, expiresAt: Date.now() + LEG_PRICE_CACHE_TTL_MS });
+  return result;
 }
 
 /**
@@ -104,7 +146,7 @@ export async function findCheapestItinerary(params: ItinerarySearchParams): Prom
 
       const candidates = nodes.filter((n) => n !== state.node && !state.legs.some((l) => l.origin === n));
       for (const dest of candidates) {
-        const { price, carrier } = await priceLeg(state.node, dest, params.adults, params.children);
+        const { price, carrier, estimated } = await priceLeg(state.node, dest, params.adults, params.children);
         // v1 não tem malha horária real (preço vem do simulador) — usa um
         // valor representativo de conexão same-day vs. pernoite. Fase 7
         // (dados reais) substitui por horários de voo de verdade, mesmo
@@ -126,6 +168,7 @@ export async function findCheapestItinerary(params: ItinerarySearchParams): Prom
           departureDate: new Date().toISOString().slice(0, 10),
           price,
           layoverAfterHours: dest === params.finalDestination ? undefined : layoverHours,
+          estimated,
         };
         const candidateState: State = { node: dest, legs: [...state.legs, leg], total: state.total + price };
 
