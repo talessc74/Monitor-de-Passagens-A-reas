@@ -3,7 +3,10 @@ import { z } from 'zod';
 import { authenticate, requireAdmin } from '../auth.js';
 import { getUserByEmail, listAllUsers, updateUser } from '../repositories/usersRepository.js';
 import { env } from '../env.js';
-import { testConnection as testTravelpayoutsConnection } from '../travelpayoutsClient.js';
+import {
+  testConnection as testTravelpayoutsConnection,
+  listCachedDestinations,
+} from '../travelpayoutsClient.js';
 import { testConnection as testSkyScrapperConnection } from '../skyScrapperClient.js';
 
 /**
@@ -51,4 +54,21 @@ export async function adminRoutes(app: FastifyInstance) {
       gemini: { configured: Boolean(env.GEMINI_API_KEY) },
     };
   });
+
+  // "Quais destinos saindo de X têm cobertura real no Travelpayouts?" —
+  // ver _local-bdr-policy-011. Evita cadastrar um monitor por destino só
+  // pra descobrir na marra se aquela rota tem dado real ou cai no
+  // simulador.
+  app.get<{ Querystring: { origin?: string } }>(
+    '/api/admin/travelpayouts-routes',
+    { preHandler: [authenticate, requireAdmin] },
+    async (request, reply) => {
+      const origin = request.query.origin?.toUpperCase().trim();
+      if (!origin || origin.length < 3 || origin.length > 4) {
+        return reply.status(400).send({ error: "Parâmetro 'origin' precisa ser um código IATA (3-4 letras)" });
+      }
+      const result = await listCachedDestinations(origin);
+      return { origin, ...result };
+    }
+  );
 }

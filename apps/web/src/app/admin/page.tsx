@@ -22,6 +22,20 @@ interface DiagnosticsResponse {
   gemini: { configured: boolean };
 }
 
+interface CachedDestination {
+  destination: string;
+  price: number;
+  gate: string;
+  stops: number;
+}
+
+interface RoutesResponse {
+  origin: string;
+  configured: boolean;
+  destinations: CachedDestination[];
+  error?: string;
+}
+
 /**
  * Painel de admin — lista quem já logou pelo menos uma vez e permite
  * conceder/revogar acesso total (bypass de plano, sem Stripe). Ver
@@ -41,6 +55,9 @@ export default function AdminPage() {
   const [message, setMessage] = useState('');
   const [diagnostics, setDiagnostics] = useState<DiagnosticsResponse | null>(null);
   const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
+  const [routesOrigin, setRoutesOrigin] = useState('BSB');
+  const [routesResult, setRoutesResult] = useState<RoutesResponse | null>(null);
+  const [routesLoading, setRoutesLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -82,6 +99,18 @@ export default function AdminPage() {
       if (res.ok) setDiagnostics(await res.json());
     } finally {
       setDiagnosticsLoading(false);
+    }
+  }
+
+  async function loadRoutes() {
+    const origin = routesOrigin.toUpperCase().trim();
+    if (origin.length < 3) return;
+    setRoutesLoading(true);
+    try {
+      const res = await apiFetch(`/api/admin/travelpayouts-routes?origin=${encodeURIComponent(origin)}`);
+      if (res.ok) setRoutesResult(await res.json());
+    } finally {
+      setRoutesLoading(false);
     }
   }
 
@@ -160,6 +189,60 @@ export default function AdminPage() {
                   {diagnostics.gemini.configured ? 'Configurada' : 'Não configurada (fallback offline)'}
                 </span>
               </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 rounded-xl border border-border bg-paper-card p-6 shadow-card">
+          <h2 className="font-serif text-base font-semibold">Cobertura do Travelpayouts por origem</h2>
+          <p className="mt-1 text-xs text-ink-muted">
+            Lista os destinos com tarifa em cache saindo de um aeroporto — pra saber quais rotas têm cobertura real sem
+            cadastrar um monitor por destino pra descobrir na marra.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <input
+              value={routesOrigin}
+              onChange={(e) => setRoutesOrigin(e.target.value.toUpperCase())}
+              placeholder="Ex: BSB"
+              maxLength={4}
+              className="w-28 rounded-md border border-border-strong bg-paper px-3 py-2 text-sm font-bold uppercase text-ink focus:border-terracotta focus:outline-none"
+            />
+            <button
+              onClick={loadRoutes}
+              disabled={routesLoading || routesOrigin.trim().length < 3}
+              className="flex items-center gap-1.5 rounded-md bg-terracotta-solid px-3 py-2 text-xs font-bold text-white transition hover:bg-terracotta-hover disabled:cursor-not-allowed disabled:bg-paper-deep disabled:text-ink-muted"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${routesLoading ? 'animate-spin' : ''}`} />
+              {routesLoading ? 'Buscando...' : 'Ver destinos'}
+            </button>
+          </div>
+
+          {routesResult && (
+            <div className="mt-4">
+              {!routesResult.configured ? (
+                <p className="text-xs text-ink-muted">Travelpayouts não está configurado (sem token).</p>
+              ) : routesResult.error ? (
+                <p className="text-xs text-danger-text">Erro: {routesResult.error}</p>
+              ) : routesResult.destinations.length === 0 ? (
+                <p className="text-xs text-ink-muted">
+                  Nenhum destino com tarifa em cache saindo de {routesResult.origin} — essa origem provavelmente cai 100% no
+                  simulador por enquanto.
+                </p>
+              ) : (
+                <div className="divide-y divide-border rounded-md border border-border">
+                  {routesResult.destinations.map((d) => (
+                    <div key={d.destination} className="flex items-center justify-between px-3 py-2 text-xs">
+                      <span className="font-mono font-bold">
+                        {routesResult.origin} → {d.destination}
+                      </span>
+                      <span className="text-ink-muted">
+                        {d.gate} · {d.stops === 0 ? 'direto' : `${d.stops} parada(s)`}
+                      </span>
+                      <span className="font-mono font-bold text-terracotta">R$ {d.price.toLocaleString('pt-BR')}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

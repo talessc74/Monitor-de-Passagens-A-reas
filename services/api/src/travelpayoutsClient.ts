@@ -27,6 +27,24 @@ interface TravelpayoutsResponse {
 }
 
 /**
+ * Item bruto de `/v2/prices/latest` quando consultado só com `origin`
+ * (sem `destination`) — a API devolve o destino em cada item, já que
+ * lista vários de uma vez. `TravelpayoutsFare` acima é o subconjunto
+ * usado quando origin+destination já são conhecidos (destino é
+ * implícito no parâmetro, não precisa vir de volta).
+ */
+interface TravelpayoutsFareWithDestination extends TravelpayoutsFare {
+  destination: string;
+  depart_date?: string;
+  return_date?: string;
+}
+
+interface TravelpayoutsListResponse {
+  success: boolean;
+  data: TravelpayoutsFareWithDestination[];
+}
+
+/**
  * Retorna a tarifa mais barata em cache para origin->destination, ou
  * `null` se a fonte estiver desligada (sem token) ou sem cobertura pra
  * essa rota — nos dois casos o chamador cai pro simulador Gemini.
@@ -62,6 +80,39 @@ export async function getCheapestRealFare(origin: string, destination: string): 
   } catch (error) {
     console.error(`[api] Erro ao consultar Travelpayouts para ${origin}->${destination}:`, error);
     return null;
+  }
+}
+
+/**
+ * Lista os destinos com tarifa em cache saindo de `origin`, mais barata
+ * primeiro — ferramenta de diagnóstico pro painel /admin (_local-bdr-
+ * policy-011), pra responder "quais rotas dessa origem têm cobertura
+ * real" sem precisar cadastrar um monitor por destino pra descobrir na
+ * marra. Mesma API de `getCheapestRealFare`, só sem fixar `destination`.
+ * Nunca lança: falha de rede/parse vira `{ configured: true, error }`.
+ */
+export async function listCachedDestinations(
+  origin: string
+): Promise<{ configured: boolean; destinations: Array<{ destination: string; price: number; gate: string; stops: number }>; error?: string }> {
+  if (!env.TRAVELPAYOUTS_API_TOKEN) {
+    return { configured: false, destinations: [] };
+  }
+  try {
+    const url = `https://api.travelpayouts.com/v2/prices/latest?origin=${encodeURIComponent(origin)}&currency=brl&limit=100&token=${env.TRAVELPAYOUTS_API_TOKEN}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      return { configured: true, destinations: [], error: `HTTP ${response.status}` };
+    }
+    const parsed = (await response.json()) as TravelpayoutsListResponse;
+    if (!parsed.success || !parsed.data) {
+      return { configured: true, destinations: [], error: 'Resposta em formato inesperado' };
+    }
+    const destinations = parsed.data
+      .map((fare) => ({ destination: fare.destination, price: fare.value, gate: fare.gate, stops: fare.number_of_changes }))
+      .sort((a, b) => a.price - b.price);
+    return { configured: true, destinations };
+  } catch (error) {
+    return { configured: true, destinations: [], error: error instanceof Error ? error.message : 'Erro de rede desconhecido' };
   }
 }
 
