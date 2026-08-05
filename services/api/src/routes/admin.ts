@@ -2,6 +2,9 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { authenticate, requireAdmin } from '../auth.js';
 import { getUserByEmail, listAllUsers, updateUser } from '../repositories/usersRepository.js';
+import { env } from '../env.js';
+import { testConnection as testTravelpayoutsConnection } from '../travelpayoutsClient.js';
+import { testConnection as testSkyScrapperConnection } from '../skyScrapperClient.js';
 
 /**
  * Gestão manual de acesso total (dev/beta-tester), fora do fluxo de
@@ -34,5 +37,18 @@ export async function adminRoutes(app: FastifyInstance) {
 
     await updateUser(target.uid, { isAdmin: parsed.data.isAdmin });
     return { success: true, email: parsed.data.email, isAdmin: parsed.data.isAdmin };
+  });
+
+  // Testa as fontes de preço real de verdade (chamada mínima e barata a
+  // cada uma), em vez de só reportar se a variável de ambiente existe —
+  // uma key presente mas inválida/sem cota passaria despercebida num
+  // check só de presença. Ver _local-bdr-policy-010.
+  app.get('/api/admin/diagnostics', { preHandler: [authenticate, requireAdmin] }, async () => {
+    const [travelpayouts, skyScrapper] = await Promise.all([testTravelpayoutsConnection(), testSkyScrapperConnection()]);
+    return {
+      travelpayouts,
+      skyScrapper,
+      gemini: { configured: Boolean(env.GEMINI_API_KEY) },
+    };
   });
 }

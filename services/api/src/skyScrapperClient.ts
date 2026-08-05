@@ -182,3 +182,31 @@ export async function getCheapestRealFare(origin: string, destination: string, d
     return null;
   }
 }
+
+/**
+ * Chamada de teste pra diagnóstico (GET /api/admin/diagnostics) — só
+ * resolve o aeroporto GRU (searchAirport), sem rodar uma busca de voo
+ * completa, pra gastar o mínimo de cota possível. `ok: false` aqui
+ * aponta pra key ausente/inválida/sem cota, não pra "sem cobertura
+ * nesta rota". Nunca lança, mesmo padrão do resto do cliente. Ver
+ * _local-bdr-policy-010.
+ */
+export async function testConnection(): Promise<{ configured: boolean; ok: boolean; httpStatus?: number; error?: string }> {
+  if (!env.RAPIDAPI_KEY) {
+    return { configured: false, ok: false };
+  }
+  try {
+    const url = `${BASE_URL}/api/v1/flights/searchAirport?query=GRU`;
+    const response = await fetch(url, { headers: rapidApiHeaders() });
+    if (!response.ok) {
+      return { configured: true, ok: false, httpStatus: response.status, error: `HTTP ${response.status}` };
+    }
+    const parsed = (await response.json()) as SkyScrapperAirportResponse;
+    if (!parsed.data || parsed.data.length === 0) {
+      return { configured: true, ok: false, httpStatus: response.status, error: 'Resposta sem dados de aeroporto' };
+    }
+    return { configured: true, ok: true, httpStatus: response.status };
+  } catch (error) {
+    return { configured: true, ok: false, error: error instanceof Error ? error.message : 'Erro de rede desconhecido' };
+  }
+}

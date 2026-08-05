@@ -4,10 +4,23 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, RefreshCw, ShieldCheck, Sparkles, XCircle } from 'lucide-react';
 import type { UserProfile } from '@mpa/types';
 import { useAuth } from '../../lib/auth-context';
 import { apiFetch } from '../../lib/api';
+
+interface SourceDiagnostic {
+  configured: boolean;
+  ok: boolean;
+  httpStatus?: number;
+  error?: string;
+}
+
+interface DiagnosticsResponse {
+  travelpayouts: SourceDiagnostic;
+  skyScrapper: SourceDiagnostic;
+  gemini: { configured: boolean };
+}
 
 /**
  * Painel de admin — lista quem já logou pelo menos uma vez e permite
@@ -26,6 +39,8 @@ export default function AdminPage() {
   const [usersLoading, setUsersLoading] = useState(true);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const [diagnostics, setDiagnostics] = useState<DiagnosticsResponse | null>(null);
+  const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -59,6 +74,16 @@ export default function AdminPage() {
   useEffect(() => {
     if (profile?.isAdmin) loadUsers();
   }, [profile]);
+
+  async function loadDiagnostics() {
+    setDiagnosticsLoading(true);
+    try {
+      const res = await apiFetch('/api/admin/diagnostics');
+      if (res.ok) setDiagnostics(await res.json());
+    } finally {
+      setDiagnosticsLoading(false);
+    }
+  }
 
   async function toggleAccess(target: UserProfile) {
     if (!target.email) return;
@@ -106,6 +131,39 @@ export default function AdminPage() {
 
         {message && <p className="mt-3 text-xs font-semibold text-danger-text">{message}</p>}
 
+        <div className="mt-6 rounded-xl border border-border bg-paper-card p-6 shadow-card">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="font-serif text-base font-semibold">Fontes de preço real</h2>
+              <p className="mt-1 text-xs text-ink-muted">
+                Testa Travelpayouts e Sky Scrapper com uma chamada mínima de verdade — não só se a variável de ambiente existe.
+              </p>
+            </div>
+            <button
+              onClick={loadDiagnostics}
+              disabled={diagnosticsLoading}
+              className="flex shrink-0 items-center gap-1.5 rounded-md border border-border-strong px-3 py-1.5 text-xs font-bold text-ink-muted transition hover:bg-paper-deep disabled:opacity-60"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${diagnosticsLoading ? 'animate-spin' : ''}`} />
+              {diagnosticsLoading ? 'Testando...' : diagnostics ? 'Testar de novo' : 'Testar agora'}
+            </button>
+          </div>
+
+          {diagnostics && (
+            <div className="mt-4 space-y-2">
+              <DiagnosticRow label="Travelpayouts" diag={diagnostics.travelpayouts} />
+              <DiagnosticRow label="Sky Scrapper" diag={diagnostics.skyScrapper} />
+              <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-paper-deep p-3 text-xs">
+                <span className="font-bold">Gemini (simulador)</span>
+                <span className={`flex items-center gap-1.5 font-bold ${diagnostics.gemini.configured ? 'text-teal' : 'text-ink-muted'}`}>
+                  {diagnostics.gemini.configured ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+                  {diagnostics.gemini.configured ? 'Configurada' : 'Não configurada (fallback offline)'}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="mt-6 divide-y divide-border rounded-xl border border-border bg-paper-card shadow-card">
           {usersLoading ? (
             <p className="p-6 text-sm text-ink-muted">Carregando usuários...</p>
@@ -145,6 +203,35 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function DiagnosticRow({ label, diag }: { label: string; diag: SourceDiagnostic }) {
+  const status = !diag.configured ? 'unconfigured' : diag.ok ? 'ok' : 'failed';
+  return (
+    <div className="rounded-md border border-border bg-paper-deep p-3 text-xs">
+      <div className="flex items-center justify-between gap-3">
+        <span className="font-bold">{label}</span>
+        <span
+          className={`flex items-center gap-1.5 font-bold ${
+            status === 'ok' ? 'text-teal' : status === 'failed' ? 'text-danger-text' : 'text-ink-muted'
+          }`}
+        >
+          {status === 'ok' ? (
+            <CheckCircle2 className="h-3.5 w-3.5" />
+          ) : (
+            <XCircle className="h-3.5 w-3.5" />
+          )}
+          {status === 'ok' ? 'Funcionando' : status === 'failed' ? 'Falhou' : 'Não configurada'}
+        </span>
+      </div>
+      {status === 'failed' && (
+        <p className="mt-1 text-[11px] text-ink-muted">
+          {diag.httpStatus ? `HTTP ${diag.httpStatus} — ` : ''}
+          {diag.error || 'Erro desconhecido'}
+        </p>
+      )}
     </div>
   );
 }
