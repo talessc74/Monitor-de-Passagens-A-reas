@@ -68,6 +68,21 @@ export interface FlightMonitor {
    * passagem direta. Ver _local-bdr-policy-013.
    */
   lastItineraryLegs?: ItineraryLeg[];
+  /**
+   * Registro da tentativa de busca de itinerário mais recente, ganhando
+   * ou perdendo pra passagem direta — diferente de `lastItineraryLegs`
+   * (só preenchido quando o itinerário venceu), isto aparece sempre que
+   * searchMode === 'anytime' já rodou pelo menos um scan, pra deixar
+   * claro pro usuário que a busca aconteceu mesmo sem achar nada melhor.
+   * Ver _local-bdr-policy-014.
+   */
+  lastItinerarySearch?: {
+    hubs: string[];
+    bestTotal: number | null;
+    bestLegs: ItineraryLeg[] | null;
+    directPrice: number;
+    won: boolean;
+  };
 }
 
 export interface NotificationLog {
