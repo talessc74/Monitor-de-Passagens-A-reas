@@ -60,6 +60,18 @@ export interface ItinerarySearchResult {
 }
 
 /**
+ * Sempre retornado por `findCheapestItinerary`, ganhando ou perdendo pra
+ * baseline — pra UI nunca ficar em silêncio sobre uma busca que rodou e
+ * não achou nada melhor (achado de UX, _local-bdr-policy-014). `hubs` é
+ * o grafo de fato considerado nesta chamada (CANDIDATE_HUBS + qualquer
+ * sugestão do Gemini).
+ */
+export interface ItinerarySearchAttempt {
+  hubs: string[];
+  best: ItinerarySearchResult | null;
+}
+
+/**
  * Cache em memória por processo, chave origin-destination — o Dijkstra
  * abaixo testa até ~50 combinações de trecho num grafo de 7 hubs
  * curados; sem isso, cada scan 'anytime' bateria no Travelpayouts umas
@@ -128,7 +140,7 @@ async function priceLeg(
  * Dijkstra abaixo, nunca o modelo. Falha ou ausência de GEMINI_API_KEY
  * na sugestão nunca impede a busca: cai de volta para só CANDIDATE_HUBS.
  */
-export async function findCheapestItinerary(params: ItinerarySearchParams): Promise<ItinerarySearchResult | null> {
+export async function searchItinerary(params: ItinerarySearchParams): Promise<ItinerarySearchAttempt> {
   const suggestedHubs = await suggestAdditionalHubs(params.origin, params.finalDestination, CANDIDATE_HUBS);
   const allHubs = [...CANDIDATE_HUBS, ...suggestedHubs];
   const nodes = [params.origin, ...allHubs.filter((h) => h !== params.origin && h !== params.finalDestination), params.finalDestination];
@@ -185,8 +197,17 @@ export async function findCheapestItinerary(params: ItinerarySearchParams): Prom
     if (frontier.length === 0) break;
   }
 
-  if (!best) return null;
-  return { legs: best.legs, total: best.total };
+  return { hubs: allHubs, best: best ? { legs: best.legs, total: best.total } : null };
+}
+
+/**
+ * Wrapper de compatibilidade — mantido pro `executeItineraryScan.ts`
+ * (`ItineraryMonitor`, Pro-only) que só precisa do resultado, não da
+ * transparência de tentativa que `searchItinerary` acrescenta pro
+ * "Modo Tieni" (_local-bdr-policy-014).
+ */
+export async function findCheapestItinerary(params: ItinerarySearchParams): Promise<ItinerarySearchResult | null> {
+  return (await searchItinerary(params)).best;
 }
 
 /**

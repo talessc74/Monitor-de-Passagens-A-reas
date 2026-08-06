@@ -8,7 +8,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { runScanSimulation } from './scanSimulator.js';
 import { getCheapestRealFare } from './travelpayoutsClient.js';
 import { getCheapestRealFare as getCheapestSkyScrapperFare } from './skyScrapperClient.js';
-import { findCheapestItinerary, beatsBaselineByMargin, LIABILITY_DISCLAIMER } from './itinerarySearch.js';
+import { searchItinerary, beatsBaselineByMargin, LIABILITY_DISCLAIMER } from './itinerarySearch.js';
 import { generatePurchaseLink } from './purchaseLink.js';
 
 /**
@@ -67,11 +67,14 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
   // "Modo Tieni" — no modo 'anytime', busca também um itinerário
   // multi-trecho (origem -> hub -> destino, pernoite permitido) e só o
   // usa se ficar mais barato que a passagem direta por margem
-  // suficiente (mesmo critério de _local-bdr-plan-003). Ver
-  // _local-bdr-policy-013.
+  // suficiente (mesmo critério de _local-bdr-plan-003). O resultado da
+  // TENTATIVA fica registrado sempre — ganhando ou perdendo — pra UI
+  // nunca ficar em silêncio sobre uma busca que rodou. Ver
+  // _local-bdr-policy-013 e _local-bdr-policy-014.
   let itineraryLegs: FlightMonitor['lastItineraryLegs'];
+  let itinerarySearchRecord: FlightMonitor['lastItinerarySearch'];
   if (monitor.searchMode === 'anytime') {
-    const itinerary = await findCheapestItinerary({
+    const attempt = await searchItinerary({
       origin: monitor.origin,
       finalDestination: monitor.destination,
       maxLegs: TIENI_ITINERARY_MAX_LEGS,
@@ -82,7 +85,20 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
       targetPrice: monitor.targetPrice,
     });
 
-    if (itinerary && itinerary.legs.length > 1 && beatsBaselineByMargin(itinerary.total, directCheapest.price)) {
+    const itinerary = attempt.best;
+    const won = Boolean(
+      itinerary && itinerary.legs.length > 1 && beatsBaselineByMargin(itinerary.total, directCheapest.price)
+    );
+
+    itinerarySearchRecord = {
+      hubs: attempt.hubs,
+      bestTotal: itinerary ? itinerary.total : null,
+      bestLegs: itinerary && itinerary.legs.length > 1 ? itinerary.legs : null,
+      directPrice: directCheapest.price,
+      won,
+    };
+
+    if (won && itinerary) {
       itineraryLegs = itinerary.legs;
       const routeText = [monitor.origin, ...itinerary.legs.map((l) => l.destination)].join(' → ');
       const legsText = itinerary.legs.map((l) => `${l.origin}→${l.destination} R$ ${l.price}`).join(' + ');
@@ -230,6 +246,7 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
     history,
     lastScanResults: validResults,
     lastItineraryLegs: itineraryLegs ?? FieldValue.delete(),
+    lastItinerarySearch: itinerarySearchRecord ?? FieldValue.delete(),
   });
 
   const batch = db.batch();
