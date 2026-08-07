@@ -12,6 +12,12 @@ const envSchema = z.object({
   // Firebase, já que quem chama é o loop de polling, não um usuário
   // logado). Ver _local-adr-policy-002.
   INTERNAL_SCAN_TOKEN: z.string().min(16).optional(),
+  // URL do services/scraper (produção: Cloud Run; dev: localhost) —
+  // busca de preço real sob demanda (Playwright), autenticada com o
+  // mesmo INTERNAL_SCAN_TOKEN acima. Sem isso, o botão "Buscar preço
+  // real agora" fica indisponível (503), sem derrubar o resto do api.
+  // Ver _local-bdr-policy-015.
+  SCRAPER_INTERNAL_URL: z.string().url().optional(),
   // Segredo compartilhado com services/publisher para assinar/verificar
   // o link de "pausar monitor" sem login, embutido no e-mail. Distinto
   // do INTERNAL_SCAN_TOKEN — protegem coisas diferentes. Ver
