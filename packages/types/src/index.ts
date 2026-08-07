@@ -46,6 +46,14 @@ export interface FlightMonitor {
   email: string;
   createdAt: string;
   lastScannedAt: string | null;
+  /**
+   * Quando `currentPrice` foi de fato observado numa fonte real. Difere
+   * de `lastScannedAt`, que marca a última TENTATIVA: um scan que roda e
+   * não encontra preço real atualiza `lastScannedAt` e deixa este campo
+   * como estava, então a distância entre os dois é exatamente o quanto o
+   * preço exibido está velho. Ver _local-bdr-policy-016.
+   */
+  lastPriceFoundAt?: string | null;
   nextScanAt: string | null;
   history: FlightHistoryEntry[];
   status: 'active' | 'paused';
@@ -112,16 +120,19 @@ export interface AirlineSite {
   avgResponseMs: number;
 }
 
+/**
+ * Um preço observado numa fonte real. Não existe mais variante
+ * estimada/simulada: preço que o FlySpot não conseguiu apurar não vira
+ * ScanResult, vira ausência de resultado. Ver _local-bdr-policy-016.
+ */
 export interface ScanResult {
-  /** Fase 1-6: id de site simulado (latam/gol/azul/decolar). Fase 7: código IATA da companhia aérea (LA/G3/AD) — Duffel/Amadeus retornam por companhia, não por site de venda. Quando `estimated: false`, carrega o nome da agência ("gate") retornada pelo Travelpayouts (ex: "Trip.com") — ver _local-adr-policy-004 (application). Ver ROADMAP.md Fase 7. */
+  /** Nome da agência ("gate") retornada pelo Travelpayouts (ex: "Trip.com"), ou o código IATA da companhia quando a fonte devolve por companhia. */
   site: string;
   price: number;
   durationHours: number;
   stops: number;
   isPromotion: boolean;
   details: string;
-  /** false = preço real (Travelpayouts Data API); true = simulado via Gemini. Ver _local-adr-policy-004 (application) — nunca misturar as duas etiquetas. */
-  estimated: boolean;
 }
 
 /**
@@ -157,8 +168,13 @@ export interface ScanResponse {
   success: boolean;
   monitor: FlightMonitor;
   results: ScanResult[];
-  generalAnalysis: string;
-  cheapestResult: ScanResult;
+  /**
+   * `null` quando nenhuma fonte real tinha preço para esta rota neste
+   * scan — resultado legítimo, não erro: o monitor continua ativo e
+   * `lastScannedAt` avança, só não há número novo pra mostrar. Ver
+   * _local-bdr-policy-016.
+   */
+  cheapestResult: ScanResult | null;
   triggeredNotification: NotificationLog | null;
 }
 
@@ -269,8 +285,6 @@ export interface ItineraryLeg {
   price: number;
   /** Ausente no último trecho. Presença de pernoite indicada por layoverAfterHours >= overnight threshold do caller, não um campo separado. */
   layoverAfterHours?: number;
-  /** false = preço real (Travelpayouts) pra este trecho específico; true = caiu no simulador. Ver _local-bdr-policy-013. */
-  estimated?: boolean;
 }
 
 export interface ItineraryMonitor {

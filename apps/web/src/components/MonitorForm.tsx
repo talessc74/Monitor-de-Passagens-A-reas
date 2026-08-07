@@ -49,16 +49,20 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail, 
 
   const [routeStats, setRouteStats] = useState<RouteStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  /** Distingue "ainda não consultamos esta rota" de "consultamos e não há preço real". */
+  const [statsChecked, setStatsChecked] = useState(false);
 
   useEffect(() => {
     const o = origin.toUpperCase().trim();
     const d = destination.toUpperCase().trim();
     if (o.length < 3 || d.length < 3) {
       setRouteStats(null);
+      setStatsChecked(false);
       return;
     }
     if (searchMode === 'dated' && (!departureDate || !returnDate)) {
       setRouteStats(null);
+      setStatsChecked(false);
       return;
     }
 
@@ -85,13 +89,16 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail, 
           if (latestReturn) params.set('latestReturn', latestReturn);
         }
         const response = await apiFetch(`/api/route-stats?${params.toString()}`);
-        if (response.ok) {
-          setRouteStats(await response.json());
-        }
+        // 404 = rota sem preço real observado. Precisa zerar o estado, e
+        // não só ignorar: manter o número da rota anterior na tela seria
+        // atribuir a esta rota um dado que não é dela.
+        setRouteStats(response.ok ? await response.json() : null);
       } catch (err) {
         console.error('Erro ao buscar histórico de preço da rota:', err);
+        setRouteStats(null);
       } finally {
         setStatsLoading(false);
+        setStatsChecked(true);
       }
     }, 500);
 
@@ -391,23 +398,30 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail, 
           </div>
         </div>
 
-        {(routeStats || statsLoading) && (
+        {(routeStats || statsLoading || statsChecked) && (
           <div className="rounded-md border border-border bg-paper-deep p-3">
             <div className="mb-1.5 flex items-center justify-between">
               <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-ink-muted">
                 <TrendingUp className="h-3 w-3 text-terracotta" />
-                Histórico de preço para esta rota
+                Preços reais observados nesta rota
               </span>
               {routeStats && <span className="text-[9px] text-ink-muted">últimos {routeStats.sampleWindowDays} dias</span>}
             </div>
             {statsLoading && !routeStats ? (
-              <p className="text-xs font-medium text-ink-muted">Consultando o histórico...</p>
-            ) : routeStats ? (
+              <p className="text-xs font-medium text-ink-muted">Consultando preços reais...</p>
+            ) : !routeStats ? (
+              <p className="text-xs font-medium text-ink-muted">
+                Ainda não temos preço real para <strong className="text-ink">{origin.toUpperCase()} → {destination.toUpperCase()}</strong>.
+                Dá pra criar o monitor mesmo assim — ele fica ativo e passa a avisar assim que essa rota aparecer nas
+                fontes, mas até lá não vai mostrar preço nenhum.
+              </p>
+            ) : (
               <>
                 <div className="mb-1 flex items-baseline gap-2">
                   <span className="font-mono text-lg font-extrabold">R$ {routeStats.average.toLocaleString('pt-BR')}</span>
                   <span className="text-[10px] font-medium text-ink-muted">
-                    média total para {passengerLabel} · faixa R$ {routeStats.min.toLocaleString('pt-BR')} – R$ {routeStats.max.toLocaleString('pt-BR')}
+                    média de {routeStats.observations} tarifa{routeStats.observations > 1 ? 's' : ''} · faixa R${' '}
+                    {routeStats.min.toLocaleString('pt-BR')} – R$ {routeStats.max.toLocaleString('pt-BR')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
@@ -423,7 +437,7 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail, 
                   </button>
                 </div>
               </>
-            ) : null}
+            )}
           </div>
         )}
 

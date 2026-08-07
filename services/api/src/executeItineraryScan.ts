@@ -40,12 +40,21 @@ export async function executeItineraryScan(monitor: ItineraryMonitor): Promise<I
     } as any),
   ]);
 
-  const directBaselinePrice = baseline.average;
-  const worthRecommending = itinerary ? beatsBaselineByMargin(itinerary.total, directBaselinePrice) : false;
+  // Sem baseline real da passagem direta não há como afirmar que o
+  // itinerário compensa — "mais barato" é uma comparação, e comparar
+  // contra um número inventado produz uma recomendação inventada. Ver
+  // _local-bdr-policy-016.
+  const directBaselinePrice = baseline?.average ?? null;
+  const worthRecommending =
+    itinerary !== null && directBaselinePrice !== null && beatsBaselineByMargin(itinerary.total, directBaselinePrice);
   const currentBestTotal = worthRecommending && itinerary ? itinerary.total : null;
 
   const prevBestTotal = monitor.currentBestTotal;
-  const history = [...monitor.history, { date: new Date().toISOString(), total: currentBestTotal ?? directBaselinePrice }];
+  const history = [...monitor.history];
+  const observedTotal = currentBestTotal ?? directBaselinePrice;
+  if (observedTotal !== null) {
+    history.push({ date: new Date().toISOString(), total: observedTotal });
+  }
   if (history.length > 20) history.shift();
 
   if (monitor.notificationsEnabled && currentBestTotal !== null) {

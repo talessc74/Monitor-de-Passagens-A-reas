@@ -1,4 +1,5 @@
 import type { FlightMonitor } from '@mpa/types';
+import { FieldValue } from 'firebase-admin/firestore';
 import { db, COLLECTIONS } from '../firestore.js';
 
 const collection = () => db.collection(COLLECTIONS.monitors);
@@ -61,6 +62,42 @@ export async function deleteAllMonitorsForUser(userId: string): Promise<void> {
   const batch = db.batch();
   snapshot.docs.forEach((doc) => batch.delete(doc.ref));
   await batch.commit();
+}
+
+/**
+ * Apaga de TODOS os monitores os preços herdados do simulador, que
+ * ficaram gravados no Firestore antes da _local-bdr-policy-016.
+ *
+ * Sem isso a amputação do simulador fica pela metade e piora o
+ * problema: os números inventados continuariam na tela, agora sem o
+ * selo "Simulado" que ao menos os identificava — passariam a se ler
+ * como preço real. Como não há como distinguir, documento a documento,
+ * o que veio de fonte real do que veio do simulador, a limpeza é total:
+ * os monitores voltam ao estado "ainda não varrido" e o próximo scan
+ * repovoa só com o que for apurado de verdade.
+ *
+ * A configuração do usuário (rota, datas, meta, notificações) não é
+ * tocada — só o que era resultado observado.
+ */
+export async function purgeSimulatedPrices(): Promise<{ monitorsCleared: number }> {
+  const snapshot = await collection().get();
+  if (snapshot.empty) return { monitorsCleared: 0 };
+
+  const batch = db.batch();
+  snapshot.docs.forEach((doc) => {
+    batch.update(doc.ref, {
+      currentPrice: null,
+      bestPriceTracked: null,
+      lastPriceFoundAt: null,
+      history: [],
+      lastScanResults: FieldValue.delete(),
+      lastItineraryLegs: FieldValue.delete(),
+      lastItinerarySearch: FieldValue.delete(),
+    });
+  });
+  await batch.commit();
+
+  return { monitorsCleared: snapshot.size };
 }
 
 /**
