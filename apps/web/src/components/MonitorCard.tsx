@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Users, RefreshCw, Trash2, Power, History, Pencil, Route, Globe } from 'lucide-react';
+import { Calendar, Users, RefreshCw, Trash2, Power, History, Pencil, Route } from 'lucide-react';
 import type { AirlineSite, FlightMonitor } from '@mpa/types';
 import EditMonitorModal from './EditMonitorModal';
 import MonitorDetailModal from './MonitorDetailModal';
-import RealSearchModal from './RealSearchModal';
 
 interface MonitorCardProps {
   monitor: FlightMonitor;
@@ -31,39 +30,30 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
   const [scanResultText, setScanResultText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isViewingDetail, setIsViewingDetail] = useState(false);
-  const [isRealSearching, setIsRealSearching] = useState(false);
 
   const handleScanClick = async () => {
     setIsScanning(true);
-    setScanSteps([]);
+    setScanSteps(['Consultando fontes de preço real...']);
     setScanResultText('');
-
-    const steps = [
-      'Iniciando varredura automatizada...',
-      `Consultando parametrizações para trecho ${monitor.origin} ➔ ${monitor.destination}...`,
-      `Conectando com segurança aos servidores selecionados... (${monitor.trackedSites.map((s) => s.toUpperCase()).join(', ')})`,
-      'Enviando dados estruturados ao robô de inteligência...',
-      'Extraindo tarifas vigentes usando processamento semântico...',
-      'Processando menor tarifa encontrada...',
-    ];
-
-    for (let i = 0; i < steps.length; i++) {
-      setScanSteps((prev) => [...prev, steps[i]]);
-      await new Promise((resolve) => setTimeout(resolve, 800));
-    }
 
     try {
       const res = await onScan(monitor.id);
-      if (res && res.success) {
-        setScanResultText(`Varredura concluída! Menor preço encontrado: R$ ${res.cheapestResult.price} (${res.cheapestResult.site.toUpperCase()}).`);
+      if (res && res.success && res.cheapestResult) {
+        setScanResultText(
+          `Menor preço real encontrado: R$ ${res.cheapestResult.price.toLocaleString('pt-BR')} (${res.cheapestResult.site}).`
+        );
         if (res.triggeredNotification) {
           setScanSteps((prev) => [...prev, 'Alerta de preço disparado e enviado para ' + monitor.email + '!']);
         }
+      } else if (res && res.success) {
+        // Varredura rodou e nenhuma fonte tinha preço pra esta rota —
+        // resultado legítimo, não erro. Ver _local-bdr-policy-016.
+        setScanResultText('Nenhuma fonte tem preço real para esta rota agora. Nada foi inventado no lugar.');
       }
     } catch (err: any) {
-      setScanSteps((prev) => [...prev, 'Erro ao ler ofertas: ' + (err.message || 'Problema técnico.')]);
+      setScanSteps((prev) => [...prev, 'Erro ao consultar as fontes: ' + (err.message || 'Problema técnico.')]);
     } finally {
-      setTimeout(() => setIsScanning(false), 2000);
+      setTimeout(() => setIsScanning(false), 1500);
     }
   };
 
@@ -154,22 +144,20 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
 
       <div className="flex flex-wrap items-end justify-between gap-4 px-5 py-4">
         <div>
-          <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-ink-muted">
-            Menor lido
-            {cheapestLastResult &&
-              (cheapestLastResult.estimated === false ? (
-                <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
-                  Real
-                </span>
-              ) : (
-                <span className="rounded bg-paper-deep px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-ink-muted">
-                  Simulado
-                </span>
-              ))}
-          </div>
-          <div className={`font-mono text-xl font-bold sm:text-2xl ${isConfiguredUnderTarget ? 'text-teal' : 'text-terracotta'}`}>
-            {monitor.currentPrice ? `R$ ${monitor.currentPrice.toLocaleString('pt-BR')}` : 'N/D'}
-          </div>
+          <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-ink-muted">Menor lido</div>
+          {monitor.currentPrice ? (
+            <div className={`font-mono text-xl font-bold sm:text-2xl ${isConfiguredUnderTarget ? 'text-teal' : 'text-terracotta'}`}>
+              R$ {monitor.currentPrice.toLocaleString('pt-BR')}
+            </div>
+          ) : (
+            // Sem preço real ainda: dizer isso em palavras, não com um
+            // "N/D" que parece defeito. Ver _local-bdr-policy-016.
+            <div className="max-w-[16rem] text-xs font-medium text-ink-muted">
+              {monitor.lastScannedAt
+                ? 'Nenhuma fonte tem preço real para esta rota ainda — seguimos procurando.'
+                : 'Ainda não varrido.'}
+            </div>
+          )}
         </div>
         <div className="text-right">
           <div className="mb-1 text-[10px] uppercase tracking-wide text-ink-muted">Meta</div>
@@ -272,15 +260,6 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
           </button>
 
           <button
-            onClick={() => setIsRealSearching(true)}
-            className="flex items-center gap-1.5 rounded-md border border-terracotta/40 bg-terracotta-wash px-3.5 py-2 text-xs font-bold text-terracotta transition hover:brightness-95"
-            title="Abrir um navegador de verdade e buscar o preço real agora"
-          >
-            <Globe className="h-3.5 w-3.5" />
-            Preço real agora
-          </button>
-
-          <button
             onClick={() => {
               if (window.confirm(`Excluir o alerta ${monitor.origin} → ${monitor.destination}? O histórico de preços será perdido.`)) {
                 onDelete(monitor.id);
@@ -306,8 +285,6 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
       )}
 
       {isViewingDetail && <MonitorDetailModal monitor={monitor} onClose={() => setIsViewingDetail(false)} />}
-
-      {isRealSearching && <RealSearchModal monitor={monitor} onClose={() => setIsRealSearching(false)} />}
     </div>
   );
 }

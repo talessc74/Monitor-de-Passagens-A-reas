@@ -162,16 +162,15 @@ Vigilância Permanente, `.seeds/ARGUS.md` §I).
 ├── packages/
 │   └── types/              # @mpa/types — fonte da verdade dos tipos, compartilhada com todo o backend
 └── services/
-    ├── api/                # @mpa/api — Fastify: gateway REST, auth, CRUD de monitores, scan (simulado)
+    ├── api/                # @mpa/api — Fastify: gateway REST, auth, CRUD de monitores, scan (só preço real)
     │   ├── src/
     │   │   ├── index.ts          # bootstrap Fastify (helmet, rate-limit, cors, static em produção)
     │   │   ├── env.ts            # validação de ambiente com Zod — não sobe com config faltando
     │   │   ├── firestore.ts      # inicialização do firebase-admin + nomes das coleções (prefixo mpa_)
     │   │   ├── auth.ts           # verifica ID Token Firebase; internalAuth.ts verifica o segredo de serviço-a-serviço
     │   │   ├── executeScan.ts    # lógica de um scan (Gemini + notificação + stats) — reaproveitada por /api e /internal
-    │   │   ├── scanSimulator.ts  # simulação de preços via Gemini (temporário — Fase 7 troca por Duffel/Amadeus)
-    │   │   ├── routeStats.ts     # estimativa de preço (média/mín/máx) antes de o monitor existir
-    │   │   ├── geminiClient.ts   # cliente Gemini único, compartilhado entre scanSimulator e routeStats
+    │   │   ├── routeStats.ts     # média/mín/máx REAIS da rota (Travelpayouts) antes de o monitor existir
+    │   │   ├── geminiClient.ts   # cliente Gemini único — usado só por hubSuggestion (malha aérea, não preço)
     │   │   ├── purchaseLink.ts   # deep-links de compra por companhia
     │   │   ├── repositories/     # única camada que fala com o Firestore
     │   │   ├── routes/           # rotas Fastify com validação Zod (inclui /internal/scan/:id)
@@ -229,8 +228,8 @@ Ver `.env.example`. Resumo:
 |----------|-------------|-------|
 | `FIREBASE_PROJECT_ID` | Não (default `lista-ai-f2916`) | Projeto Firestore |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Só em dev local | Caminho do JSON de service account; em Cloud Run as credenciais são automáticas |
-| `GEMINI_API_KEY` | Não | Habilita simulação de preços via IA; sem ela roda fallback offline |
-| `GEMINI_MODEL` | Não (default `gemini-3.5-flash`) | Modelo usado na simulação (Fase 1/2 — some na Fase 3) |
+| `GEMINI_API_KEY` | Não | Habilita a sugestão de hubs de conexão (`hubSuggestion.ts`). Nunca gera preço — ver `_local-bdr-policy-016` |
+| `GEMINI_MODEL` | Não (default `gemini-3.5-flash`) | Modelo usado na sugestão de hubs |
 | `PORT` | Não (default `8080`) | Porta do serviço api |
 | `APP_URL` | Não | URL base para links auto-referenciais |
 
@@ -244,12 +243,12 @@ Validação de env acontece no boot via Zod (`services/api/src/env.ts`) — o se
 
 ## Lógica de scan (`POST /api/monitors/:id/scan`)
 
-Implementada em `services/api/src/scanSimulator.ts` + `routes/monitors.ts`. **Temporária** — a Fase 3 substitui por busca real (Duffel/Amadeus) atrás da mesma assinatura, sem tocar no resto do sistema.
+Implementada em `services/api/src/executeScan.ts` + `routes/monitors.ts`. **O FlySpot não fabrica preço** — ver `_local-bdr-policy-016`.
 
-1. Chama Gemini (`GEMINI_MODEL`) com schema JSON estruturado para gerar preços realistas em BRL por site
-2. Fallback para simulação determinística se `GEMINI_API_KEY` ausente ou chamada falhar
-3. Pega o resultado mais barato, atualiza `monitor.currentPrice` e `monitor.history`, incrementa stats do site (via `FieldValue.increment`)
-4. Cria `NotificationLog` se preço ≤ meta ou preço mudou desde o último scan
+1. Consulta as fontes reais em cascata: Travelpayouts (cache de tarifas observadas) e, sem cobertura, Sky Scrapper
+2. Sem preço em nenhuma fonte, o scan termina **com sucesso e sem resultado**: `lastScannedAt` avança, mas `currentPrice`, `history` e `bestPriceTracked` ficam intocados, e nenhuma notificação é criada
+3. Com preço, atualiza `currentPrice`, `lastPriceFoundAt` e `history`
+4. Cria `NotificationLog` se o preço bateu a meta ou entrou na faixa de aviso (e-mail só nesses dois casos — `_local-bdr-policy-008`)
 
 ## Processo de desenvolvimento
 

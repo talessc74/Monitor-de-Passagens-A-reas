@@ -41,7 +41,7 @@ describe('getCheapestRealFare (with key, fetch mocked)', () => {
     vi.unstubAllEnvs();
   });
 
-  it('resolves airports then returns the cheapest itinerary, marked estimated: false', async () => {
+  it('resolves airports then returns the cheapest itinerary', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(airportResponse('GRU', '95673332'))
@@ -67,7 +67,6 @@ describe('getCheapestRealFare (with key, fetch mocked)', () => {
     expect(result).not.toBeNull();
     expect(result!.price).toBe(256);
     expect(result!.site).toBe('Avianca');
-    expect(result!.estimated).toBe(false);
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 

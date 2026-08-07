@@ -175,7 +175,6 @@ export async function getCheapestRealFare(origin: string, destination: string, d
       stops: leg?.stopCount ?? 0,
       isPromotion: false,
       details: `Preço real observado via Sky Scrapper (companhia: ${carrierName}).`,
-      estimated: false,
     };
   } catch (error) {
     console.error(`[api] Erro ao consultar Sky Scrapper para ${origin}->${destination}:`, error);

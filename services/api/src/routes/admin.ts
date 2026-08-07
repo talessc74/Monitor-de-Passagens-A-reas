@@ -2,10 +2,12 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { authenticate, requireAdmin } from '../auth.js';
 import { getUserByEmail, listAllUsers, updateUser } from '../repositories/usersRepository.js';
+import { purgeSimulatedPrices } from '../repositories/monitorsRepository.js';
 import { env } from '../env.js';
 import {
   testConnection as testTravelpayoutsConnection,
   listCachedDestinations,
+  mapCoverage,
   testRoute as testTravelpayoutsRoute,
 } from '../travelpayoutsClient.js';
 import { testConnection as testSkyScrapperConnection } from '../skyScrapperClient.js';
@@ -72,6 +74,25 @@ export async function adminRoutes(app: FastifyInstance) {
       return { origin, ...result };
     }
   );
+
+  // Limpeza única dos preços herdados do simulador — ver
+  // _local-bdr-policy-016 e purgeSimulatedPrices(). Manual e sob
+  // demanda, não automático no boot: apagar histórico de preço é
+  // destrutivo e irreversível, então quem puxa o gatilho é uma pessoa,
+  // com a intenção explícita, não um deploy.
+  app.post('/api/admin/purge-simulated-prices', { preHandler: [authenticate, requireAdmin] }, async () => {
+    return purgeSimulatedPrices();
+  });
+
+  // Mapa de cobertura em lote: varre todos os aeroportos brasileiros
+  // relevantes de uma vez e responde "de que tamanho é o produto que dá
+  // pra construir com dado real?" — a medição que decide o rumo do
+  // FlySpot. Ver _local-bdr-policy-016. Sem cache: é consulta manual e
+  // rara, e um número velho aqui vale menos que a espera de alguns
+  // segundos.
+  app.get('/api/admin/coverage-map', { preHandler: [authenticate, requireAdmin] }, async () => {
+    return mapCoverage();
+  });
 
   // Testa uma rota origin->destination específica com a mesma chamada
   // que o scan real faz — pra depurar o caso "apareceu no explorador de

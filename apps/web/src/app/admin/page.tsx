@@ -36,6 +36,21 @@ interface RoutesResponse {
   error?: string;
 }
 
+interface CoverageByOrigin {
+  origin: string;
+  destinationCount: number;
+  cheapest: { destination: string; price: number } | null;
+  error?: string;
+}
+
+interface CoverageMapResponse {
+  configured: boolean;
+  origins: CoverageByOrigin[];
+  totalRoutes: number;
+  uniqueDestinations: number;
+  generatedAt: string;
+}
+
 interface RouteTestResponse {
   origin: string;
   destination: string;
@@ -68,6 +83,9 @@ export default function AdminPage() {
   const [routesOrigin, setRoutesOrigin] = useState('BSB');
   const [routesResult, setRoutesResult] = useState<RoutesResponse | null>(null);
   const [routesLoading, setRoutesLoading] = useState(false);
+  const [coverage, setCoverage] = useState<CoverageMapResponse | null>(null);
+  const [coverageLoading, setCoverageLoading] = useState(false);
+  const [purgeLoading, setPurgeLoading] = useState(false);
   const [routeTestOrigin, setRouteTestOrigin] = useState('BSB');
   const [routeTestDestination, setRouteTestDestination] = useState('MCO');
   const [routeTestResult, setRouteTestResult] = useState<RouteTestResponse | null>(null);
@@ -113,6 +131,36 @@ export default function AdminPage() {
       if (res.ok) setDiagnostics(await res.json());
     } finally {
       setDiagnosticsLoading(false);
+    }
+  }
+
+  async function loadCoverage() {
+    setCoverageLoading(true);
+    try {
+      const res = await apiFetch('/api/admin/coverage-map');
+      if (res.ok) setCoverage(await res.json());
+    } finally {
+      setCoverageLoading(false);
+    }
+  }
+
+  async function purgeSimulated() {
+    if (
+      !window.confirm(
+        'Isso apaga preço atual, melhor preço e histórico de TODOS os monitores — o que veio do simulador antigo não dá pra separar do que veio de fonte real, então a limpeza é total. A configuração (rota, datas, meta) não é tocada. Confirma?'
+      )
+    ) {
+      return;
+    }
+    setPurgeLoading(true);
+    try {
+      const res = await apiFetch('/api/admin/purge-simulated-prices', { method: 'POST' });
+      const data = await res.json();
+      setMessage(
+        res.ok ? `Limpeza concluída: ${data.monitorsCleared} monitor(es) zerado(s).` : data.error || 'Falha na limpeza.'
+      );
+    } finally {
+      setPurgeLoading(false);
     }
   }
 
@@ -222,6 +270,81 @@ export default function AdminPage() {
           )}
         </div>
 
+        <div className="mt-6 rounded-xl border border-danger-border bg-paper-card p-6 shadow-card">
+          <h2 className="font-serif text-base font-semibold">Limpar preços do simulador antigo</h2>
+          <p className="mt-1 text-xs text-ink-muted">
+            Monitores criados antes da remoção do simulador têm preço inventado gravado. Sem o selo &quot;Simulado&quot;, esses
+            números passam a se ler como reais — esta limpeza zera preço, melhor preço e histórico de todos os monitores,
+            deixando o próximo scan repovoar só com o que for apurado de verdade. Ação destrutiva e sem volta.
+          </p>
+          <button
+            onClick={purgeSimulated}
+            disabled={purgeLoading}
+            className="mt-3 flex items-center gap-1.5 rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-xs font-bold text-danger-text transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${purgeLoading ? 'animate-spin' : ''}`} />
+            {purgeLoading ? 'Limpando...' : 'Zerar preços de todos os monitores'}
+          </button>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-border bg-paper-card p-6 shadow-card">
+          <h2 className="font-serif text-base font-semibold">Mapa de cobertura real</h2>
+          <p className="mt-1 text-xs text-ink-muted">
+            Varre de uma vez os 20 aeroportos brasileiros de maior movimento e conta quantas rotas têm preço real
+            disponível. É esse número que define o tamanho do produto que dá pra construir sem inventar preço.
+          </p>
+          <button
+            onClick={loadCoverage}
+            disabled={coverageLoading}
+            className="mt-3 flex items-center gap-1.5 rounded-md bg-terracotta-solid px-3 py-2 text-xs font-bold text-white transition hover:bg-terracotta-hover disabled:cursor-not-allowed disabled:bg-paper-deep disabled:text-ink-muted"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${coverageLoading ? 'animate-spin' : ''}`} />
+            {coverageLoading ? 'Varrendo 20 origens...' : 'Rodar varredura'}
+          </button>
+
+          {coverage && (
+            <div className="mt-4">
+              {!coverage.configured ? (
+                <p className="text-xs text-ink-muted">Travelpayouts não está configurado (sem token).</p>
+              ) : (
+                <>
+                  <div className="mb-3 grid grid-cols-2 gap-3">
+                    <div className="rounded-md border border-terracotta/40 bg-terracotta-wash p-3 text-center">
+                      <div className="font-mono text-2xl font-bold text-terracotta">{coverage.totalRoutes}</div>
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">rotas com preço real</div>
+                    </div>
+                    <div className="rounded-md border border-border bg-paper-deep p-3 text-center">
+                      <div className="font-mono text-2xl font-bold text-ink">{coverage.uniqueDestinations}</div>
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">destinos distintos</div>
+                    </div>
+                  </div>
+                  <div className="divide-y divide-border rounded-md border border-border">
+                    {[...coverage.origins]
+                      .sort((a, b) => b.destinationCount - a.destinationCount)
+                      .map((o) => (
+                        <div key={o.origin} className="flex items-center justify-between px-3 py-2 text-xs">
+                          <span className="font-mono font-bold">{o.origin}</span>
+                          {o.error ? (
+                            <span className="text-danger-text">{o.error}</span>
+                          ) : (
+                            <span className="text-ink-muted">
+                              {o.cheapest ? `mais barato: ${o.cheapest.destination} · R$ ${o.cheapest.price.toLocaleString('pt-BR')}` : 'sem cobertura'}
+                            </span>
+                          )}
+                          <span
+                            className={`font-mono font-bold ${o.destinationCount > 0 ? 'text-terracotta' : 'text-ink-muted'}`}
+                          >
+                            {o.destinationCount}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="mt-6 rounded-xl border border-border bg-paper-card p-6 shadow-card">
           <h2 className="font-serif text-base font-semibold">Cobertura do Travelpayouts por origem</h2>
           <p className="mt-1 text-xs text-ink-muted">
@@ -280,7 +403,7 @@ export default function AdminPage() {
           <h2 className="font-serif text-base font-semibold">Testar rota específica</h2>
           <p className="mt-1 text-xs text-ink-muted">
             Roda a mesma chamada que um scan de verdade faz pra essa origem+destino — útil quando a rota aparece no
-            explorador acima mas o monitor continua vindo "Simulado".
+            explorador acima mas o monitor continua sem preço.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <input

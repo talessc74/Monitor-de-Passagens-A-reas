@@ -36,8 +36,12 @@ export default function SitesList({ sites, onToggleSiteStatus }: SitesListProps)
                   <Link2 className="h-3 w-3" />
                 </a>
               </div>
+              {/* Contador de varreduras e tempo de resposta saíram daqui: eram
+                  gerados por scan (incremento fixo + valor aleatório) para
+                  sites que o FlySpot nunca consultou de fato. Ver
+                  _local-bdr-policy-016. */}
               <div className="mt-0.5 font-mono text-[11px] text-ink-muted">
-                {site.status === 'active' ? `${site.scrapedCount} varreduras · ${site.avgResponseMs}ms` : 'desligado'}
+                {site.status === 'active' ? 'ligado' : 'desligado'}
               </div>
             </div>
 

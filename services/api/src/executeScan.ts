@@ -1,11 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import type { FlightMonitor, NotificationLog, ScanResponse } from '@mpa/types';
+import type { FlightMonitor, NotificationLog, ScanResponse, ScanResult } from '@mpa/types';
 import { updateMonitor } from './repositories/monitorsRepository.js';
 import { createNotification } from './repositories/notificationsRepository.js';
 import { createOutboxEvent } from './repositories/outboxRepository.js';
-import { db, COLLECTIONS } from './firestore.js';
 import { FieldValue } from 'firebase-admin/firestore';
-import { runScanSimulation } from './scanSimulator.js';
 import { getCheapestRealFare } from './travelpayoutsClient.js';
 import { getCheapestRealFare as getCheapestSkyScrapperFare } from './skyScrapperClient.js';
 import { searchItinerary, beatsBaselineByMargin, LIABILITY_DISCLAIMER } from './itinerarySearch.js';
@@ -29,39 +27,34 @@ const TIENI_ITINERARY_MAX_LAYOVER_HOURS = 6;
  * de polling do services/generator). Ver _local-adr-policy-002.
  */
 export async function executeScanForMonitor(monitor: FlightMonitor): Promise<ScanResponse> {
-  const sitesToScan = monitor.trackedSites.length > 0 ? monitor.trackedSites : ['latam', 'gol', 'azul', 'decolar'];
-
-  const { results, generalAnalysis } = await runScanSimulation({
-    originCity: monitor.originCity,
-    origin: monitor.origin,
-    destinationCity: monitor.destinationCity,
-    destination: monitor.destination,
-    departureDate: monitor.departureDate,
-    returnDate: monitor.returnDate,
-    earliestDeparture: monitor.earliestDeparture,
-    latestReturn: monitor.latestReturn,
-    adults: monitor.adults,
-    children: monitor.children,
-    targetPrice: monitor.targetPrice,
-    sitesToScan,
-  });
-
   // Fontes de preço real do FlySpot, em cascata — ver _local-adr-policy-004
   // (application). Travelpayouts primeiro (cache, mais barato/rápido de
   // consultar); se não tiver cobertura pra rota, tenta o Sky Scrapper
-  // (busca ao vivo, cobertura mais ampla confirmada em _local-bdr-plan-006,
-  // inclusive BSB). Quando nenhuma das duas tem dado real, o scan segue
-  // 100% com os resultados simulados (estimated: true) — nunca misturados
-  // sob a mesma etiqueta de "real".
-  const realFare = (await getCheapestRealFare(monitor.origin, monitor.destination)) ?? (await getCheapestSkyScrapperFare(monitor.origin, monitor.destination, monitor.departureDate ?? null));
-  const allResults = realFare ? [realFare, ...results] : results;
+  // (busca ao vivo). Quando nenhuma das duas tem dado, o scan termina sem
+  // preço — não há mais simulador atrás pra preencher o silêncio. Ver
+  // _local-bdr-policy-016.
+  const realFare =
+    (await getCheapestRealFare(monitor.origin, monitor.destination)) ??
+    (await getCheapestSkyScrapperFare(monitor.origin, monitor.destination, monitor.departureDate ?? null));
 
-  const validResults = allResults.filter((r) => r.price > 0);
-  const sorted = [...validResults].sort((a, b) => a.price - b.price);
-  const directCheapest = sorted[0];
+  const validResults: ScanResult[] = realFare && realFare.price > 0 ? [realFare] : [];
+  const directCheapest = validResults[0];
 
+  // Nenhuma fonte real cobre esta rota agora. Isso é um resultado, não
+  // uma falha: a tentativa fica registrada (lastScannedAt avança, então
+  // o scheduler reagenda normalmente), mas currentPrice, history e
+  // bestPriceTracked ficam intocados — inventar número aqui foi
+  // exatamente o que a _local-bdr-policy-016 veio encerrar. Sem preço
+  // não há meta batida, logo não há notificação nem e-mail.
   if (!directCheapest) {
-    throw new Error('Resultados de busca vazios');
+    const untouched = await updateMonitor(monitor.id, { lastScannedAt: new Date().toISOString() });
+    return {
+      success: true,
+      monitor: untouched as FlightMonitor,
+      results: [],
+      cheapestResult: null,
+      triggeredNotification: null,
+    };
   }
 
   // "Modo Tieni" — no modo 'anytime', busca também um itinerário
@@ -109,7 +102,6 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
         stops: itinerary.legs.length - 1,
         isPromotion: false,
         details: `Roteiro ${routeText} (${legsText}). ${LIABILITY_DISCLAIMER}`,
-        estimated: itinerary.legs.some((l) => l.estimated !== false),
       });
       validResults.sort((a, b) => a.price - b.price);
     }
@@ -242,6 +234,7 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
   const updatedMonitor = await updateMonitor(monitor.id, {
     currentPrice: cheapestResult.price,
     lastScannedAt: new Date().toISOString(),
+    lastPriceFoundAt: new Date().toISOString(),
     bestPriceTracked,
     history,
     lastScanResults: validResults,
@@ -249,26 +242,10 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
     lastItinerarySearch: itinerarySearchRecord ?? FieldValue.delete(),
   });
 
-  const batch = db.batch();
-  sitesToScan.forEach((siteId) => {
-    const ref = db.collection(COLLECTIONS.sites).doc(siteId);
-    batch.set(
-      ref,
-      {
-        scrapedCount: FieldValue.increment(1),
-        lastScrapedAt: new Date().toISOString(),
-        avgResponseMs: Math.round(200 + Math.random() * 500),
-      },
-      { merge: true }
-    );
-  });
-  await batch.commit();
-
   return {
     success: true,
     monitor: updatedMonitor as FlightMonitor,
     results: validResults,
-    generalAnalysis,
     cheapestResult,
     triggeredNotification,
   };

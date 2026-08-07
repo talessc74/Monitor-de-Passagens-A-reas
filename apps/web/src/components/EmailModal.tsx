@@ -88,7 +88,7 @@ export default function EmailModal({ notification, onClose }: EmailModalProps) {
                 <p className="text-xs font-bold uppercase tracking-wider text-[#6B6255]">Meta Atingida</p>
                 <h3 className="text-xl font-black leading-tight">Sua passagem está com preço ideal!</h3>
                 <div className="mt-3 inline-flex items-center gap-3 rounded-xl border border-[#0F6B5C]/20 bg-[#0F6B5C]/10 px-5 py-2.5 text-2xl font-black text-[#0F6B5C]">
-                  R$ {notification.price > 0 ? notification.price : 'Simulado'}
+                  R$ {notification.price.toLocaleString('pt-BR')}
                 </div>
                 <p className="text-[11px] text-[#6B6255]">
                   Preço teto configurado: <strong className="text-[#2A241D]">R$ {notification.targetPrice > 0 ? notification.targetPrice : '---'}</strong>
@@ -120,7 +120,7 @@ export default function EmailModal({ notification, onClose }: EmailModalProps) {
                   id="btn-buy-flight-direct"
                 >
                   <ExternalLink className="h-4 w-4" />
-                  Ir para o site de compra e reservar (R$ {notification.price > 0 ? notification.price : 'Simulado'})
+                  Ir para o site de compra e reservar (R$ {notification.price.toLocaleString('pt-BR')})
                 </a>
 
                 <div className="space-y-1.5 rounded-xl border border-[#E4DDD0] bg-[#F0E9DC]/40 p-3 text-left">
