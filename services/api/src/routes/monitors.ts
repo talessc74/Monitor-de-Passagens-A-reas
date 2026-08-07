@@ -20,6 +20,7 @@ import { executeScanForMonitor } from '../executeScan.js';
 import { verifyPauseToken } from '../pauseLink.js';
 import { passengerDateSchema, passengerDateUnion } from '../schemas/passengerDate.js';
 import { sendRealTestEmail } from '../testEmailSender.js';
+import { requestRealSearch } from '../realSearchClient.js';
 
 // Presets fechados de _local-bdr-policy-005 — a UI nunca envia um valor
 // livre, então validamos contra o conjunto discreto, não um range.
@@ -271,6 +272,39 @@ export async function monitorsRoutes(app: FastifyInstance) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
       request.log.error({ err: error, monitorId: monitor.id }, 'Falha durante o escaneamento');
       return reply.status(500).send({ error: 'Falha ao escanear tarifas aéreas', details: message });
+    }
+  });
+
+  // Busca de preço real sob demanda — abre um navegador de verdade
+  // (services/scraper) só quando o usuário clica, nunca em loop
+  // automático (bloqueio de bot é o risco real de automatizar isso,
+  // ver _local-bdr-policy-015). Distinta de /scan: não atualiza
+  // currentPrice/history nem dispara notificação, é uma consulta
+  // pontual mostrada só na hora.
+  app.post<{ Params: { id: string } }>('/api/monitors/:id/real-search', { preHandler: authenticate }, async (request, reply) => {
+    const monitor = await getMonitor(request.params.id);
+    if (!monitor || monitor.userId !== request.userId) {
+      return reply.status(404).send({ error: 'Monitor não encontrado' });
+    }
+
+    try {
+      return await requestRealSearch({
+        origin: monitor.origin,
+        destination: monitor.destination,
+        departureDate:
+          monitor.departureDate ?? monitor.earliestDeparture ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        returnDate: monitor.returnDate,
+        adults: monitor.adults,
+        children: monitor.children,
+      });
+    } catch (error) {
+      const code = (error as { code?: string })?.code;
+      if (code === 'NOT_CONFIGURED') {
+        return reply.status(503).send({ error: 'Busca de preço real não está disponível neste ambiente ainda.' });
+      }
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      request.log.error({ err: error, monitorId: monitor.id }, 'Falha na busca de preço real');
+      return reply.status(502).send({ error: 'Falha ao buscar preço real', details: message });
     }
   });
 

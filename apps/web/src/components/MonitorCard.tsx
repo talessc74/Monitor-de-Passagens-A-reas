@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Users, RefreshCw, Trash2, Power, History, Pencil, Route } from 'lucide-react';
+import { Calendar, Users, RefreshCw, Trash2, Power, History, Pencil, Route, Globe } from 'lucide-react';
 import type { AirlineSite, FlightMonitor } from '@mpa/types';
 import EditMonitorModal from './EditMonitorModal';
 import MonitorDetailModal from './MonitorDetailModal';
+import RealSearchModal from './RealSearchModal';
 
 interface MonitorCardProps {
   monitor: FlightMonitor;
@@ -30,6 +31,7 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
   const [scanResultText, setScanResultText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isViewingDetail, setIsViewingDetail] = useState(false);
+  const [isRealSearching, setIsRealSearching] = useState(false);
 
   const handleScanClick = async () => {
     setIsScanning(true);
@@ -270,6 +272,15 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
           </button>
 
           <button
+            onClick={() => setIsRealSearching(true)}
+            className="flex items-center gap-1.5 rounded-md border border-terracotta/40 bg-terracotta-wash px-3.5 py-2 text-xs font-bold text-terracotta transition hover:brightness-95"
+            title="Abrir um navegador de verdade e buscar o preço real agora"
+          >
+            <Globe className="h-3.5 w-3.5" />
+            Preço real agora
+          </button>
+
+          <button
             onClick={() => {
               if (window.confirm(`Excluir o alerta ${monitor.origin} → ${monitor.destination}? O histórico de preços será perdido.`)) {
                 onDelete(monitor.id);
@@ -295,6 +306,8 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
       )}
 
       {isViewingDetail && <MonitorDetailModal monitor={monitor} onClose={() => setIsViewingDetail(false)} />}
+
+      {isRealSearching && <RealSearchModal monitor={monitor} onClose={() => setIsRealSearching(false)} />}
     </div>
   );
 }

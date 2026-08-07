@@ -9,11 +9,12 @@ env:
   IMAGE_API: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-api
   IMAGE_GENERATOR: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-generator
   IMAGE_PUBLISHER: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-publisher
+  IMAGE_SCRAPER: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-scraper
   IMAGE_WEB: southamerica-east1-docker.pkg.dev/lista-ai-f2916/flyspot/flyspot-web
 
 jobs:
   deploy:
-    name: Build & Deploy flyspot-api + flyspot-generator + flyspot-publisher + flyspot-web
+    name: Build & Deploy flyspot-scraper + flyspot-api + flyspot-generator + flyspot-publisher + flyspot-web
     runs-on: ubuntu-latest
 
     steps:
@@ -41,6 +42,43 @@ jobs:
 
       - name: Configurar Docker para o Artifact Registry
         run: gcloud auth configure-docker ${{ env.AR_LOCATION }}-docker.pkg.dev --quiet
+
+      # ── flyspot-scraper (busca de preço real sob demanda, Playwright —
+      # ver _local-bdr-policy-015) — deploya ANTES do api porque o api
+      # precisa da URL dela em SCRAPER_INTERNAL_URL. Serviço isolado de
+      # propósito: uma falha nessa imagem experimental (Chromium, mais
+      # pesada) nunca deve travar o deploy do api/generator/publisher/web,
+      # que já funcionam. ──────────────────────────────────────────────────
+      - name: Build da imagem Docker — scraper
+        run: |
+          docker build \
+            -f services/scraper/Dockerfile \
+            -t ${{ env.IMAGE_SCRAPER }}:${{ github.sha }} \
+            -t ${{ env.IMAGE_SCRAPER }}:latest \
+            .
+
+      - name: Push para o Artifact Registry — scraper
+        run: docker push --all-tags ${{ env.IMAGE_SCRAPER }}
+
+      - name: Deploy para Cloud Run — scraper
+        id: deploy-scraper
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: flyspot-scraper
+          image: ${{ env.IMAGE_SCRAPER }}:latest
+          region: southamerica-east1
+          project_id: lista-ai-f2916
+          # Sem min-instances: uso é sob demanda (clique do usuário), não
+          # precisa ficar de pé 24/7 como generator/publisher — escala a
+          # zero entre buscas pra não gastar à toa. Memória/CPU maiores
+          # que o padrão porque o Chromium do Playwright precisa de mais
+          # que os serviços Node puros. Timeout maior que o default (300s
+          # já cobre, mas deixamos explícito) pra sobrar folga do
+          # SCRAPE_TIMEOUT_MS interno (45s) mais o cold start do Chromium.
+          flags: --allow-unauthenticated --memory=1Gi --cpu=1 --timeout=120s
+          env_vars: |
+            NODE_ENV=production
+            INTERNAL_SCAN_TOKEN=${{ secrets.INTERNAL_SCAN_TOKEN }}
 
       # ── flyspot-api ──────────────────────────────────────────────────────
       - name: Build da imagem Docker — api
@@ -76,6 +114,7 @@ jobs:
             ADMIN_EMAILS=${{ secrets.ADMIN_EMAILS }}
             TRAVELPAYOUTS_API_TOKEN=${{ secrets.TRAVELPAYOUTS_API_TOKEN }}
             RAPIDAPI_KEY=${{ secrets.RAPIDAPI_KEY }}
+            SCRAPER_INTERNAL_URL=${{ steps.deploy-scraper.outputs.url }}
 
       # ── flyspot-generator (Fase 4 — scheduler) ──────────────────────────
       - name: Build da imagem Docker — generator
@@ -176,5 +215,6 @@ jobs:
       - name: URLs dos serviços
         run: |
           echo "✅ Deploy concluído"
+          echo "scraper: ${{ steps.deploy-scraper.outputs.url }}"
           echo "api: ${{ steps.deploy-api.outputs.url }}"
           echo "web: ${{ steps.deploy-web.outputs.url }}"
