@@ -129,6 +129,13 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail, 
   const originValid = Boolean(findAirport(origin));
   const destinationValid = Boolean(findAirport(destination));
 
+  const minReturnDate = (() => {
+    if (!departureDate) return undefined;
+    const nextDay = new Date(departureDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    return nextDay.toISOString().slice(0, 10);
+  })();
+
   const handleToggleSite = (id: string) => {
     if (selectedSites.includes(id)) {
       if (selectedSites.length > 1) {
@@ -233,7 +240,15 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail, 
                 id="mf-departure"
                 type="date"
                 value={departureDate}
-                onChange={(e) => setDepartureDate(e.target.value)}
+                onChange={(e) => {
+                  const newDeparture = e.target.value;
+                  setDepartureDate(newDeparture);
+                  if (newDeparture && returnDate && returnDate <= newDeparture) {
+                    const nextDay = new Date(newDeparture);
+                    nextDay.setDate(nextDay.getDate() + 1);
+                    setReturnDate(nextDay.toISOString().slice(0, 10));
+                  }
+                }}
                 className={`${plainInputClass} mb-2`}
                 required
               />
@@ -263,6 +278,7 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail, 
                 id="mf-return"
                 type="date"
                 value={returnDate}
+                min={minReturnDate}
                 onChange={(e) => setReturnDate(e.target.value)}
                 className={`${plainInputClass} mb-2`}
                 required
