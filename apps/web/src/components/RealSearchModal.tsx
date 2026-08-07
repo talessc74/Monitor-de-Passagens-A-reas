@@ -18,6 +18,7 @@ interface RealSearchResponse {
   searchUrl: string;
   pageTitle?: string;
   error?: string;
+  screenshotBase64?: string;
 }
 
 /**
@@ -110,6 +111,15 @@ export default function RealSearchModal({ monitor, onClose }: RealSearchModalPro
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber" />
                 {result.error || 'Não conseguimos ler um preço automaticamente desta vez.'}
               </div>
+            )}
+
+            {!result.success && result.screenshotBase64 && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={`data:image/png;base64,${result.screenshotBase64}`}
+                alt="Captura da página no momento da falha de leitura do preço"
+                className="w-full rounded-md border border-border"
+              />
             )}
 
             <a
