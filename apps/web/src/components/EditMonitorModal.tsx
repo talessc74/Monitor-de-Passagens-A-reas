@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { X, Calendar, CalendarX, Clock, Sparkles, Users, DollarSign, Mail } from 'lucide-react';
-import type { AirlineSite, FlightMonitor } from '@mpa/types';
+import type { FlightMonitor } from '@mpa/types';
 import { DEFAULT_SCAN_INTERVAL_HOURS, findAirport } from '@mpa/types';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
 import AirportAutocomplete from './AirportAutocomplete';
@@ -10,7 +10,6 @@ import MarginPresetControl from './MarginPresetControl';
 
 interface EditMonitorModalProps {
   monitor: FlightMonitor;
-  airlineSites: AirlineSite[];
   onClose: () => void;
   onSave: (id: string, patch: Record<string, unknown>) => Promise<boolean>;
   isPro: boolean;
@@ -28,7 +27,7 @@ const labelClass = 'mb-1 block text-[10px] font-bold uppercase tracking-wide tex
  * Editar um monitor existente — disponível independente do status
  * (ativo ou pausado). Ver _local-bdr-policy-004.
  */
-export default function EditMonitorModal({ monitor, airlineSites, onClose, onSave, isPro }: EditMonitorModalProps) {
+export default function EditMonitorModal({ monitor, onClose, onSave, isPro }: EditMonitorModalProps) {
   useEscapeToClose(onClose);
 
   const [searchMode, setSearchMode] = useState<'dated' | 'anytime'>(monitor.searchMode ?? 'dated');
@@ -49,17 +48,8 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
   const [targetPrice, setTargetPrice] = useState(String(monitor.targetPrice));
   const [targetPriceMarginPercent, setTargetPriceMarginPercent] = useState(monitor.targetPriceMarginPercent ?? 0);
   const [email, setEmail] = useState(monitor.email);
-  const [selectedSites, setSelectedSites] = useState<string[]>(monitor.trackedSites);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
-
-  const handleToggleSite = (id: string) => {
-    if (selectedSites.includes(id)) {
-      if (selectedSites.length > 1) setSelectedSites(selectedSites.filter((s) => s !== id));
-    } else {
-      setSelectedSites([...selectedSites, id]);
-    }
-  };
 
   const handleSave = async () => {
     if (searchMode === 'dated' && (!departureDate || !returnDate)) {
@@ -79,7 +69,6 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
       infants,
       targetPrice: Number(targetPrice),
       targetPriceMarginPercent,
-      trackedSites: selectedSites,
       email,
       ...(isPro ? { scanIntervalHours } : {}),
     };
@@ -369,30 +358,6 @@ export default function EditMonitorModal({ monitor, airlineSites, onClose, onSav
               className={`${fieldInputClass} font-medium`}
             />
           </div>
-
-          <fieldset>
-            <legend className={`${labelClass} text-xs`}>Sites pesquisados</legend>
-            <div className="grid grid-cols-2 gap-2">
-              {airlineSites.map((site) => (
-                <label
-                  key={site.id}
-                  className={`flex cursor-pointer items-center gap-2 rounded-md border p-2 text-xs transition-all ${
-                    selectedSites.includes(site.id)
-                      ? 'border-terracotta bg-terracotta-wash font-bold text-ink'
-                      : 'border-border-strong bg-paper text-ink-muted hover:bg-paper-deep'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedSites.includes(site.id)}
-                    onChange={() => handleToggleSite(site.id)}
-                    className="h-4 w-4 rounded border-border-strong text-terracotta focus:ring-terracotta"
-                  />
-                  <span className="truncate font-medium">{site.name}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
 
           {error && <p className="text-xs font-semibold text-danger-text">{error}</p>}
 

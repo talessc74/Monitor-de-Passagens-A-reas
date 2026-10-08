@@ -5,13 +5,12 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sparkles, RefreshCw } from 'lucide-react';
-import type { FlightMonitor, AirlineSite, NotificationLog, UserProfile } from '@mpa/types';
+import type { FlightMonitor, NotificationLog, UserProfile } from '@mpa/types';
 import { useAuth } from '../../lib/auth-context';
 import { apiFetch } from '../../lib/api';
 import Header from '../../components/Header';
 import MonitorForm from '../../components/MonitorForm';
 import MonitorCard from '../../components/MonitorCard';
-import SitesList from '../../components/SitesList';
 import NotificationFeed from '../../components/NotificationFeed';
 import EmailModal from '../../components/EmailModal';
 import RadarEmptyState from '../../components/RadarEmptyState';
@@ -49,7 +48,6 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const [monitors, setMonitors] = useState<FlightMonitor[]>([]);
-  const [sites, setSites] = useState<AirlineSite[]>([]);
   const [notifications, setNotifications] = useState<NotificationLog[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [selectedEmail, setSelectedEmail] = useState<NotificationLog | null>(null);
@@ -74,19 +72,17 @@ export default function DashboardPage() {
     setIsLoading(true);
     setErrorMessage('');
     try {
-      const [monitorsRes, sitesRes, notificationsRes, meRes] = await Promise.all([
+      const [monitorsRes, notificationsRes, meRes] = await Promise.all([
         apiFetch('/api/monitors'),
-        apiFetch('/api/sites'),
         apiFetch('/api/notifications'),
         apiFetch('/api/me'),
       ]);
 
-      if (!monitorsRes.ok || !sitesRes.ok || !notificationsRes.ok) {
+      if (!monitorsRes.ok || !notificationsRes.ok) {
         throw new Error('Erro de resposta do servidor back-end');
       }
 
       setMonitors(await monitorsRes.json());
-      setSites(await sitesRes.json());
       setNotifications(await notificationsRes.json());
       if (meRes.ok) setProfile(await meRes.json());
     } catch (err) {
@@ -138,9 +134,6 @@ export default function DashboardPage() {
 
         const notifRes = await apiFetch('/api/notifications');
         if (notifRes.ok) setNotifications(await notifRes.json());
-
-        const sitesRes = await apiFetch('/api/sites');
-        if (sitesRes.ok) setSites(await sitesRes.json());
       }
       return data;
     } catch (err) {
@@ -187,20 +180,6 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.error('Erro ao alterar status do monitor:', err);
-    }
-  };
-
-  const handleToggleSiteStatus = async (id: string) => {
-    try {
-      const response = await apiFetch(`/api/sites/${id}/toggle`, { method: 'POST' });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setSites((prev) => prev.map((s) => (s.id === id ? data.site : s)));
-        }
-      }
-    } catch (err) {
-      console.error('Erro ao alterar status do site:', err);
     }
   };
 
@@ -323,8 +302,7 @@ export default function DashboardPage() {
           ) : (
             <div className="grid grid-cols-1 gap-7 lg:grid-cols-[5fr_7fr] lg:items-start">
               <div className="space-y-7">
-                <MonitorForm airlineSites={sites} onSubmit={handleAddMonitor} currentUserEmail={currentUserEmail} isPro={isPro} />
-                <SitesList sites={sites} onToggleSiteStatus={handleToggleSiteStatus} />
+                <MonitorForm onSubmit={handleAddMonitor} currentUserEmail={currentUserEmail} isPro={isPro} />
               </div>
 
               <div className="space-y-7">
@@ -346,7 +324,6 @@ export default function DashboardPage() {
                         <MonitorCard
                           key={monitor.id}
                           monitor={monitor}
-                          airlineSites={sites}
                           onScan={handleScanMonitor}
                           onDelete={handleDeleteMonitor}
                           onToggleStatus={handleToggleMonitorStatus}

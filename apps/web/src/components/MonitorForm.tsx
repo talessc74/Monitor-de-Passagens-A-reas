@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { Calendar, CalendarX, Clock, DollarSign, Mail, Plus, Sparkles, TrendingUp } from 'lucide-react';
-import type { AirlineSite, RouteStats } from '@mpa/types';
+import type { RouteStats } from '@mpa/types';
 import { DEFAULT_SCAN_INTERVAL_HOURS, findAirport } from '@mpa/types';
 import { apiFetch } from '../lib/api';
 import AirportAutocomplete from './AirportAutocomplete';
 import MarginPresetControl from './MarginPresetControl';
 
 interface MonitorFormProps {
-  airlineSites: AirlineSite[];
   onSubmit: (data: any) => Promise<boolean>;
   currentUserEmail: string;
   isPro: boolean;
@@ -25,7 +24,7 @@ const selectClass =
   'select-native w-full rounded-md border border-border-strong bg-paper-card px-2 py-1.5 text-xs font-bold text-ink focus:border-terracotta focus:outline-none';
 const labelClass = 'mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-ink-muted';
 
-export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail, isPro }: MonitorFormProps) {
+export default function MonitorForm({ onSubmit, currentUserEmail, isPro }: MonitorFormProps) {
   const [searchMode, setSearchMode] = useState<'dated' | 'anytime'>('dated');
   const [scanIntervalHours, setScanIntervalHours] = useState<number>(DEFAULT_SCAN_INTERVAL_HOURS);
   const [origin, setOrigin] = useState('GRU');
@@ -44,7 +43,6 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail, 
   const [targetPrice, setTargetPrice] = useState<string>('4000');
   const [targetPriceMarginPercent, setTargetPriceMarginPercent] = useState<number>(0);
   const [email, setEmail] = useState(currentUserEmail);
-  const [selectedSites, setSelectedSites] = useState<string[]>(['latam', 'gol', 'azul', 'decolar']);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [routeStats, setRouteStats] = useState<RouteStats | null>(null);
@@ -136,16 +134,6 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail, 
   const originValid = Boolean(findAirport(origin));
   const destinationValid = Boolean(findAirport(destination));
 
-  const handleToggleSite = (id: string) => {
-    if (selectedSites.includes(id)) {
-      if (selectedSites.length > 1) {
-        setSelectedSites(selectedSites.filter((s) => s !== id));
-      }
-    } else {
-      setSelectedSites([...selectedSites, id]);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -161,7 +149,6 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail, 
       infants,
       targetPrice: Number(targetPrice),
       targetPriceMarginPercent,
-      trackedSites: selectedSites,
       email: email || currentUserEmail,
       ...(isPro ? { scanIntervalHours } : {}),
     };
@@ -475,30 +462,6 @@ export default function MonitorForm({ airlineSites, onSubmit, currentUserEmail, 
             required
           />
         </div>
-
-        <fieldset>
-          <legend className={labelClass}>Pesquisar nos seguintes sites</legend>
-          <div className="grid grid-cols-2 gap-2">
-            {airlineSites.map((site) => (
-              <label
-                key={site.id}
-                className={`flex cursor-pointer items-center gap-2 rounded-md border p-2 text-xs transition-all ${
-                  selectedSites.includes(site.id)
-                    ? 'border-terracotta bg-terracotta-wash font-bold text-ink'
-                    : 'border-border-strong bg-paper text-ink-muted hover:bg-paper-deep'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedSites.includes(site.id)}
-                  onChange={() => handleToggleSite(site.id)}
-                  className="h-4 w-4 rounded border-border-strong text-terracotta focus:ring-terracotta"
-                />
-                <span className="truncate font-medium">{site.name}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
 
         <button
           type="submit"

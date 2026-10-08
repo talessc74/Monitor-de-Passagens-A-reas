@@ -24,10 +24,6 @@ export function generatePurchaseLink(
     return `https://www.decolar.com/shop/flights/search/roundtrip/${o}/${d}/${depDate}/${retDate}/${ad}/${ch}/0`;
   }
 
-  if (siteId === 'passagensimperdiveis') {
-    return `https://passagensimperdiveis.com.br/passagens-aereas/?origem=${o}&destino=${d}&ida=${depDate}&volta=${retDate}&adultos=${ad}&criancas=${ch}`;
-  }
-
   const d1 = depDate.slice(2).replace(/-/g, '');
   const d2 = retDate.slice(2).replace(/-/g, '');
   return `https://www.skyscanner.com.br/transporte/passagens-aereas/${o.toLowerCase()}/${d.toLowerCase()}/${d1}/${d2}/?adults=${ad}&children=${ch}`;

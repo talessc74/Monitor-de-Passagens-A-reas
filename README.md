@@ -38,9 +38,6 @@ npm install
 cp .env.example .env.local
 # Edite .env.local: GEMINI_API_KEY (opcional) e GOOGLE_APPLICATION_CREDENTIALS
 
-# Popular a coleção mpa_sites no Firestore (uma vez)
-npm run seed
-
 # Iniciar frontend + backend juntos
 npm run dev
 ```
@@ -55,7 +52,6 @@ Frontend em `http://localhost:5173` (proxy de `/api/*` para o backend em `:8080`
 | `npm run dev:web` / `npm run dev:api` | Só um dos dois |
 | `npm run build` | Build de produção do frontend |
 | `npm run build --workspace=@mpa/api` | Type-check + bundle do backend |
-| `npm run seed` | Popula `mpa_sites` no Firestore |
 | `npm run lint` | Type-check do frontend e do backend |
 
 ## Estrutura do projeto

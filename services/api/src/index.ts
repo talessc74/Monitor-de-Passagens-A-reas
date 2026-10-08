@@ -4,7 +4,6 @@ import rateLimit from '@fastify/rate-limit';
 import cors from '@fastify/cors';
 import { env } from './env.js';
 import { monitorsRoutes } from './routes/monitors.js';
-import { sitesRoutes } from './routes/sites.js';
 import { notificationsRoutes } from './routes/notifications.js';
 import { accountRoutes } from './routes/account.js';
 import { billingRoutes } from './routes/billing.js';
@@ -20,7 +19,6 @@ async function buildServer() {
   await app.register(rateLimit, { max: 100, timeWindow: '1 minute' });
 
   await app.register(monitorsRoutes);
-  await app.register(sitesRoutes);
   await app.register(notificationsRoutes);
   await app.register(accountRoutes);
   await app.register(billingRoutes);

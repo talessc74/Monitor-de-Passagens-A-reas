@@ -41,7 +41,6 @@ export interface FlightMonitor {
   targetPriceMarginPercent: number;
   currentPrice: number | null;
   bestPriceTracked: number | null;
-  trackedSites: string[];
   notificationsEnabled: boolean;
   email: string;
   createdAt: string;
@@ -107,17 +106,6 @@ export interface NotificationLog {
   sentAt: string;
   type: 'price_update' | 'target_reached' | 'promotion' | 'price_in_range';
   purchaseUrl?: string;
-}
-
-export interface AirlineSite {
-  id: string;
-  name: string;
-  url: string;
-  logo: string;
-  status: 'active' | 'maintenance';
-  scrapedCount: number;
-  lastScrapedAt: string | null;
-  avgResponseMs: number;
 }
 
 /**
