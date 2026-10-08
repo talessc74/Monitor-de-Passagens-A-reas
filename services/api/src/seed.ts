@@ -52,6 +52,16 @@ const DEFAULT_SITES: AirlineSite[] = [
     lastScrapedAt: null,
     avgResponseMs: 310,
   },
+  {
+    id: 'passagensimperdiveis',
+    name: 'Passagens Imperdíveis',
+    url: 'https://passagensimperdiveis.com.br',
+    logo: 'TICKET',
+    status: 'active',
+    scrapedCount: 0,
+    lastScrapedAt: null,
+    avgResponseMs: 420,
+  },
 ];
 
 async function seed() {
