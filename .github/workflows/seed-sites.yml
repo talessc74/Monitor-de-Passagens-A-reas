@@ -1,0 +1,34 @@
+name: Seed — Sites de busca
+
+on:
+  workflow_dispatch:
+
+jobs:
+  seed:
+    name: Inserir sites que ainda não existem em mpa_sites
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Autenticar no GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # O seed só cria documentos ausentes (nunca sobrescreve um site existente).
+      # Requer que a service account do GCP_SA_KEY tenha acesso de escrita ao
+      # Firestore (roles/datastore.user) — se falhar por permissão, é isso.
+      - name: Rodar seed
+        run: npm run seed
+        env:
+          FIREBASE_PROJECT_ID: lista-ai-f2916
