@@ -33,7 +33,6 @@ const createMonitorSchema = passengerDateUnion({
   destinationCity: z.string().optional(),
   targetPrice: z.coerce.number().positive(),
   targetPriceMarginPercent: targetPriceMarginPercentSchema.optional(),
-  trackedSites: z.array(z.string()).optional(),
   email: z.string().email(),
   scanIntervalHours: z.coerce.number().int().optional(),
 });
@@ -65,7 +64,6 @@ const updateMonitorSchema = z
     infants: z.coerce.number().int().min(0).optional(),
     targetPrice: z.coerce.number().positive().optional(),
     targetPriceMarginPercent: targetPriceMarginPercentSchema.optional(),
-    trackedSites: z.array(z.string()).optional(),
     email: z.string().email().optional(),
     currentPrice: z.number().nullable().optional(),
     bestPriceTracked: z.number().nullable().optional(),
@@ -175,7 +173,6 @@ export async function monitorsRoutes(app: FastifyInstance) {
       targetPriceMarginPercent: body.targetPriceMarginPercent ?? 0,
       currentPrice: null,
       bestPriceTracked: null,
-      trackedSites: body.trackedSites && body.trackedSites.length ? body.trackedSites : ['latam', 'gol', 'azul', 'decolar'],
       notificationsEnabled: true,
       email: body.email,
       ...(body.scanIntervalHours !== undefined ? { scanIntervalHours: body.scanIntervalHours } : {}),

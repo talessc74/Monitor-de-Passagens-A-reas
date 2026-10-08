@@ -173,8 +173,7 @@ Vigilância Permanente, `.seeds/ARGUS.md` §I).
     │   │   ├── geminiClient.ts   # cliente Gemini único — usado só por hubSuggestion (malha aérea, não preço)
     │   │   ├── purchaseLink.ts   # deep-links de compra por companhia
     │   │   ├── repositories/     # única camada que fala com o Firestore
-    │   │   ├── routes/           # rotas Fastify com validação Zod (inclui /internal/scan/:id)
-    │   │   └── seed.ts           # popula mpa_sites (LATAM, GOL, Azul, Decolar, Skyscanner)
+    │   │   └── routes/           # rotas Fastify com validação Zod (inclui /internal/scan/:id)
     │   └── Dockerfile            # build multi-stage para Cloud Run
     ├── generator/          # @mpa/generator — Fastify mínimo + loop de polling do scheduler (Fase 4)
     │   ├── src/
@@ -203,7 +202,7 @@ Cada serviço é empacotado em contêiner Docker e deployado no **Cloud Run** �
 
 ## Convenção de nomes no Firestore (projeto compartilhado)
 
-O projeto Firebase (`lista-ai-f2916`) é compartilhado com outro produto (Lista Aí, hoje inativo). **Toda coleção deste produto usa o prefixo `mpa_`** para nunca colidir com dados do outro produto: `mpa_monitors`, `mpa_notifications`, `mpa_sites`, `mpa_users`. Nunca criar ou consultar uma coleção sem esse prefixo neste projeto. Ver `services/api/src/firestore.ts` (`COLLECTIONS`).
+O projeto Firebase (`lista-ai-f2916`) é compartilhado com outro produto (Lista Aí, hoje inativo). **Toda coleção deste produto usa o prefixo `mpa_`** para nunca colidir com dados do outro produto: `mpa_monitors`, `mpa_notifications`, `mpa_users`. Nunca criar ou consultar uma coleção sem esse prefixo neste projeto. Ver `services/api/src/firestore.ts` (`COLLECTIONS`).
 
 ## Commands
 
@@ -214,7 +213,6 @@ npm run dev:web             # só o frontend
 npm run dev:api             # só o serviço api
 npm run build                # build de produção do frontend
 npm run build --workspace=@mpa/api   # type-check + bundle (esbuild) do serviço api
-npm run seed                # popula a coleção mpa_sites no Firestore (idempotente)
 npm run lint                 # type-check do frontend + do serviço api
 ```
 
@@ -237,9 +235,8 @@ Validação de env acontece no boot via Zod (`services/api/src/env.ts`) — o se
 
 ## Modelo de dados (`packages/types`)
 
-- **`FlightMonitor`** — entidade central: `userId` (nullable até a Fase 2), códigos IATA origem/destino, datas, contagem de passageiros, `targetPrice`, `currentPrice`, `history[]`, `trackedSites`, `nextScanAt` (usado pela Fase 4), `status: 'active' | 'paused'`
+- **`FlightMonitor`** — entidade central: `userId` (nullable até a Fase 2), códigos IATA origem/destino, datas, contagem de passageiros, `targetPrice`, `currentPrice`, `history[]`, `nextScanAt` (usado pela Fase 4), `status: 'active' | 'paused'`
 - **`NotificationLog`** — gerada quando `currentPrice ≤ targetPrice` ou preço muda; inclui `purchaseUrl` deep-link para o site da companhia
-- **`AirlineSite`** — metadata de cada fonte (LATAM, GOL, Azul, Decolar, Skyscanner): `status`, `scrapedCount`, `avgResponseMs`
 
 ## Lógica de scan (`POST /api/monitors/:id/scan`)
 

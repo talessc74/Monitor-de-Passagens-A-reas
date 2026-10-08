@@ -2,13 +2,12 @@
 
 import { useState } from 'react';
 import { Calendar, Users, RefreshCw, Trash2, Power, History, Pencil, Route } from 'lucide-react';
-import type { AirlineSite, FlightMonitor } from '@mpa/types';
+import type { FlightMonitor } from '@mpa/types';
 import EditMonitorModal from './EditMonitorModal';
 import MonitorDetailModal from './MonitorDetailModal';
 
 interface MonitorCardProps {
   monitor: FlightMonitor;
-  airlineSites: AirlineSite[];
   onScan: (id: string) => Promise<any>;
   onDelete: (id: string) => void;
   onToggleStatus: (id: string, currentStatus: string) => void;
@@ -16,15 +15,7 @@ interface MonitorCardProps {
   isPro: boolean;
 }
 
-const SITE_NAMES: { [key: string]: string } = {
-  latam: 'LATAM',
-  gol: 'GOL',
-  azul: 'Azul',
-  decolar: 'Decolar',
-  skyscanner: 'Skyscanner',
-};
-
-export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, onToggleStatus, onEdit, isPro }: MonitorCardProps) {
+export default function MonitorCard({ monitor, onScan, onDelete, onToggleStatus, onEdit, isPro }: MonitorCardProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanSteps, setScanSteps] = useState<string[]>([]);
   const [scanResultText, setScanResultText] = useState('');
@@ -177,13 +168,6 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
           {monitor.children > 0 && `, ${monitor.children} ${monitor.children === 1 ? 'criança' : 'crianças'}`}
           {monitor.infants > 0 && ` e ${monitor.infants} ${monitor.infants === 1 ? 'bebê' : 'bebês'}`}
         </span>
-        <span className="flex flex-wrap gap-1.5">
-          {monitor.trackedSites.map((s) => (
-            <span key={s} className="rounded bg-paper-deep px-1.5 py-0.5 font-mono text-[10px] text-ink-muted">
-              {(SITE_NAMES[s] || s.toUpperCase()).toUpperCase()}
-            </span>
-          ))}
-        </span>
       </div>
 
       <MonitorSparkline monitor={monitor} />
@@ -277,7 +261,6 @@ export default function MonitorCard({ monitor, airlineSites, onScan, onDelete, o
       {isEditing && (
         <EditMonitorModal
           monitor={monitor}
-          airlineSites={airlineSites}
           onClose={() => setIsEditing(false)}
           onSave={onEdit}
           isPro={isPro}

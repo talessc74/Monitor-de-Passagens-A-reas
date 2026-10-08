@@ -87,7 +87,7 @@ export default function MonitorDetailModal({ monitor, onClose }: MonitorDetailMo
         <div className="mb-1 flex items-start justify-between">
           <div>
             <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-muted">
-              {monitor.origin} → {monitor.destination} · {monitor.trackedSites.map((s) => SITE_NAMES[s] || s).join(', ')}
+              {monitor.origin} → {monitor.destination}
             </p>
             <h2 id="monitor-detail-title" className="font-serif text-base font-semibold">
               {priceVsTarget !== null && priceVsTarget <= 0 ? 'Meta batida — hora de comprar' : 'Histórico de preço'}

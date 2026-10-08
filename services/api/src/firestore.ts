@@ -10,7 +10,6 @@ import { env } from './env.js';
 export const COLLECTIONS = {
   monitors: 'mpa_monitors',
   notifications: 'mpa_notifications',
-  sites: 'mpa_sites',
   users: 'mpa_users',
   outbox: 'mpa_outbox',
   webhookEvents: 'mpa_webhook_events',
