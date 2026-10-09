@@ -21,6 +21,15 @@ const TIENI_ITINERARY_MAX_LEGS = 2;
 const TIENI_ITINERARY_MAX_LAYOVER_HOURS = 6;
 
 /**
+ * O menor preço vem de fontes que não casam, necessariamente, com as datas
+ * nem com os passageiros do monitor (o Travelpayouts é cache da rota; o Sky
+ * Scrapper busca só ida, 1 adulto). Todo aviso diz isso — ver
+ * _local-bdr-policy-018.
+ */
+const PRICE_BASIS_NOTE =
+  'É o menor preço encontrado para a rota e pode não valer para as suas datas exatas nem para todos os passageiros — confira no vendedor antes de comprar.';
+
+/**
  * Lógica de execução de um scan — extraída para ser reaproveitada tanto
  * pela rota autenticada (POST /api/monitors/:id/scan, "Varrer Agora")
  * quanto pela rota interna (POST /internal/scan/:id, chamada pelo loop
@@ -140,7 +149,7 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
         origin: monitor.origin,
         destination: monitor.destination,
         title: `Meta Atingida! ${monitor.originCity} ➔ ${monitor.destinationCity} por R$ ${cheapestResult.price}`,
-        message: `O site de passagens ${cheapestResult.site.toUpperCase()} atingiu um valor incrível de R$ ${cheapestResult.price} para as datas de sua viagem (${travelDatesText}). Este valor está abaixo da sua meta estipulada de R$ ${monitor.targetPrice}!`,
+        message: `Foi encontrado o preço de R$ ${cheapestResult.price} para ${monitor.origin} → ${monitor.destination} (fonte: ${cheapestResult.site}), dentro da sua meta de R$ ${monitor.targetPrice}. Suas datas: ${travelDatesText}. ${PRICE_BASIS_NOTE}`,
         price: cheapestResult.price,
         targetPrice: monitor.targetPrice,
         sentTo: monitor.email,
@@ -164,7 +173,7 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
         origin: monitor.origin,
         destination: monitor.destination,
         title: `Preço na faixa de aviso! ${monitor.originCity} ➔ ${monitor.destinationCity} por R$ ${cheapestResult.price}`,
-        message: `O site de passagens ${cheapestResult.site.toUpperCase()} está oferecendo R$ ${cheapestResult.price} para as datas de sua viagem (${travelDatesText}). Está acima da sua meta de R$ ${monitor.targetPrice}, mas dentro da faixa de aviso de ${monitor.targetPriceMarginPercent}% que você definiu (até R$ ${marginCeiling.toFixed(2)}).`,
+        message: `Foi encontrado o preço de R$ ${cheapestResult.price} para ${monitor.origin} → ${monitor.destination} (fonte: ${cheapestResult.site}). Está acima da sua meta de R$ ${monitor.targetPrice}, mas dentro da faixa de aviso de ${monitor.targetPriceMarginPercent}% que você definiu (até R$ ${marginCeiling.toFixed(2)}). Suas datas: ${travelDatesText}. ${PRICE_BASIS_NOTE}`,
         price: cheapestResult.price,
         targetPrice: monitor.targetPrice,
         sentTo: monitor.email,
@@ -190,7 +199,7 @@ export async function executeScanForMonitor(monitor: FlightMonitor): Promise<Sca
         origin: monitor.origin,
         destination: monitor.destination,
         title: `${arrow} para ${monitor.destinationCity}`,
-        message: `Olá! O preço da sua passagem monitorada variou de R$ ${prevPrice} para R$ ${cheapestResult.price} no site ${cheapestResult.site.toUpperCase()}. Suas datas de viagem são ${travelDatesText}.`,
+        message: `O menor preço encontrado para a rota variou de R$ ${prevPrice} para R$ ${cheapestResult.price} (fonte: ${cheapestResult.site}). Suas datas: ${travelDatesText}. ${PRICE_BASIS_NOTE}`,
         price: cheapestResult.price,
         targetPrice: monitor.targetPrice,
         sentTo: monitor.email,

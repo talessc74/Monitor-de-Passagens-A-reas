@@ -60,8 +60,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // "Quais destinos saindo de X têm cobertura real no Travelpayouts?" —
   // ver _local-bdr-policy-011. Evita cadastrar um monitor por destino só
-  // pra descobrir na marra se aquela rota tem dado real ou cai no
-  // simulador.
+  // pra descobrir na marra se aquela rota tem dado real.
   app.get<{ Querystring: { origin?: string } }>(
     '/api/admin/travelpayouts-routes',
     { preHandler: [authenticate, requireAdmin] },
@@ -96,7 +95,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Testa uma rota origin->destination específica com a mesma chamada
   // que o scan real faz — pra depurar o caso "apareceu no explorador de
-  // destinos, mas o scan real continua vindo simulado". Ver
+  // destinos, mas o scan real continua sem preço". Ver
   // _local-bdr-policy-012.
   app.get<{ Querystring: { origin?: string; destination?: string } }>(
     '/api/admin/travelpayouts-route-test',

@@ -38,7 +38,7 @@ interface EmailCopy {
 }
 
 function priceText(notification: NotificationLog): string {
-  return notification.price > 0 ? `R$ ${notification.price}` : 'Simulado';
+  return `R$ ${notification.price}`;
 }
 
 function card(notification: NotificationLog, copy: EmailCopy): string {
@@ -176,7 +176,7 @@ export function targetReachedEmail(notification: NotificationLog): { subject: st
     badge: 'Alerta Imediato',
     eyebrow: 'Meta Atingida',
     headline: 'Sua passagem está com preço ideal!',
-    buttonLabel: 'Ir para o site de compra e reservar',
+    buttonLabel: 'Buscar esta rota',
     showPricePill: true,
   });
   return { subject, html };
@@ -188,7 +188,7 @@ export function priceInRangeEmail(notification: NotificationLog): { subject: str
     badge: 'Faixa de Aviso',
     eyebrow: 'Perto da meta',
     headline: 'O preço entrou na sua faixa de aviso',
-    buttonLabel: 'Ir para o site de compra e reservar',
+    buttonLabel: 'Buscar esta rota',
     showPricePill: true,
   });
   return { subject, html };

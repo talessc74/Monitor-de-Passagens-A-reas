@@ -33,8 +33,9 @@ const envSchema = z.object({
   WAITLIST_NOTIFICATION_EMAIL: z.string().email().default('contato@flyspot.com.br'),
   // Primeira fonte de preço real do FlySpot — ver _local-adr-policy-004 (application)
   // e _local-bdr-plan-004. Cobertura conhecida como estreita (forte só
-  // na ponte aérea SP-RJ); sem a key, cai 100% no simulador Gemini,
-  // mesmo padrão no-op de toda integração opcional deste projeto.
+  // na ponte aérea SP-RJ); sem a key, só o Sky Scrapper
+  // (se configurado) responde — mesmo padrão no-op de toda integração opcional.
+  // Sem nenhuma fonte, o scan termina sem preço (_local-bdr-policy-016).
   TRAVELPAYOUTS_API_TOKEN: z.string().optional(),
   // Segunda fonte de preço real, complementar ao Travelpayouts — ver
   // _local-bdr-plan-006. Scraper não-oficial do Skyscanner via RapidAPI

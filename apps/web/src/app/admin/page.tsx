@@ -260,10 +260,10 @@ export default function AdminPage() {
               <DiagnosticRow label="Travelpayouts" diag={diagnostics.travelpayouts} />
               <DiagnosticRow label="Sky Scrapper" diag={diagnostics.skyScrapper} />
               <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-paper-deep p-3 text-xs">
-                <span className="font-bold">Gemini (simulador)</span>
+                <span className="font-bold">Gemini (sugestão de conexões)</span>
                 <span className={`flex items-center gap-1.5 font-bold ${diagnostics.gemini.configured ? 'text-teal' : 'text-ink-muted'}`}>
                   {diagnostics.gemini.configured ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-                  {diagnostics.gemini.configured ? 'Configurada' : 'Não configurada (fallback offline)'}
+                  {diagnostics.gemini.configured ? 'Configurada' : 'Não configurada'}
                 </span>
               </div>
             </div>
@@ -377,8 +377,8 @@ export default function AdminPage() {
                 <p className="text-xs text-danger-text">Erro: {routesResult.error}</p>
               ) : routesResult.destinations.length === 0 ? (
                 <p className="text-xs text-ink-muted">
-                  Nenhum destino com tarifa em cache saindo de {routesResult.origin} — essa origem provavelmente cai 100% no
-                  simulador por enquanto.
+                  Nenhum destino com tarifa em cache saindo de {routesResult.origin} — essa origem provavelmente fica sem
+                  preço real por enquanto.
                 </p>
               ) : (
                 <div className="divide-y divide-border rounded-md border border-border">

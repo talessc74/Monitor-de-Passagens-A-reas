@@ -3,6 +3,7 @@
 import { X, TrendingDown, TrendingUp } from 'lucide-react';
 import type { FlightMonitor } from '@mpa/types';
 import { useEscapeToClose } from '../lib/useEscapeToClose';
+import { formatPriceAge, PRICE_BASIS_HINT } from '../lib/priceAge';
 
 interface MonitorDetailModalProps {
   monitor: FlightMonitor;
@@ -102,6 +103,15 @@ export default function MonitorDetailModal({ monitor, onClose }: MonitorDetailMo
           <span className="font-mono text-3xl font-black">
             {monitor.currentPrice ? `R$ ${monitor.currentPrice.toLocaleString('pt-BR')}` : 'Sem leitura ainda'}
           </span>
+          {monitor.currentPrice && (
+            <p className="mt-1 text-[10px] text-ink-muted">
+              {[sortedResults[0] ? `Fonte: ${sortedResults[0].site}` : null, formatPriceAge(monitor.lastPriceFoundAt) ? `visto ${formatPriceAge(monitor.lastPriceFoundAt)}` : null]
+                .filter(Boolean)
+                .join(' · ')}
+              {' — '}
+              {PRICE_BASIS_HINT}
+            </p>
+          )}
           {priceVsTarget !== null && (
             <p className={`mt-1 flex items-center justify-center gap-1 text-xs font-bold ${priceVsTarget <= 0 ? 'text-teal' : 'text-ink-muted'}`}>
               {priceVsTarget <= 0 ? <TrendingDown className="h-3.5 w-3.5" /> : <TrendingUp className="h-3.5 w-3.5" />}

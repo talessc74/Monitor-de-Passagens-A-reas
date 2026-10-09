@@ -5,6 +5,7 @@ import { Calendar, Users, RefreshCw, Trash2, Power, History, Pencil, Route } fro
 import type { FlightMonitor } from '@mpa/types';
 import EditMonitorModal from './EditMonitorModal';
 import MonitorDetailModal from './MonitorDetailModal';
+import { formatPriceAge, PRICE_BASIS_HINT } from '../lib/priceAge';
 
 interface MonitorCardProps {
   monitor: FlightMonitor;
@@ -135,7 +136,7 @@ export default function MonitorCard({ monitor, onScan, onDelete, onToggleStatus,
 
       <div className="flex flex-wrap items-end justify-between gap-4 px-5 py-4">
         <div>
-          <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-ink-muted">Menor lido</div>
+          <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-ink-muted">Menor preço visto</div>
           {monitor.currentPrice ? (
             <div className={`font-mono text-xl font-bold sm:text-2xl ${isConfiguredUnderTarget ? 'text-teal' : 'text-terracotta'}`}>
               R$ {monitor.currentPrice.toLocaleString('pt-BR')}
@@ -147,6 +148,14 @@ export default function MonitorCard({ monitor, onScan, onDelete, onToggleStatus,
               {monitor.lastScannedAt
                 ? 'Nenhuma fonte tem preço real para esta rota ainda — seguimos procurando.'
                 : 'Ainda não varrido.'}
+            </div>
+          )}
+          {monitor.currentPrice && (
+            <div className="mt-1 max-w-[16rem] text-[10px] leading-snug text-ink-muted">
+              {[cheapestLastResult ? `Fonte: ${cheapestLastResult.site}` : null, formatPriceAge(monitor.lastPriceFoundAt) ? `visto ${formatPriceAge(monitor.lastPriceFoundAt)}` : null]
+                .filter(Boolean)
+                .join(' · ')}
+              <div>{PRICE_BASIS_HINT}</div>
             </div>
           )}
         </div>

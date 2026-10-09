@@ -120,7 +120,7 @@ export default function EmailModal({ notification, onClose }: EmailModalProps) {
                   id="btn-buy-flight-direct"
                 >
                   <ExternalLink className="h-4 w-4" />
-                  Ir para o site de compra e reservar (R$ {notification.price.toLocaleString('pt-BR')})
+                  Buscar esta rota (R$ {notification.price.toLocaleString('pt-BR')})
                 </a>
 
                 <div className="space-y-1.5 rounded-xl border border-[#E4DDD0] bg-[#F0E9DC]/40 p-3 text-left">
