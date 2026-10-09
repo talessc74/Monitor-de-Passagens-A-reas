@@ -4,8 +4,7 @@ import { updateMonitor } from './repositories/monitorsRepository.js';
 import { createNotification } from './repositories/notificationsRepository.js';
 import { createOutboxEvent } from './repositories/outboxRepository.js';
 import { FieldValue } from 'firebase-admin/firestore';
-import { getCheapestRealFare } from './travelpayoutsClient.js';
-import { getCheapestRealFare as getCheapestSkyScrapperFare } from './skyScrapperClient.js';
+import { findRealFare } from './realFare.js';
 import { searchItinerary, beatsBaselineByMargin, LIABILITY_DISCLAIMER } from './itinerarySearch.js';
 import { generatePurchaseLink } from './purchaseLink.js';
 
@@ -36,15 +35,12 @@ const PRICE_BASIS_NOTE =
  * de polling do services/generator). Ver _local-adr-policy-002.
  */
 export async function executeScanForMonitor(monitor: FlightMonitor): Promise<ScanResponse> {
-  // Fontes de preço real do FlySpot, em cascata — ver _local-adr-policy-004
-  // (application). Travelpayouts primeiro (cache, mais barato/rápido de
-  // consultar); se não tiver cobertura pra rota, tenta o Sky Scrapper
-  // (busca ao vivo). Quando nenhuma das duas tem dado, o scan termina sem
-  // preço — não há mais simulador atrás pra preencher o silêncio. Ver
-  // _local-bdr-policy-016.
-  const realFare =
-    (await getCheapestRealFare(monitor.origin, monitor.destination)) ??
-    (await getCheapestSkyScrapperFare(monitor.origin, monitor.destination, monitor.departureDate ?? null));
+  // Fontes de preço real do FlySpot — ver _local-adr-policy-004 e
+  // _local-bdr-policy-019. Monitor com data consulta primeiro o Sky Scrapper
+  // (ao vivo) e usa o Travelpayouts (cache) de reserva; sem data, só o
+  // Travelpayouts. Quando nenhuma tem dado, o scan termina sem preço — não
+  // há simulador atrás pra preencher o silêncio. Ver _local-bdr-policy-016.
+  const realFare = await findRealFare(monitor);
 
   const validResults: ScanResult[] = realFare && realFare.price > 0 ? [realFare] : [];
   const directCheapest = validResults[0];

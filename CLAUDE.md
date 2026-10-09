@@ -242,7 +242,7 @@ Validação de env acontece no boot via Zod (`services/api/src/env.ts`) — o se
 
 Implementada em `services/api/src/executeScan.ts` + `routes/monitors.ts`. **O FlySpot não fabrica preço** — ver `_local-bdr-policy-016`.
 
-1. Consulta as fontes reais em cascata: Travelpayouts (cache de tarifas observadas) e, sem cobertura, Sky Scrapper
+1. Consulta as fontes reais em cascata (`realFare.ts`, ver `_local-bdr-policy-019`): monitor com data usa o Sky Scrapper (ao vivo) e, sem preço, o Travelpayouts (cache de tarifas observadas); monitor sem data usa só o Travelpayouts
 2. Sem preço em nenhuma fonte, o scan termina **com sucesso e sem resultado**: `lastScannedAt` avança, mas `currentPrice`, `history` e `bestPriceTracked` ficam intocados, e nenhuma notificação é criada
 3. Com preço, atualiza `currentPrice`, `lastPriceFoundAt` e `history`
 4. Cria `NotificationLog` se o preço bateu a meta ou entrou na faixa de aviso (e-mail só nesses dois casos — `_local-bdr-policy-008`)
