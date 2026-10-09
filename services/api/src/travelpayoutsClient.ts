@@ -47,7 +47,7 @@ interface TravelpayoutsListResponse {
 /**
  * Retorna a tarifa mais barata em cache para origin->destination, ou
  * `null` se a fonte estiver desligada (sem token) ou sem cobertura pra
- * essa rota — nos dois casos o chamador cai pro simulador Gemini.
+ * essa rota — nos dois casos o chamador tenta a próxima fonte real.
  * Nunca lança: qualquer falha de rede/parse também vira `null`.
  */
 export async function getCheapestRealFare(origin: string, destination: string): Promise<ScanResult | null> {
@@ -74,7 +74,7 @@ export async function getCheapestRealFare(origin: string, destination: string): 
       durationHours: Math.round(cheapest.duration / 60),
       stops: cheapest.number_of_changes,
       isPromotion: false,
-      details: `Preço real observado via Travelpayouts (agência: ${cheapest.gate}).`,
+      details: `Tarifa mais barata em cache para a rota (agência: ${cheapest.gate}) — não casa, necessariamente, com as datas do monitor.`,
     };
   } catch (error) {
     console.error(`[api] Erro ao consultar Travelpayouts para ${origin}->${destination}:`, error);

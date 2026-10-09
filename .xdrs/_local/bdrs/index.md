@@ -19,6 +19,7 @@ Product behavior, lifecycle, and offering decisions.
 - [005-notification-margin-range](product/005-notification-margin-range.md) — Discrete percentage presets (0/5/10/15/20%) above the target price trigger a distinct `price_in_range` notification, shown identically in onboarding and edit
 - [006-warm-editorial-visual-identity](product/006-warm-editorial-visual-identity.md) — Replaces the generic Inter/blue-600/rounded-2xl SaaS look with a warm editorial, boarding-pass-ticket visual identity across every `apps/web` page, with mandatory light and dark themes
 - [017-remove-tracked-sites-fiction](product/017-remove-tracked-sites-fiction.md) — Removes the "sites pesquisados" concept (trackedSites, mpa_sites, checkboxes, sites list): the scan only ever queried Travelpayouts and Sky Scrapper, so the selection controlled nothing
+- [018-price-provenance-and-basis](product/018-price-provenance-and-basis.md) — Every shown price states its source, its age and that it may not match the monitor's exact dates/passengers; e-mail buttons say "Buscar esta rota", not "site de compra"
 
 **Plans:**
 - [001-fase-3-completion-and-next-phases](product/plans/001-fase-3-completion-and-next-phases.md) — What's left of Fase 3 (screens 04/05, mobile/a11y audit, QA gate) and a milestone-level handoff to Fases 4-8
