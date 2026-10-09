@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 
+const PRICES = [318, 375, 480, 540, 690, 810, 940, 1230, 1560, 2050, 2480];
+
 function tokenColor(name: string) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#2563eb';
 }
@@ -14,7 +16,18 @@ interface Plane {
   y1: number;
   start: number;
   dur: number;
+  price: number;
   angle: number;
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
 
 export default function RadarEmptyState() {
@@ -77,8 +90,14 @@ export default function RadarEmptyState() {
         y1,
         start: now,
         dur,
+        price: PRICES[Math.floor(Math.random() * PRICES.length)],
         angle: Math.atan2(dy, dx),
       });
+    }
+
+    function bestId() {
+      if (!planes.length) return null;
+      return planes.reduce((a, b) => (b.price < a.price ? b : a)).id;
     }
 
     function drawPlaneShape(scale: number) {
@@ -98,14 +117,49 @@ export default function RadarEmptyState() {
       ctx!.fill();
     }
 
-    function drawPlane(x: number, y: number, angle: number) {
+    function drawPlane(x: number, y: number, angle: number, price: number, isBest: boolean, t: number) {
       const amber = tokenColor('--radar-amber');
+      const teal = tokenColor('--radar-teal');
+      const ink = tokenColor('--radar-ink');
+      const card = tokenColor('--radar-card');
+      const line = tokenColor('--radar-line');
+      const blinkAlpha = 0.5 + Math.sin(t / 170) * 0.5;
+
       ctx!.save();
       ctx!.translate(x, y);
       ctx!.rotate(angle);
-      ctx!.globalAlpha = 0.9;
-      ctx!.fillStyle = amber;
+      ctx!.globalAlpha = isBest ? Math.max(0.25, blinkAlpha) : 0.95;
+      ctx!.fillStyle = isBest ? teal : amber;
       drawPlaneShape(0.85);
+      if (isBest) {
+        ctx!.beginPath();
+        ctx!.arc(0, 0, 9 + blinkAlpha * 3, 0, Math.PI * 2);
+        ctx!.strokeStyle = teal;
+        ctx!.globalAlpha = blinkAlpha * 0.5;
+        ctx!.lineWidth = 1;
+        ctx!.stroke();
+      }
+      ctx!.restore();
+
+      const label = 'R$ ' + price.toLocaleString('pt-BR');
+      ctx!.save();
+      ctx!.font = (isBest ? '700 9.5px ' : '600 9px ') + 'ui-monospace, monospace';
+      ctx!.textAlign = 'center';
+      ctx!.textBaseline = 'middle';
+      const tw = ctx!.measureText(label).width;
+      const boxW = tw + 8;
+      const boxH = 13;
+      const bx = x - boxW / 2;
+      const by = y + 9;
+      ctx!.globalAlpha = isBest ? Math.max(0.55, blinkAlpha) : 0.92;
+      ctx!.fillStyle = card;
+      ctx!.strokeStyle = isBest ? teal : line;
+      ctx!.lineWidth = isBest ? 1.4 : 1;
+      roundRect(ctx!, bx, by, boxW, boxH, 3.5);
+      ctx!.fill();
+      ctx!.stroke();
+      ctx!.fillStyle = isBest ? teal : ink;
+      ctx!.fillText(label, x, by + boxH / 2 + 0.5);
       ctx!.restore();
     }
 
@@ -118,12 +172,13 @@ export default function RadarEmptyState() {
         lastSpawn = t;
       }
       planes = planes.filter((p) => t - p.start < p.dur);
+      const best = bestId();
 
       for (const p of planes) {
         const progress = (t - p.start) / p.dur;
         const x = p.x0 + (p.x1 - p.x0) * progress;
         const y = p.y0 + (p.y1 - p.y0) * progress;
-        drawPlane(x, y, p.angle);
+        drawPlane(x, y, p.angle, p.price, p.id === best, t);
       }
 
       if (!reduceMotion) rafId = requestAnimationFrame(frame);
@@ -151,6 +206,10 @@ export default function RadarEmptyState() {
       <style>{`
         :root {
           --radar-amber: var(--color-terracotta);
+          --radar-teal: var(--color-teal);
+          --radar-ink: var(--color-ink-muted);
+          --radar-card: var(--color-paper-card);
+          --radar-line: var(--color-border);
         }
       `}</style>
       <div className="relative mb-5" style={{ width: 220, height: 220 }}>
@@ -167,8 +226,8 @@ export default function RadarEmptyState() {
       </div>
       <h3 className="font-serif text-base font-semibold">Nenhum voo no radar ainda</h3>
       <p className="mt-1 max-w-xs text-xs font-medium text-ink-muted">
-        Cadastre sua primeira rota no painel ao lado, com o preço que você quer pagar. Quando uma
-        fonte real mostrar esse valor, avisamos por e-mail.
+        Já estamos vigiando o mercado. LATAM, GOL, Azul, Decolar e Skyscanner. Cadastre sua
+        primeira rota no painel ao lado para começar a receber alertas.
       </p>
     </div>
   );
